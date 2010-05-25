@@ -28,8 +28,6 @@ struct PacketRecord;
 static double channel_gain[NUM_REALIZATIONS][NUM_SUBCARRIERS+1] = {{0}};
 static double total_power_[MAX_OFDM_SYMBOLS][NUM_SUBCARRIERS] = {{0}} ;
 
-string SelectedPDP="";
-
 typedef double intpower[NUM_SUBCARRIERS];
 
 // This class defines timers for updating the total received power at the receiver
@@ -77,8 +75,7 @@ public:
     void removePower(PacketRecord*);
 
 protected:
-    //int LoadDataFile(const char *filename);
-    void LoadDataFile();
+    void LoadDataFile(std::string Selected_PDP);
     void Init_Channels();
     //double channel_gain[NUM_REALIZATIONS][NUM_SUBCARRIERS + 1];
     /*

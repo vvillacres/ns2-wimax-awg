@@ -892,7 +892,7 @@ void Mac802_16BS::receive (Packet *pktRx_)
                     debug2("In BS: Set to local MCS index.%d.\n", index);
                 }
 
-                beta = global->Beta[ITU_PDP][index];
+                beta = global->GetBeta( ITU_PDP, index);
                 debug2("In BS: beta = %.2f = \n" , beta );
 
                 num_subcarrier_block = num_symbol_per_slot * getPhy()->getNumSubcarrier (DL_) * last_block_size;
@@ -960,7 +960,7 @@ void Mac802_16BS::receive (Packet *pktRx_)
                     debug2("In BS: Set to local MCS index %d.\n", index);
                 }
 
-                beta = global->Beta[ITU_PDP][index];
+                beta = global->GetBeta( ITU_PDP, index);
 
                 num_subcarrier_block = num_symbol_per_slot * getPhy()->getNumSubcarrier (DL_) * max_block_size;
                 if (num_subcarrier_block > total_subcarriers)
@@ -1027,7 +1027,7 @@ void Mac802_16BS::receive (Packet *pktRx_)
 
                 //num_of_complete_block =1;
                 index =  phy->getMCSIndex( wimaxHdr->phy_info.modulation_ ,  last_block_size);
-                beta = global->Beta[ITU_PDP][index];
+                beta = global->GetBeta( ITU_PDP, index);
                 debug2(" In BS: beta = %.2f = \n" , beta );
 
                 num_subcarrier_block = num_symbol_per_slot * getPhy()->getNumSubcarrier (DL_) * last_block_size;
@@ -1082,7 +1082,7 @@ void Mac802_16BS::receive (Packet *pktRx_)
                 debug2("1.5 In BS: Begin to calculate the BLER for the complete blocks.\n");
                 index =  phy->getMCSIndex( wimaxHdr->phy_info.modulation_ ,  max_block_size);
                 debug2("In BS: No AMC enabled here. The MCS index is %d\n", index);
-                beta = global->Beta[ITU_PDP][index];
+                beta = global->GetBeta( ITU_PDP, index);
 
                 num_subcarrier_block = num_symbol_per_slot * getPhy()->getNumSubcarrier (DL_) * max_block_size;
                 if (num_subcarrier_block > total_subcarriers)
@@ -1141,7 +1141,7 @@ void Mac802_16BS::receive (Packet *pktRx_)
                     index =  phy->getMCSIndex( wimaxHdr->phy_info.modulation_ ,  last_block_size);
                     debug2("In BS: No AMC enabled here. The MCS index is %d\n", index);
 
-                    beta = global->Beta[ITU_PDP][index];
+                    beta = global->GetBeta( ITU_PDP, index);
 
                     num_subcarrier_block = num_symbol_per_slot * getPhy()->getNumSubcarrier (DL_) * last_block_size;
 

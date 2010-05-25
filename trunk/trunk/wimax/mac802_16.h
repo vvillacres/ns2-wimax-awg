@@ -59,8 +59,10 @@
 #define INIT_RNG_PREAMBLE 0         	// no preamble for ranging
 #define BW_REQ_PREAMBLE 0           	// no preamble for bw req
 
-#define BASE_POWER  1e-18  //rpi
-//#define BASE_POWER 8.688e-16
+// Noise Power for one subcarier
+// Calculate trought RSS = 10.^((- 114 + 10 * log10(fs * 840 * 1e-6 / 1024) - 30 + 5 +8)/10)/840
+#define BASE_POWER  8.688e-16 // vr@tud 10-09
+//#define BASE_POWER  1e-18  //rpi
 #define DOUBLE_INT_ZERO 1e-30
 
 #define FIX_PROPORTIONAL_ERROR
