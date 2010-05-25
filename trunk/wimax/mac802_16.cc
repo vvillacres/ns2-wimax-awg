@@ -23,8 +23,9 @@
 
 /* Defines frequencies for 3.5 GHz band and 7 Mhz freqency bandwidth */
 /* Will be removed when a dynamic way is added */
-static const int nbFreq = 5;
-static const double frequencies[] = { 3.486e+9, 3.493e+9, 3.5e+9, 3.507e+9, 3.514e+9};
+static const int nbFreq = 6;
+// Adding 2.496 GHz according to Prof3.A_2.496
+static const double frequencies[] = { 2.496e+9, 3.486e+9, 3.493e+9, 3.5e+9, 3.507e+9, 3.514e+9};
 
 
 int hdr_mac802_16::offset_;

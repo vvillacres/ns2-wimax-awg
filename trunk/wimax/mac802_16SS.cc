@@ -1036,7 +1036,7 @@ void Mac802_16SS::receive (Packet *pktRx_)
                 }
                 set_ss_current_mcs_index(current_mcs_indx);
 
-                beta = global->Beta[ITU_PDP][index];
+                beta = global->GetBeta( ITU_PDP, index);
                 debug2(" beta = %.2f = \n" , beta );
 
                 num_subcarrier_block = num_symbol_per_slot * getPhy()->getNumSubcarrier (DL_) * last_block_size;
@@ -1109,7 +1109,7 @@ void Mac802_16SS::receive (Packet *pktRx_)
                     }
                 }
 
-                beta = global->Beta[ITU_PDP][index];
+                beta = global->GetBeta( ITU_PDP, index);
 
                 num_subcarrier_block = num_symbol_per_slot * getPhy()->getNumSubcarrier (DL_) * max_block_size;
                 if (num_subcarrier_block > total_subcarriers)
@@ -1174,7 +1174,7 @@ void Mac802_16SS::receive (Packet *pktRx_)
 
                 //num_of_complete_block =1;
                 index =  phy->getMCSIndex( wimaxHdr->phy_info.modulation_ ,  last_block_size);
-                beta = global->Beta[ITU_PDP][index];
+                beta = global->GetBeta( ITU_PDP, index);
                 debug2(" beta = %.2f = \n" , beta );
 
                 num_subcarrier_block = num_symbol_per_slot * getPhy()->getNumSubcarrier (DL_) * last_block_size;
@@ -1231,7 +1231,7 @@ void Mac802_16SS::receive (Packet *pktRx_)
                 debug2("1.5 Begin to calculate the BLER for the complete blocks.\n");
                 index =  phy->getMCSIndex( wimaxHdr->phy_info.modulation_ ,  max_block_size);
                 debug2("No AMC enabled here. The MCS index is %d\n", index);
-                beta = global->Beta[ITU_PDP][index];
+                beta = global->GetBeta( ITU_PDP, index);
 
                 num_subcarrier_block = num_symbol_per_slot * getPhy()->getNumSubcarrier (DL_) * max_block_size;
                 if (num_subcarrier_block > total_subcarriers)
@@ -1292,7 +1292,7 @@ void Mac802_16SS::receive (Packet *pktRx_)
                     index =  phy->getMCSIndex( wimaxHdr->phy_info.modulation_ ,  last_block_size);
                     debug2("No AMC enabled here. The MCS index is %d\n", index);
 
-                    beta = global->Beta[ITU_PDP][index];
+                    beta = global->GetBeta( ITU_PDP, index);
 
                     num_subcarrier_block = num_symbol_per_slot * getPhy()->getNumSubcarrier (DL_) * last_block_size;
 

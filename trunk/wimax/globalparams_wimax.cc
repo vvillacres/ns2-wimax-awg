@@ -24,7 +24,8 @@ GlobalParams_Wimax* instance = 0;        //Address of the singleton
 
 GlobalParams_Wimax::GlobalParams_Wimax()
 {
-    Num_SINR_Decimals = 1;
+    Num_SINR_Decimals_ = 1;
+    SearchNs2Directory ();
     int FileOK;
     FileOK=ReadTableFromFile();
     LoadBetaFile();
@@ -38,9 +39,11 @@ GlobalParams_Wimax::~GlobalParams_Wimax()
     instance = 0;
 
     //release memory
-    free(Table_Index);
-    free(Table_SINR);
-    free(Table_BLER);
+    free(Table_Index_);
+    free(Table_SINR_);
+    free(Table_BLER_);
+    free(Table_Low_SINR_Bounds_);
+    free(Table_High_SINR_Bounds_);
 
 }
 
@@ -70,11 +73,11 @@ double GlobalParams_Wimax::GetTablePrecision(double FullDoubleNumber)
 
     double TruncatedDouble;
 
-    FullDoubleNumber = FullDoubleNumber * pow(10, Num_SINR_Decimals);
+    FullDoubleNumber = FullDoubleNumber * pow(10, Num_SINR_Decimals_);
     TruncatedInt= (int) FullDoubleNumber;
     TruncatedDouble = (double) TruncatedInt;
 
-    TruncatedDouble = TruncatedDouble / (pow(10, Num_SINR_Decimals));
+    TruncatedDouble = TruncatedDouble / (pow(10, Num_SINR_Decimals_));
 
     return TruncatedDouble;
 
@@ -89,29 +92,29 @@ double GlobalParams_Wimax::TableLookup(int Index, double SINR)
     double BLER_low=double(NULL);
     double BLER_high=double(NULL); //when BLER_low is found, BLER_high is taken to be the next BLER in the table
     double SINR_low=GetTablePrecision(SINR);
-    double SINR_high=SINR_low + pow(10, -Num_SINR_Decimals); //SINR_high is one "table precision unit" above SINR_low
+    double SINR_high=SINR_low + pow(10, - Num_SINR_Decimals_); //SINR_high is one "table precision unit" above SINR_low
 
     cout << "SINR_low = " << SINR_low << endl;
     cout << "SINR_high = " << SINR_high << endl;
 
     cout << "SINR: " << SINR << endl;
-    cout << "Low: " << Table_Low_SINR_Bounds[Index] << endl;
-    cout << "High: " << Table_High_SINR_Bounds[Index] << endl;
+    cout << "Low: " << Table_Low_SINR_Bounds_[Index] << endl;
+    cout << "High: " << Table_High_SINR_Bounds_[Index] << endl;
 
-    if (SINR < Table_Low_SINR_Bounds[Index]) {
+    if (SINR < Table_Low_SINR_Bounds_[Index]) {
         printf("outside of low limit range.\n");
         return 1; // we are outside the range (lower limit) of the table, so the packet is definilty in error
     }
 
-    if (SINR > Table_High_SINR_Bounds[Index]) {
+    if (SINR > Table_High_SINR_Bounds_[Index]) {
         printf("outside of upper limit range.\n");
         return 0; //we are outside the rang of the table (upper limit), so the packet is definitly received correctly
     }
     //Check if we have an exact match.  If so, simply return the value from the SINR lookup.
-    for (int i=0; i < NumLines - 1 ; i++) {
-        if ( (Table_Index[i] == Index) && (Table_SINR[i] == SINR) ) {
-            cout << "Exact match (in TableLookup() ): " << Table_BLER[i] << endl;
-            return Table_BLER[i];
+    for (int i=0; i < NumLines_ - 1 ; i++) {
+        if ( (Table_Index_[i] == Index) && (Table_SINR_[i] == SINR) ) {
+            cout << "Exact match (in TableLookup() ): " << Table_BLER_[i] << endl;
+            return Table_BLER_[i];
             break;
         }
     }
@@ -121,14 +124,14 @@ double GlobalParams_Wimax::TableLookup(int Index, double SINR)
     //cout << endl << "No exact match... getting interpolated match..." << endl;
 
     //get bounding BLERs
-    for (int i=0; i < NumLines - 1 ; i++) {
+    for (int i=0; i < NumLines_ - 1 ; i++) {
         //cout << Table_Index[i] << " " << Index << endl;
         //cout << Table_SINR[i] << " " << SINR_low << endl;
-        if ( (Table_Index[i] == Index) && ( Table_SINR[i] == SINR_low) ) {
-            cout << "BLER_low found to be " << Table_BLER[i] << endl;
-            BLER_low = Table_BLER[i];
-            BLER_high = Table_BLER[i+1];
-            cout << "BLER_low found to be " << Table_BLER[i] <<" high = "<<Table_BLER[i+1]<< endl;
+        if ( (Table_Index_[i] == Index) && ( Table_SINR_[i] == SINR_low) ) {
+            cout << "BLER_low found to be " << Table_BLER_[i] << endl;
+            BLER_low = Table_BLER_[i];
+            BLER_high = Table_BLER_[i+1];
+            cout << "BLER_low found to be " << Table_BLER_[i] <<" high = "<<Table_BLER_[i+1]<< endl;
         }
     }
 
@@ -147,7 +150,7 @@ double GlobalParams_Wimax::TableLookup(int Index, double SINR)
 
     //if all else fails
     cout << "No Match Found!" << endl;
-    return (double) NULL;
+    return double( NULL);
 
 
 }
@@ -159,60 +162,66 @@ int GlobalParams_Wimax::ReadTableFromFile ()
 
     int NumIndex = 32;
     //open file to get numLines
-    ifstream LineFile;
-    LineFile.open("BLER_LookupTable.txt");
+    ifstream TableFile;
+    TableFile.open( string( Ns2_Directory_ + "BLER_LookupTable.txt").c_str());
 
-    if (LineFile.fail()) {
-        cerr << "Error opening file BLER_LookupTable.txt\n";
-        exit (0);
+    if (TableFile.fail()) {
+
+    	cerr << "Error opening file BLER_LookupTable.txt in directory " << Ns2_Directory_ << endl;
+    	// try to open this file in the current directory
+    	TableFile.open( "BLER_LookupTable.txt");
+
+    	if (TableFile.fail()) {
+
+    		// File not found
+    		cerr << "Error opening file BLER_LookupTable.txt in the current directory " << endl;
+    		exit (1);
+    	}
     }
 
-    NumLines = CountLines(LineFile);
+    NumLines_ = CountLines(TableFile);
     //cout << "num lines = " << NumLines << endl;
 
-    LineFile.close(); //close the file
+    // Replaces reopen file
+    TableFile.seekg(0, ios::beg);
 
-    //OPEN TABLE FILE
-    ifstream TableFile;
-    TableFile.open("BLER_LookupTable.txt");
-
-    Table_Index = (int *) malloc(NumLines * sizeof(int) );
+    Table_Index_ = (int *) malloc(NumLines_ * sizeof(int) );
     //check if malloc worked
-    if (Table_Index == NULL) {
-        fprintf(stderr,"Error: Table_Index is NULL\n");
-        free(Table_Index);
+    if (Table_Index_ == NULL) {
+        fprintf(stderr,"Error: Table_Index_ is NULL\n");
+        free(Table_Index_);
         exit(1);
     }
 
-    Table_SINR = (double *) malloc(NumLines * sizeof(double) );
+    Table_SINR_ = (double *) malloc(NumLines_ * sizeof(double) );
     //check if malloc worked
-    if (Table_SINR == NULL) {
-        fprintf(stderr,"Error: Table_SINR is NULL\n");
-        free(Table_SINR);
+    if (Table_SINR_ == NULL) {
+        fprintf(stderr,"Error: Table_SINR_ is NULL\n");
+        free(Table_SINR_);
         exit(1);
     }
 
-    Table_BLER = (double *) malloc(NumLines * sizeof(double) );
+    Table_BLER_ = (double *) malloc(NumLines_ * sizeof(double) );
     //check if malloc worked
-    if (Table_BLER == NULL) {
-        fprintf(stderr,"Error: Table_BLER is NULL\n");
-        free(Table_BLER);
+    if (Table_BLER_ == NULL) {
+        fprintf(stderr,"Error: Table_BLER_ is NULL\n");
+        free(Table_BLER_);
         exit(1);
     }
 
-    Table_Low_SINR_Bounds = (double *) malloc((NumIndex + 1) * sizeof(double) ); //so array indexes match table indexes
+    Table_Low_SINR_Bounds_ = (double *) malloc((NumIndex + 1) * sizeof(double) ); //so array indexes match table indexes
     //check if malloc worked
-    if (Table_Low_SINR_Bounds == NULL) {
+    if (Table_Low_SINR_Bounds_ == NULL) {
         fprintf(stderr,"Error: Table_Low_SINR_Bounds is NULL\n");
-        free(Table_Low_SINR_Bounds);
+        free(Table_Low_SINR_Bounds_);
         exit(1);
     }
 
-    Table_High_SINR_Bounds = (double *) malloc((NumIndex + 1)* sizeof(double) ); //so array indexes match table indexes
+    Table_High_SINR_Bounds_ = (double *) malloc((NumIndex + 1)* sizeof(double) ); //so array indexes match table indexes
     //check if malloc worked
-    if (Table_High_SINR_Bounds == NULL) {
-        fprintf(stderr,"Error: Table_High_SINR_Bounds is NULL\n");
-        free(Table_High_SINR_Bounds);
+    if (Table_High_SINR_Bounds_ == NULL) {
+        fprintf(stderr,"Error: Table_High_SINR_Bounds_ is NULL\n");
+        free(Table_High_SINR_Bounds_);
         exit(1);
     }
 
@@ -220,11 +229,11 @@ int GlobalParams_Wimax::ReadTableFromFile ()
 
     int CurrentLine=0;
     while (!TableFile.eof()) {
-        TableFile >> Table_Index[CurrentLine];
+        TableFile >> Table_Index_[CurrentLine];
         //cout << "Index: " << Table_Index[CurrentLine] << endl;
-        TableFile >> Table_SINR[CurrentLine];
+        TableFile >> Table_SINR_[CurrentLine];
         //cout << "SINR: " << Table_SINR[CurrentLine] << endl;
-        TableFile >> Table_BLER[CurrentLine];
+        TableFile >> Table_BLER_[CurrentLine];
         //cout << "BLER: " << Table_BLER[CurrentLine] << endl;
 
         CurrentLine++;
@@ -234,25 +243,25 @@ int GlobalParams_Wimax::ReadTableFromFile ()
 
     //cout << "after read file" << endl;
 
-    Table_Low_SINR_Bounds[0]=double(NULL); //not used
-    Table_High_SINR_Bounds[0]=double(NULL); //not used
+    Table_Low_SINR_Bounds_[0]=double(NULL); //not used
+    Table_High_SINR_Bounds_[0]=double(NULL); //not used
 
-    Table_Low_SINR_Bounds[1]=Table_SINR[0]; //first line in file
+    Table_Low_SINR_Bounds_[1]=Table_SINR_[0]; //first line in file
     //	cout << "LOW 1 = " << Table_Low_SINR_Bounds[1] << endl;
 
-    Table_High_SINR_Bounds[NumIndex]=Table_SINR[NumLines - 1]; //last line in file
+    Table_High_SINR_Bounds_[NumIndex]=Table_SINR_[NumLines_ - 1]; //last line in file
     //	cout << "HIGH 32 = " << Table_High_SINR_Bounds[NumIndex] << endl;
 
     int BreaksFound = 0;
     //cout << "Before break finding loop..." << endl;
 
-    for (int counter=1; counter <= NumLines; counter++) {
+    for (int counter=1; counter <= NumLines_; counter++) {
         int TempIndex1, TempIndex2;
-        TempIndex1=Table_Index[counter];
-        TempIndex2=Table_Index[counter + 1];
+        TempIndex1=Table_Index_[counter];
+        TempIndex2=Table_Index_[counter + 1];
         if (TempIndex1 != TempIndex2) {
-            Table_High_SINR_Bounds[BreaksFound + 1] = Table_SINR[counter];
-            Table_Low_SINR_Bounds[BreaksFound + 2] = Table_SINR[counter + 1];
+            Table_High_SINR_Bounds_[BreaksFound + 1] = Table_SINR_[counter];
+            Table_Low_SINR_Bounds_[BreaksFound + 2] = Table_SINR_[counter + 1];
 
             BreaksFound++;
             //			cout << "Breaks Found = " << BreaksFound << endl;
@@ -262,8 +271,9 @@ int GlobalParams_Wimax::ReadTableFromFile ()
             //			cout << endl;
         }
 
-        if (BreaksFound == (NumIndex - 1) )
+        if (BreaksFound == (NumIndex - 1) ) {
             break;
+        }
     }
 
     //if we get to here, all is well
@@ -275,11 +285,22 @@ int GlobalParams_Wimax::LoadBetaFile()
 {
 
     ifstream BetaFile;
-    BetaFile.open("BetaTable.txt");
+    BetaFile.open( string( Ns2_Directory_ + "BetaTable.txt").c_str());
 
     if (BetaFile.fail()) {
-        cerr << "Error opening file BetaTable.txt\n";
-        exit (0);
+
+    	cerr << "Error opening file BetaTable.txt in directory " << Ns2_Directory_ << endl;
+
+    	// try to open the file in the current directory
+
+    	BetaFile.open( "BetaTable.txt");
+
+    	if (BetaFile.fail()) {
+
+    		// File not found
+    		cerr << "Error opening file BetaTable.txt in directory " << endl;
+    		exit (1);
+    	}
     }
 
     /*Model Index
@@ -298,10 +319,36 @@ int GlobalParams_Wimax::LoadBetaFile()
         BetaFile >> TempBeta;
         //cout << "Beta " << TempBeta << endl;
 
-        Beta[Model][Index] = TempBeta;
+        Beta_[Model][Index] = TempBeta;
     }
 
     //cout << endl << Beta[1][16] << endl;
 
     return 0;
+}
+
+/*
+ * Get ns2 install path from PATH environment variable - vr@tud 11-09
+ */
+void GlobalParams_Wimax::SearchNs2Directory ()
+{
+    string path_environment_variable;
+    size_t position_of_ns2_entry;
+    size_t first_pos_of_entry;
+    size_t last_pos_of_entry;
+
+    path_environment_variable = string( getenv( "PATH"));
+    position_of_ns2_entry = path_environment_variable.find( NS2_DIRECTORY);
+
+    if ( position_of_ns2_entry == string::npos) {
+        // search pattern not found --> take working directory
+        Ns2_Directory_ = "./";
+    } else {
+        // search pattern found --> extract path
+        first_pos_of_entry = path_environment_variable.find_last_of( ':', position_of_ns2_entry);
+        last_pos_of_entry = path_environment_variable.find_first_of( ':', position_of_ns2_entry);
+        Ns2_Directory_ = path_environment_variable.substr( first_pos_of_entry + 1, last_pos_of_entry - first_pos_of_entry - 1);
+    }
+
+    cout << "Path to the ns2 directory is: " << Ns2_Directory_ << endl;
 }

@@ -18,13 +18,11 @@
 #include "prop_OFDMA.h"
 #include "mac802_16.h"
 #include "ofdmphy.h"
+#include "globalparams_wimax.h"
 
 #include <fstream>
 #include <iomanip>
 
-#ifndef BASE_POWER
-#define BASE_POWER 1e-20   // The thermal noise level: value is arbit.. made after checking ns-default.tcl // sam added for int power
-#endif
 using namespace std;
 
 #define rand_channel_MIMO 200  // this is a random no used for antenna no 2 .. n, this num ber will be added to the channel index and used for antennas 2..n for recv diversity. Since channel no 1 is random and is correlated from frame to frame so we add a const no to maintain the randomness and correlation. Can be done in a better way but later. 
@@ -93,9 +91,9 @@ PropOFDMA::command(int argc, const char*const* argv)
 
     if ( argc == 3) {
         if (strcmp(argv[1], "ITU_PDP") == 0) {
-            SelectedPDP=argv[2];
+            std::string SelectedPDP=argv[2];
             cout << endl << "SelectedPDP in command() = " << SelectedPDP << endl;
-            LoadDataFile();
+            LoadDataFile( SelectedPDP);
             initialized_ = true;
             return TCL_OK;
         } else {
@@ -109,23 +107,33 @@ PropOFDMA::command(int argc, const char*const* argv)
 /*
  * Load the propagation datafile
  */
-void PropOFDMA::LoadDataFile()
+void PropOFDMA::LoadDataFile( std::string SelectedPDP)
 {
     cout << "Enter PropOFDMA::LoadDataFile function" << endl;
     cout << "In LoadDataFile, SelectedPDP is " << SelectedPDP << endl;
 
+    // Read ns2 directory path from GlobalParams class
+    GlobalParams_Wimax* globalParams = GlobalParams_Wimax::Instance();
+
     ifstream ChannelFile;
-    const char * FileToOpen = SelectedPDP.c_str();
 
-    ChannelFile.open(FileToOpen);
+    ChannelFile.open(string( globalParams->GetNs2Directory() + SelectedPDP).c_str());
 
-    /*
-      if(!fdstream) {
-      cout << "PDP file " << SelectedPDP << " is opened" << endl;
-      perror("PDP file opened");
-      return rc;
-      }
-    */
+    if (ChannelFile.fail()) {
+
+    	cerr << "Error opening file" << SelectedPDP << " in directory " << globalParams->GetNs2Directory() << endl;
+
+    	// try to open the file in the current folder
+    	ChannelFile.open(string( SelectedPDP).c_str());
+
+    	if (ChannelFile.fail()) {
+
+    		// File not found
+    		cerr << "Error opening file" << SelectedPDP << " in the current directory " << endl;
+    		exit (1);
+    	}
+    }
+
     cout << "after open file" << endl;;
 
     //READ CHANNEL GAINS FROM THE FILE

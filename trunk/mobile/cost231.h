@@ -21,7 +21,7 @@ public:
                            double hr, double ht, double L, double lambda);
 
 protected:
-    double cost231_formula(double Pt, double ht, double hr, double L, double d); // the formula that calculates the bulk path loss
+    double cost231_formula(double Pt, double Gt, double Gr, double ht, double hr, double L, double d); // the formula that calculates the bulk path loss
 };
 
 
