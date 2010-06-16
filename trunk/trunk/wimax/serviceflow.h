@@ -82,7 +82,7 @@ public:
      */
     inline void setScheduling (SchedulingType_t scheduling) {
         scheduling_ = scheduling;
-    }
+        }
 
     /**
      * Return the scheduling type for this service flow
