@@ -18,6 +18,13 @@
 #
 # $Header: /cvsroot/nsnam/ns-2/allinone/install,v 1.31 2007/03/10 23:40:05 tom_henderson Exp $
 
+#######################################################################
+#
+# Copy this file in ns-allinone-2.34 directory and execute
+# to conduct debug compilation
+#
+#######################################################################
+
 die() {
 	echo "$@"  1>&2
 	test ! -z "$blame" && echo "$blame" 1>&2
@@ -201,14 +208,15 @@ cygwin_tests() {
 
 
 # Package VERSIONs. Change these when releasing new packages
-TCLVER=8.4.14
-TKVER=8.4.14
+TCLVER=8.4.18
+TKVER=8.4.18
 OTCLVER=1.13
 TCLCLVER=1.19
-NSVER=2.31
-NAMVER=1.13
+NSVER=2.34
+NAMVER=1.14
 XGRAPHVER=12.1
 ZLIBVER=1.2.3
+DEI80211MRVER=1.1.4
 
 # Get current path
 CUR_PATH=`pwd`
@@ -269,7 +277,18 @@ else
         echo "Cygwin not detected, proceeding with regular install.";
 fi;
 
-
+echo "============================================================"
+echo "* Testing for FreeBSD environment"
+echo "============================================================"
+# See if we need to use gmake.
+if [ "`uname -s`" = "FreeBSD" ]; then
+ echo "FreeBSD detected; using gmake instead of make"
+ if (type gmake &>/dev/null); then
+   alias make="gmake"
+ fi
+else
+ echo "FreeBSD not detected"
+fi
 
 # Compile and install xgraph
 
@@ -282,7 +301,7 @@ cd ./xgraph-$XGRAPHVER
 if  [ "${test_cygwin}" = "true" ]; then
        touch stamp-h;
 fi;
-if make
+if make 
 then
 	echo "xgraph has been installed successfully. "
 else 
@@ -403,7 +422,7 @@ fi
 
 cd ../
 
-# Build Tcl8.4.5
+# Build Tcl8.4.18
 
 echo "============================================================"
 echo "* Build tcl$TCLVER"
@@ -416,7 +435,8 @@ fi
 
 blame='Tcl is not part of the ns project.  Please see www.Scriptics.com
 to see if they have a fix for your platform.'
-./configure --enable-gcc --disable-shared --prefix=$CUR_PATH || die "tcl8.3.2 configuration failed! Exiting ..."
+autoconf
+./configure --enable-gcc --disable-shared --prefix=$CUR_PATH || die "tcl$TCLVER configuration failed! Exiting ..."
 if make 
 then 
 	echo "tcl$TCLVER make succeeded."
@@ -444,7 +464,8 @@ fi
 
 blame='Tk is not part of the ns project.  Please see www.Scriptics.com
 to see if they have a fix for your platform.'
-./configure --enable-gcc --disable-shared --prefix=$CUR_PATH || die "tk8.3.2 configuration failed! Exiting ..."
+autoconf
+./configure --enable-gcc --disable-shared --prefix=$CUR_PATH || die "tk$TKVER configuration failed! Exiting ..."
 if make 
 then
 	echo "tk$TKVER build succeeded."
@@ -531,7 +552,7 @@ if [ -f Makefile ] ; then
 	make distclean
 fi
 
-# --enable-debug
+# --enable-debug vr@tud
 
 if  [ "${test_cygwin}" = "true" ]; then
         ./configure --x-libraries=/usr/X11R6/lib --x-includes=/usr/X11R6/include --enable-debug || die "Ns configuration failed! Exiting ...";
@@ -578,8 +599,8 @@ then
 elif  [ "${test_darwin}" = "true" ]; then
     # XXX workaround for OS X nam Tcl/Tk problems
     echo "Nam make failed! Trying to relink..."
-    echo "g++ -o nam tkcompat.o tkUnixInit.o xwd.o netview.o netmodel.o edge.o packet.o node.o main.o trace.o queue.o drop.o animation.o agent.o feature.o route.o transform.o paint.o state.o monitor.o anetmodel.o random.o rng.o view.o graphview.o netgraph.o tracehook.o lan.o psview.o group.o editview.o tag.o address.o animator.o wnetmodel.o nam_stream.o enetmodel.o testview.o parser.o trafficsource.o lossmodel.o queuehandle.o gen/version.o gen/nam_tcl.o  ../tcl8.4.14/unix/libtcl8.4.a ../tk8.4.14/unix/libtk8.4.a ../tcl8.4.14/unix/libtclstub8.4.a -L../tclcl-1.19 -ltclcl -L../otcl -lotcl -L/usr/lib -lz -L/usr/X11R6/lib -lXext -lX11 -lm -L. -lcorefoundation"
-    g++ -o nam tkcompat.o tkUnixInit.o xwd.o netview.o netmodel.o edge.o packet.o node.o main.o trace.o queue.o drop.o animation.o agent.o feature.o route.o transform.o paint.o state.o monitor.o anetmodel.o random.o rng.o view.o graphview.o netgraph.o tracehook.o lan.o psview.o group.o editview.o tag.o address.o animator.o wnetmodel.o nam_stream.o enetmodel.o testview.o parser.o trafficsource.o lossmodel.o queuehandle.o gen/version.o gen/nam_tcl.o  ../tcl8.4.14/unix/libtcl8.4.a ../tk8.4.14/unix/libtk8.4.a ../tcl8.4.14/unix/libtclstub8.4.a -L../tclcl-1.19 -ltclcl -L../otcl -lotcl -L/usr/lib -lz -L/usr/X11R6/lib -lXext -lX11 -lm -L. -lcorefoundation
+    echo "g++ -o nam tkcompat.o tkUnixInit.o xwd.o netview.o netmodel.o edge.o packet.o node.o main.o trace.o queue.o drop.o animation.o agent.o feature.o route.o transform.o paint.o state.o monitor.o anetmodel.o random.o rng.o view.o graphview.o netgraph.o tracehook.o lan.o psview.o group.o editview.o tag.o address.o animator.o wnetmodel.o nam_stream.o enetmodel.o testview.o parser.o trafficsource.o lossmodel.o queuehandle.o gen/version.o gen/nam_tcl.o  ../tcl8.4.18/unix/libtcl8.4.a ../tk8.4.18/unix/libtk8.4.a ../tcl8.4.18/unix/libtclstub8.4.a -L../tclcl-1.19 -ltclcl -L../otcl -lotcl -L/usr/lib -lz -L/usr/X11R6/lib -lXext -lX11 -lm -L. -lcorefoundation"
+    g++ -o nam tkcompat.o tkUnixInit.o xwd.o netview.o netmodel.o edge.o packet.o node.o main.o trace.o queue.o drop.o animation.o agent.o feature.o route.o transform.o paint.o state.o monitor.o anetmodel.o random.o rng.o view.o graphview.o netgraph.o tracehook.o lan.o psview.o group.o editview.o tag.o address.o animator.o wnetmodel.o nam_stream.o enetmodel.o testview.o parser.o trafficsource.o lossmodel.o queuehandle.o gen/version.o gen/nam_tcl.o  ../tcl8.4.18/unix/libtcl8.4.a ../tk8.4.18/unix/libtk8.4.a ../tcl8.4.18/unix/libtclstub8.4.a -L../tclcl-1.19 -ltclcl -L../otcl -lotcl -L/usr/lib -lz -L/usr/X11R6/lib -lXext -lX11 -lm -L. -lcorefoundation
     if [ -e nam ]; then
         echo "Nam relinking succeeded; nam has been installed successfully."
     else
@@ -592,6 +613,19 @@ else
 fi
 
 cd ../
+
+
+
+# Building dei80211mr
+
+cd ./dei80211mr-${DEI80211MRVER}
+
+./configure --with-ns-allinone=${CUR_PATH} --prefix=${CUR_PATH} \
+    && make \
+    && make install
+
+cd ..
+
 
 # Install nam, ns, xgraph into bin
 
