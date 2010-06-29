@@ -1314,6 +1314,24 @@ Agent/LossMonitor set bytes_ 0
 Agent/LossMonitor set lastPktTime_ 0
 Agent/LossMonitor set expected_ 0
 
+
+# vr@tud defaults for WiMAX Monitor
+Agent/WimaxMonitor set bytes_ 0
+Agent/WimaxMonitor set npkts_ 0
+Agent/WimaxMonitor set nlost_ 0
+Agent/WimaxMonitor set total_bytes_ 0
+Agent/WimaxMonitor set total_npkts_ 0
+Agent/WimaxMonitor set distance_ 0.0
+Agent/WimaxMonitor set source_ 0
+Agent/WimaxMonitor set destination_ 0
+Agent/WimaxMonitor set delay_mean_ 0.0
+Agent/WimaxMonitor set delay_max_ 0.0
+Agent/WimaxMonitor set jitter_mean_ 0.0
+Agent/WimaxMonitor set jitter_max_ 0.0
+Agent/WimaxMonitor set rxpr_ 0.0
+Agent/WimaxMonitor set rssi_ 0.0
+# vr@tud end changes
+
 # RAP
 Agent/RAP set packetSize_ 512
 Agent/RAP set seqno_ 0
