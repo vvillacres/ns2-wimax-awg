@@ -617,7 +617,7 @@ public:
 
     /*used in Ssscheduler to get access the FFB report.*/
     virtual Packet * get_ffb_report() { return NULL; }
-    virtual Packet * set_ffb_report_pointer_null() { return NULL; }
+    virtual void set_ffb_report_pointer_null() {}
 
     /*used in sscheduler to get the cqich_id fot itself*/
     virtual void set_cqich_id(u_int16_t cqich_id) {}

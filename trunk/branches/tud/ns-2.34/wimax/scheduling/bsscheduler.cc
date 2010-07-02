@@ -1556,7 +1556,7 @@ mac802_16_dl_map_frame * BSScheduler::dl_stage2(Connection *head, int input_subc
                     if (virtual_alloc_exist > 0) {
                         int add_slots = overallocation_withoutdlmap (index_burst, total_dl_slots_pusc, con_slots);
                         int t_index = addslots_withoutdlmap(index_burst, con_byte, con_slots, con->get_cid());
-                        debug10 ("DL Add more slots into existing burst contype(%d), index :%d, cid :%d, byte :%d, slots :%f\n", contype, t_index, con->get_cid(), virtual_alloc[t_index].byte, virtual_alloc[t_index].numslots);
+                        debug10 ("DL Add more slots into existing burst contype(%d), index :%d, cid :%d, byte :%f, slots :%d\n", contype, t_index, con->get_cid(), virtual_alloc[t_index].byte, virtual_alloc[t_index].numslots);
                     } else {
                         int add_slots = overallocation_withdlmap (index_burst, total_dl_slots_pusc, con_slots);
                         if (add_slots > 0) {
@@ -1570,13 +1570,13 @@ mac802_16_dl_map_frame * BSScheduler::dl_stage2(Connection *head, int input_subc
                             virtual_alloc[index_burst].rep =  rep;
                             virtual_alloc[index_burst].dl_ul = 0;
                             virtual_alloc[index_burst].ie_type = 0;
-                            debug10 ("DL Add new burst contype(%d), index :%d, cid :%d, byte :%f, slots :%f\n", contype, index_burst, con->get_cid(), virtual_alloc[index_burst].byte, virtual_alloc[index_burst].numslots);
+                            debug10 ("DL Add new burst contype(%d), index :%d, cid :%d, byte :%f, slots :%d\n", contype, index_burst, con->get_cid(), virtual_alloc[index_burst].byte, virtual_alloc[index_burst].numslots);
                             index_burst++;
                         }
                     }
                 }//end if q > 0
 
-                debug10 ("DL2.management msg, contype(%d), index :%d, CID :%d, Q-Bytes :%d, allocationsize :%f\n", contype, index_burst, con->get_cid(), con->queueByteLength(), con_byte);
+                debug10 ("DL2.management msg, contype(%d), index :%d, CID :%d, Q-Bytes :%d, allocationsize :%d\n", contype, index_burst, con->get_cid(), con->queueByteLength(), con_byte);
             }
             con = con->next_entry();
         }//end con!=null
@@ -1884,7 +1884,7 @@ mac802_16_dl_map_frame * BSScheduler::dl_stage2(Connection *head, int input_subc
                     if (t_bytes > 0) {
                         withfrag = withfrag + (getMac()->arq_block_size_ - t_bytes);
                     }
-                    debug10 ("\t ARQ enable CID :%d, arq_block :%d, requested_size :%f, arq_block_boundary_size :%f, all_header_included :%f\n", con->get_cid(), getMac()->arq_block_size_, ori_grant, withfrag, withfrag + (double)14);
+                    debug10 ("\t ARQ enable CID :%d, arq_block :%d, requested_size :%f, arq_block_boundary_size :%d, all_header_included :%d\n", con->get_cid(), getMac()->arq_block_size_, ori_grant, withfrag, withfrag + 14);
                     withfrag = withfrag + 14;   //optional => MAC+frag_sub+pack_sub+gm_sub+mesh_sub
                 }
                 //End ARQ
@@ -2002,7 +2002,7 @@ mac802_16_dl_map_frame * BSScheduler::dl_stage2(Connection *head, int input_subc
                 }
             }
 
-            debug10 ("DL2.other QoS flows, index :%d, grant_numslots :%d, grant_bytes :%d, CID :%d\n", i, con_slots, (long int)( con_slots*mac_->getPhy()->getSlotCapacity(con_data[i].mod_rate, DL_)), con_data[i].cid);
+            debug10 ("DL2.other QoS flows, index :%d, grant_numslots :%d, grant_bytes :%d, CID :%d\n", i, con_slots, (int)( con_slots*mac_->getPhy()->getSlotCapacity(con_data[i].mod_rate, DL_)), con_data[i].cid);
         }
 
     }
@@ -3274,6 +3274,7 @@ int BSScheduler::update_mcs_index(Ofdm_mod_rate current_rate, int current_mcs_in
         return FALSE;
         break;
     }
+    return FALSE;
 }
 
 bool BSScheduler::check_modulation_change(Ofdm_mod_rate current_rate, int current_mcs_index, bool increase)

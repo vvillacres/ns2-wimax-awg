@@ -243,19 +243,19 @@ public:
 
     /*xingting set get modulation configure*/
     virtual bool get_registered_flag(int mac_index)  {
-        ;
+        return false;
     }
     virtual void set_registered_flag(int mac_index, bool reg)   {
         ;
     }
     virtual bool get_change_modulation_flag(int mac_index)   {
-        ;
+        return false;
     }
     virtual void set_change_modulation_flag(int mac_index, bool change)  {
         ;
     }
     virtual bool get_increase_modulation(int mac_index)  {
-        ;
+        return false;
     }
     virtual void set_increase_modulation(int mac_index, bool change)  {
         ;
@@ -291,7 +291,7 @@ public:
     }
     /*Need to set it to NULL because in sscheduler, a tmp pointer has pointed to the actual packet memory. Set it to NULL for sscheduler
     	to make sure the non-empty ffb report is a new one instead of the previous sent one.*/
-    virtual Packet * set_ffb_report_pointer_null();
+    virtual void set_ffb_report_pointer_null();
 
     virtual void set_cqich_id(u_int16_t cqich_id) {
         cqich_id_ = cqich_id;
