@@ -87,7 +87,7 @@ Mac802_16SS::Mac802_16SS() : Mac802_16 ()
     nb_scan_req_ = 0;
 
     //xingting added
-    WimaxFfbTimer * tmp_ffbTimer = new WimaxFfbTimer(this);
+    //WimaxFfbTimer * tmp_ffbTimer = new WimaxFfbTimer(this);
     /*if(!tmp_ffbTimer)
     {
       	set_ffb_timer(tmp_ffbTimer);
@@ -1074,7 +1074,7 @@ void Mac802_16SS::receive (Packet *pktRx_)
                 set_effective_sinr(SIR);
                 set_current_bler(BLER);
                 //set_ss_current_mcs_index(index);
-                debug2( "SS set the DL effective SIR to %f  set current BLER = %.5f, mcs index = %f\n", SIR, BLER, index);
+                debug2( "SS set the DL effective SIR to %f  set current BLER = %.5f, mcs index = %d\n", SIR, BLER, index);
 
 #ifdef FIX_PROPORTIONAL_ERROR
                 rand1 = ERROR_THRESHOLD;
@@ -2266,6 +2266,7 @@ void Mac802_16SS::send_FastFeedback_Report()
     } else {
         p = p_ffb_report_;
     }
+    // TODO: Ugly hacking !!! vr@tud
     ch = HDR_CMN(p);
     ch->size() = FFB_REPORT_SIZE;
     wimaxHdr = HDR_MAC802_16(p);
@@ -2311,7 +2312,7 @@ void Mac802_16SS::send_FastFeedback_Report()
     ffb_ext->cqich_id = cqich_id_;
     p_report_hdr->fb_content = 2;
 
-    debug2("SS report SINR is %f, BLER is %f, mcs_index is %d\n",p_report_hdr->fb_content, ffb_ext->bler, ffb_ext->mcs_index);
+    //debug2("SS report SINR is %f, BLER is %f, mcs_index is %d\n",p_report_hdr->fb_content, ffb_ext->bler, ffb_ext->mcs_index);
     break;
 
     default:
@@ -2359,8 +2360,9 @@ void Mac802_16SS::ffb_process()
     }
 }
 
-Packet * Mac802_16SS::set_ffb_report_pointer_null()
+void Mac802_16SS::set_ffb_report_pointer_null()
 {
+	//TODO: CHECK IF CORRECT MEMORY LEAK ???
     //Packet::free(p_ffb_report_);
     p_ffb_report_ = NULL;
 }
@@ -2375,7 +2377,7 @@ void Mac802_16SS::process_cqich_allocation_ie(mac802_16_ul_map_frame *frame)
         //debug2("I am here.uiuc is %d,  ext_uiuc is %d\n", ies[i].uiuc, ies[i].extended_uiuc );
         if (( ies[i].uiuc == UIUC_EXT_UIUC ) && ies[i].extended_uiuc == UIUC_CQICH_ALLOCATION_IE
                 && ( ies[i].cqich_alloc_ie.ss_mac_id == addr())) {
-            debug2("SS [%d] wants to process CQICH_alloc_IE. ss_mac_id in this IE is %d\n", ies[i].cqich_alloc_ie.ss_mac_id);
+            debug2("SS [%d] wants to process CQICH_alloc_IE. ss_mac_id in this IE is %d\n", i, ies[i].cqich_alloc_ie.ss_mac_id);
             /*Here we start the fast feedback timer for this SS.*/
             debug2("Get the CQICH allocation IE information from UL-MAP IE. Duration[%d]  Period[%d]  FB_type[%d]  CQICH_ID[%d]\n",
                    ies[i].cqich_alloc_ie.duration,ies[i].cqich_alloc_ie.period,ies[i].cqich_alloc_ie.fb_type,ies[i].cqich_alloc_ie.cqich_id);

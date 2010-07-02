@@ -311,7 +311,7 @@ void SSscheduler::schedule ()
         }
 
         if (b->getIUC()==UIUC_INITIAL_RANGING) {
-            bool t_bool;
+            bool t_bool = false;
             Connection *c_tmp = mac_->getCManager()->get_connection(0, t_bool );
 
             my_burst_rng = b;
@@ -497,7 +497,7 @@ void SSscheduler::schedule ()
                         int n_sub = wimaxHdr_tmp->phy_info.num_subchannels;
                         int sub_off = wimaxHdr_tmp->phy_info.subchannel_offset;
                         debug10 ("\tBW-REQ.2.packetinfo CID :%d, #symbol :%d, #symbol_offset :%d, #subchannel :%d, #subchannel_offset :%d, code :%d, top :%d\n", tmp_cid, wimaxHdr_tmp->phy_info.num_OFDMSymbol, wimaxHdr_tmp->phy_info.OFDMSymbol_offset, wimaxHdr_tmp->phy_info.num_subchannels, wimaxHdr_tmp->phy_info.subchannel_offset, header_tmp->code, header_tmp->top);
-                        debug10 ("\tBW-REQ.2.burstinfo  #b_duration :%d, #b_subchannel :%d, #b_subchannel_offset :%d, b_starttime :%f\n", my_burst_rng->getDuration(), my_burst_rng->getnumSubchannels(), my_burst_rng->getSubchannelOffset(), my_burst_rng->getStarttime());
+                        debug10 ("\tBW-REQ.2.burstinfo  #b_duration :%d, #b_subchannel :%d, #b_subchannel_offset :%d, b_starttime :%d\n", my_burst_rng->getDuration(), my_burst_rng->getnumSubchannels(), my_burst_rng->getSubchannelOffset(), my_burst_rng->getStarttime());
 
                         newtimeout--;
 

@@ -1847,7 +1847,7 @@ void Mac802_16BS::AMC_algorithm(Packet * p, struct mac_hdr_ffb_report * ffb_repo
         return;
     }
 
-    debug2("In BS DL AMC, the BLER is %f, mcs_index is %d, upper bound is %d, lower bound is %d\n",  pffb_rpt->bler, pffb_rpt->mcs_index,
+    debug2("In BS DL AMC, the BLER is %f, mcs_index is %d, upper bound is %f, lower bound is %f\n",  pffb_rpt->bler, pffb_rpt->mcs_index,
            upper_bound, lower_bound);
     float BLER =  pffb_rpt->bler;
 

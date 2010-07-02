@@ -473,6 +473,7 @@ void Mac802_16::transmit(Packet *p)
 u_char Mac802_16::get_diuc()
 {
     //handle by subclass
+	return 0;
 }
 /*
  * Process incoming packets
