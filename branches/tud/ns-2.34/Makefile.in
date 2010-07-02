@@ -216,6 +216,7 @@ OBJ_CC = \
 	sctp/sctpDebug.o \
 	tools/integrator.o tools/queue-monitor.o \
 	tools/flowmon.o tools/loss-monitor.o \
+	tools/wimax-monitor.o \
 	tools/weibull.o tools/voip.o \
 	queue/queue.o queue/drop-tail.o \
 	adc/simple-intserv-sched.o queue/red.o \

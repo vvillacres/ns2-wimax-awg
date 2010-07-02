@@ -972,7 +972,7 @@ int WimaxScheduler::transfer_packets1 (Connection *c, Burst *b, int b_data)
         //wimaxHdr->phy_info.channel_index = c->getPeerNode()->getchannel();
         if (mac_->getNodeType()==STA_BS) {
             wimaxHdr->phy_info.direction = 0;
-            debug2("Peer Node is %d\n", c->getPeerNode()->getAddr());
+            // debug2("Peer Node is %d\n", c->getPeerNode());
             if (c->getPeerNode()) {
                 wimaxHdr->phy_info.channel_index = c->getPeerNode()->getchannel();
                 /*Xingting added to support MCS. Here is used to change the MCS index.*/
