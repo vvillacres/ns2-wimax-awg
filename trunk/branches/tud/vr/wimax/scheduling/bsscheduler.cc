@@ -1488,7 +1488,7 @@ mac802_16_dl_map_frame * BSScheduler::dl_stage2(Connection *head, int input_subc
     struct mac802_16_dl_map_frame *dl_map;
     struct mac802_16_dlmap_ie *ies;
     Connection *con;
-    int i, ie_index, temp_index;
+    int i, ie_index;
     int num_of_symbols, num_of_subchannels, num_of_slots;
     double allocationsize;
     int freeslots;
@@ -1498,7 +1498,7 @@ mac802_16_dl_map_frame * BSScheduler::dl_stage2(Connection *head, int input_subc
     int num_of_data_connections = 0;
     int total_dl_free_slots = 0;
     ConnectionType_t contype;
-    SchedulingType_t schedtype;
+    DataDeliveryServiceType_t dataDeliveryServiceType;
     Mac802_16 *  mac_ = getMac ();
     Ofdm_mod_rate mod_rate;
 
@@ -1588,18 +1588,18 @@ mac802_16_dl_map_frame * BSScheduler::dl_stage2(Connection *head, int input_subc
         for (i=0; i<5; ++i) {
             con = head;
             if (i==0)
-                schedtype = SERVICE_UGS;
+                dataDeliveryServiceType = DL_UGS;
             else if (i==1)
-                schedtype = SERVICE_ertPS;
+                dataDeliveryServiceType = DL_ERTVR;
             else if (i==2)
-                schedtype = SERVICE_rtPS;
+                dataDeliveryServiceType = DL_RTVR;
             else if (i==3)
-                schedtype = SERVICE_nrtPS;
+                dataDeliveryServiceType = DL_NRTVR;
             else
-                schedtype = SERVICE_BE;
+                dataDeliveryServiceType = DL_BE;
 
             while (con!=NULL) {
-                if (con->get_category() == CONN_DATA && con->get_serviceflow()->getScheduling() == schedtype) {
+                if (con->get_category() == CONN_DATA && con->get_serviceflow()->getQosSet()->getDataDeliveryServiceType() == dataDeliveryServiceType) {
                     /*Xingting would like to change the modulation mode for this SS.*/
                     int ss_mac_id;
                     Ofdm_mod_rate  updated_mod_rate;
@@ -1667,27 +1667,27 @@ mac802_16_dl_map_frame * BSScheduler::dl_stage2(Connection *head, int input_subc
 
     for (i=0; i<5; ++i) {
         con = head;
-        if (i==0)            schedtype = SERVICE_UGS;
-        else if (i==1)       schedtype = SERVICE_ertPS;
-        else if (i==2)       schedtype = SERVICE_rtPS;
-        else if (i==3)       schedtype = SERVICE_nrtPS;
-        else                schedtype = SERVICE_BE;
+        if (i==0)            dataDeliveryServiceType = DL_UGS;
+        else if (i==1)       dataDeliveryServiceType = DL_ERTVR;
+        else if (i==2)       dataDeliveryServiceType = DL_RTVR;
+        else if (i==3)       dataDeliveryServiceType = DL_NRTVR;
+        else                dataDeliveryServiceType = DL_BE;
 
         while (con!=NULL) {
-            if (con->get_category() == CONN_DATA && con->get_serviceflow()->getScheduling() == schedtype) {
-                if (schedtype==SERVICE_UGS) {
+            if (con->get_category() == CONN_DATA && con->get_serviceflow()->getQosSet()->getDataDeliveryServiceType() == dataDeliveryServiceType) {
+                if (dataDeliveryServiceType == DL_UGS) {
                     if (con->queueByteLength() > 0) conn_per_schetype[0]++;
                     con_ugs_all++;
-                } else if (schedtype==SERVICE_ertPS) {
+                } else if (dataDeliveryServiceType== DL_ERTVR) {
                     if (con->queueByteLength() > 0) conn_per_schetype[1]++;
                     con_ertps_all++;
-                } else if (schedtype==SERVICE_rtPS) {
+                } else if (dataDeliveryServiceType==DL_RTVR) {
                     if (con->queueByteLength() > 0) conn_per_schetype[2]++;
                     con_rtps_all++;
-                } else if (schedtype==SERVICE_nrtPS) {
+                } else if (dataDeliveryServiceType==DL_NRTVR) {
                     if (con->queueByteLength() > 0) conn_per_schetype[3]++;
                     con_nrtps_all++;
-                } else if (schedtype==SERVICE_BE) {
+                } else if (dataDeliveryServiceType==DL_BE) {
                     if (con->queueByteLength() > 0) conn_per_schetype[4]++;
                     con_be_all++;
                 } else {
@@ -1711,26 +1711,26 @@ mac802_16_dl_map_frame * BSScheduler::dl_stage2(Connection *head, int input_subc
     //UGS Scheduling
     for (i=0; i<5; ++i) {
         con = head;
-        if (i==0)            schedtype = SERVICE_UGS;
+        if (i==0)            dataDeliveryServiceType = DL_UGS;
 
         while (con!=NULL) {
-            if (con->get_category() == CONN_DATA && con->get_serviceflow()->getScheduling() == schedtype) {
+            if (con->get_category() == CONN_DATA && con->get_serviceflow()->getQosSet()->getDataDeliveryServiceType() == dataDeliveryServiceType) {
                 req_slots_tmp1 = 0;
                 int grant_slots = 0;
                 num_of_slots = 0;
                 mod_rate = mac_->getMap()->getDlSubframe()->getProfile(con->getPeerNode()->getDIUC())->getEncoding();
 
-                if (schedtype==SERVICE_UGS) {
-                    ServiceFlow *sf = con->get_serviceflow();
-                    ServiceFlowQoS *sfqos = sf->getQoS();
+                if (dataDeliveryServiceType==DL_UGS) {
+                    ServiceFlowQosSet * sfQosSet = con->get_serviceflow()->getQosSet();
                     if (con->queueByteLength() > 0) {
 #ifdef UGS_AVG
-                        allocationsize = (int) ceil((double)sfqos->getDataSize()/(double)sfqos->getPeriod());
+                        allocationsize = (int) ceil(double(sfQosSet->getMinReservedTrafficRate()) * mac_->getFrameDuration() / 8.0);
 #endif
+                        /*
 #ifndef UGS_AVG
                         int tmp_getpoll = con->getPOLL_interval();
-                        if ( (tmp_getpoll%sfqos->getPeriod())== 0 ) {
-                            allocationsize = ceil(sfqos->getDataSize());
+                        if ( (tmp_getpoll%sfQosSet->getPeriod())== 0 ) {
+                            allocationsize = ceil(sfQosSet->getDataSize());
                             con->setPOLL_interval(0);
                         } else {
                             allocationsize = 0;
@@ -1738,6 +1738,7 @@ mac802_16_dl_map_frame * BSScheduler::dl_stage2(Connection *head, int input_subc
                         tmp_getpoll++;
                         con->setPOLL_interval(tmp_getpoll);
 #endif
+*/
                     } else {
                         allocationsize = 0;
                     }
@@ -1792,7 +1793,7 @@ mac802_16_dl_map_frame * BSScheduler::dl_stage2(Connection *head, int input_subc
                         }
                     }
 
-                    debug10 ("DL2.UGS, DataSize :%f, period :%d, numslots :%d, CID :%d, DIUC :%d\n", sfqos->getDataSize(), sfqos->getPeriod(), con_slots, con->get_cid(), con->getPeerNode()->getDIUC());
+                    debug10 ("DL2.UGS, MRTR :%f, numslots :%d, CID :%d, DIUC :%d\n", double(sfQosSet->getMinReservedTrafficRate()), con_slots, con->get_cid(), con->getPeerNode()->getDIUC());
                     debug10 ("\tQ-bytes :%d, grant-bytes :%ld\n", con->queueByteLength(), (long int)( con_slots*mac_->getPhy()->getSlotCapacity(mod_rate, DL_) ));
 
                 }//end UGS
@@ -1835,17 +1836,17 @@ mac802_16_dl_map_frame * BSScheduler::dl_stage2(Connection *head, int input_subc
 
     for (i=0; i<5; ++i) {
         con = head;
-        if (i==0)        schedtype = SERVICE_UGS;
-        else if (i==1)   schedtype = SERVICE_ertPS;
-        else if (i==2)   schedtype = SERVICE_rtPS;
-        else if (i==3)   schedtype = SERVICE_nrtPS;
-        else            schedtype = SERVICE_BE;
+        if (i==0)        dataDeliveryServiceType = DL_UGS;
+        else if (i==1)   dataDeliveryServiceType = DL_ERTVR;
+        else if (i==2)   dataDeliveryServiceType = DL_RTVR;
+        else if (i==3)   dataDeliveryServiceType = DL_NRTVR;
+        else            dataDeliveryServiceType = DL_BE;
 
         if ( i==0 ) continue;
 
         while (con != NULL) {
 
-            if (con->get_category() == CONN_DATA && con->get_serviceflow()->getScheduling() == schedtype) {
+            if (con->get_category() == CONN_DATA && con->get_serviceflow()->getQosSet()->getDataDeliveryServiceType() == dataDeliveryServiceType) {
                 Ofdm_mod_rate mod_rate = mac_->getMap()->getDlSubframe()->getProfile(con->getPeerNode()->getDIUC())->getEncoding();
 
                 int withfrag = 0;
@@ -2111,7 +2112,7 @@ struct mac802_16_ul_map_frame * BSScheduler::ul_stage2(Connection *head, int tot
     int subchannel_offset = 0;
     int subchannel_start = 0;
     ConnectionType_t contype;
-    SchedulingType_t schedtype;
+    UlGrantSchedulingType_t ulGrantSchedulingType;
     int slots_per_con[MAX_MAP_IE];
     int cid_list[MAX_MAP_IE];
     int uiuc_list[MAX_MAP_IE];
@@ -2236,18 +2237,18 @@ struct mac802_16_ul_map_frame * BSScheduler::ul_stage2(Connection *head, int tot
         for (i=0; i<5; ++i) {
             con = head;
             if (i==0)
-                schedtype = SERVICE_UGS;
+                ulGrantSchedulingType = UL_UGS;
             else if (i==1)
-                schedtype = SERVICE_ertPS;
+                ulGrantSchedulingType = UL_ertPS;
             else if (i==2)
-                schedtype = SERVICE_rtPS;
+                ulGrantSchedulingType = UL_rtPS;
             else if (i==3)
-                schedtype = SERVICE_nrtPS;
+                ulGrantSchedulingType = UL_nrtPS;
             else
-                schedtype = SERVICE_BE;
+                ulGrantSchedulingType = UL_BE;
 
             while (con!=NULL) {
-                if (con->get_category() == CONN_DATA && con->get_serviceflow()->getScheduling() == schedtype) {
+                if (con->get_category() == CONN_DATA && con->get_serviceflow()->getQosSet()->getUlGrantSchedulingType() == ulGrantSchedulingType) {
                     /*Xingting would like to change the modulation mode for this SS.*/
 
                     Ofdm_mod_rate  updated_mod_rate;
@@ -2497,30 +2498,30 @@ struct mac802_16_ul_map_frame * BSScheduler::ul_stage2(Connection *head, int tot
 
     for (i=0; i<5; ++i) {
         con = head;
-        if (i==0)            schedtype = SERVICE_UGS;
-        else if (i==1)       schedtype = SERVICE_ertPS;
-        else if (i==2)       schedtype = SERVICE_rtPS;
-        else if (i==3)       schedtype = SERVICE_nrtPS;
-        else                schedtype = SERVICE_BE;
+        if (i==0)            ulGrantSchedulingType = UL_UGS;
+        else if (i==1)       ulGrantSchedulingType = UL_ertPS;
+        else if (i==2)       ulGrantSchedulingType = UL_rtPS;
+        else if (i==3)       ulGrantSchedulingType = UL_nrtPS;
+        else                ulGrantSchedulingType = UL_BE;
 
         while (con!=NULL) {
-            if (con->get_category() == CONN_DATA && con->get_serviceflow()->getScheduling() == schedtype) {
+            if (con->get_category() == CONN_DATA && con->get_serviceflow()->getQosSet()->getUlGrantSchedulingType() == ulGrantSchedulingType) {
                 //mod_rate = mac_->getMap()->getUlSubframe()->getProfile(con->getPeerNode()->getDIUC()-DIUC_PROFILE_1+UIUC_PROFILE_1)->getEncoding();
                 mod_rate = mac_->getMap()->getUlSubframe()->getProfile(con->getPeerNode()->getUIUC())->getEncoding();
 
-                if (schedtype==SERVICE_UGS) {
+                if (ulGrantSchedulingType==UL_UGS) {
                     conn_per_schetype[0]++;
-                } else if (schedtype==SERVICE_ertPS) {
+                } else if (ulGrantSchedulingType==UL_ertPS) {
                     if (con->getBw() > 0) conn_per_schetype[1]++;
                     con_ertps_all++;
 
-                } else if (schedtype==SERVICE_rtPS) {
+                } else if (ulGrantSchedulingType==UL_rtPS) {
                     if (con->getBw() > 0) conn_per_schetype[2]++;
                     con_rtps_all++;
-                } else if (schedtype==SERVICE_nrtPS) {
+                } else if (ulGrantSchedulingType==UL_nrtPS) {
                     if (con->getBw() > 0) conn_per_schetype[3]++;
                     con_nrtps_all++;
-                } else if (schedtype==SERVICE_BE) {
+                } else if (ulGrantSchedulingType==UL_BE) {
                     if (con->getBw() > 0) conn_per_schetype[4]++;
                     con_be_all++;
                 } else {
@@ -2538,15 +2539,15 @@ struct mac802_16_ul_map_frame * BSScheduler::ul_stage2(Connection *head, int tot
 
     for (i=0; i<5; ++i) {
         con = head;
-        if (i==0)            schedtype = SERVICE_UGS;
-        else if (i==1)       schedtype = SERVICE_ertPS;
-        else if (i==2)       schedtype = SERVICE_rtPS;
-        else if (i==3)       schedtype = SERVICE_nrtPS;
-        else                schedtype = SERVICE_BE;
+        if (i==0)            ulGrantSchedulingType = UL_UGS;
+        else if (i==1)       ulGrantSchedulingType = UL_ertPS;
+        else if (i==2)       ulGrantSchedulingType = UL_rtPS;
+        else if (i==3)       ulGrantSchedulingType = UL_nrtPS;
+        else                ulGrantSchedulingType = UL_BE;
 
 
         while (con!=NULL) {
-            if (con->get_category() == CONN_DATA && con->get_serviceflow()->getScheduling() == schedtype) {
+            if (con->get_category() == CONN_DATA && con->get_serviceflow()->getQosSet()->getUlGrantSchedulingType() == ulGrantSchedulingType) {
                 //Richard: we must look up the rate again
                 //mod_rate = mac_->getMap()->getUlSubframe()->getProfile(con->getPeerNode()->getDIUC()-DIUC_PROFILE_1+UIUC_PROFILE_1)->getEncoding();
                 mod_rate = mac_->getMap()->getUlSubframe()->getProfile(con->getPeerNode()->getUIUC())->getEncoding();
@@ -2564,18 +2565,19 @@ struct mac802_16_ul_map_frame * BSScheduler::ul_stage2(Connection *head, int tot
                 if (temp_index < 0) return_cid_tmp = -1;
                 else return_cid_tmp = con->getPeerNode()->getBasic(OUT_CONNECTION)->get_cid();
 
-                if (schedtype==SERVICE_UGS) {
-                    ServiceFlow *sf = con->get_serviceflow();
-                    ServiceFlowQoS *sfqos = sf->getQoS();
+                if (ulGrantSchedulingType==UL_UGS) {
+                    ServiceFlowQosSet *sfQosSet = con->get_serviceflow()->getQosSet();
 
 
 #ifdef UGS_AVG
-                    allocationsize = (int) ceil((double)sfqos->getDataSize()/(double)sfqos->getPeriod());
+                    allocationsize = (int) ceil( double(sfQosSet->getMinReservedTrafficRate()) / ( mac_->getFrameDuration() * 8 ) );
 #endif
+
+                    /* TODO Adapt to new QoS parameters vr@tud
 #ifndef UGS_AVG
                     int tmp_getpoll = con->getPOLL_interval();
-                    if ( (tmp_getpoll%sfqos->getPeriod())== 0 ) {
-                        allocationsize = ceil(sfqos->getDataSize());
+                    if ( (tmp_getpoll%sfQosSet->getGrantInterval())== 0 ) {
+                        allocationsize = ceil(sfQosSet->getDataSize());
                         con->setPOLL_interval(0);
                     } else {
                         allocationsize = 0;
@@ -2583,6 +2585,7 @@ struct mac802_16_ul_map_frame * BSScheduler::ul_stage2(Connection *head, int tot
                     tmp_getpoll++;
                     con->setPOLL_interval(tmp_getpoll);
 #endif
+*/
 
                     int arq_enable_f = 0;
                     if ((con->getArqStatus () != NULL) && (con->getArqStatus ()->isArqEnabled() == 1) ) {
@@ -2610,15 +2613,14 @@ struct mac802_16_ul_map_frame * BSScheduler::ul_stage2(Connection *head, int tot
                     } else leftOTHER_slots=leftOTHER_slots-num_of_slots;
 
 
-                    debug10 ("UL.Check1.3.UGS, DataSize :%f, period :%d, PRE-GRANT-SLOTS :%d, Peer-CID :%d, returnCID :%d, DIUC :%d\n", sfqos->getDataSize(), sfqos->getPeriod(), grant_slots, con->getPeerNode()->getBasic(OUT_CONNECTION)->get_cid(), return_cid_tmp, con->getPeerNode()->getDIUC());
+                    debug10 ("UL.Check1.3.UGS, DataSize :%f, PRE-GRANT-SLOTS :%d, Peer-CID :%d, returnCID :%d, DIUC :%d\n", double(sfQosSet->getMinReservedTrafficRate()), sfQosSet->getGrantInterval(), grant_slots, con->getPeerNode()->getBasic(OUT_CONNECTION)->get_cid(), return_cid_tmp, con->getPeerNode()->getDIUC());
                     debug10 ("\tAllocatedSLots :%d, BeforeFree :%d, LeftforOTHER :%d, NumofUGS :%d\n", num_of_slots, freeslots, leftOTHER_slots, conn_per_schetype[0]);
 
                 }
 
-                if (schedtype == SERVICE_ertPS) {
+                if (ulGrantSchedulingType == UL_ertPS) {
 
-                    ServiceFlow *sf = con->get_serviceflow();
-                    ServiceFlowQoS *sfqos = sf->getQoS();
+                	ServiceFlowQosSet *sfQosSet = con->get_serviceflow()->getQosSet();
                     req_slots_tmp1 = (int) ceil((double)con->getBw()/(double)mac_->getPhy()->getSlotCapacity(mod_rate, UL_));
                     int issue_pol = 0;
 
@@ -2629,22 +2631,22 @@ struct mac802_16_ul_map_frame * BSScheduler::ul_stage2(Connection *head, int tot
 
                     int tmp_getpoll = con->getPOLL_interval();
                     if (req_slots_tmp1>0) {
-                        allocationsize = ceil((double)sfqos->getDataSize()/(double)sfqos->getPeriod());
-                        debug10 ("\tPoll_ertPS: No polling (bw-req>0), lastpoll :%d, period :%d\n", tmp_getpoll, sfqos->getPeriod());
+                        allocationsize = ceil( double(sfQosSet->getMinReservedTrafficRate()) * double(sfQosSet->getGrantInterval()) / ( 1000 * 8 ));
+                        debug10 ("\tPoll_ertPS: No polling (bw-req>0), lastpoll :%d, period :%d\n", tmp_getpoll, sfQosSet->getGrantInterval());
                         con->setPOLL_interval(0);
                     } else  {
-                        if ( (tmp_getpoll%sfqos->getPeriod())== 0 ) {
-                            debug10 ("\tPoll_ertPS(yes): Issues unicast poll, lastpoll :%d, period :%d\n", tmp_getpoll, sfqos->getPeriod());
+                        if ( (tmp_getpoll% sfQosSet->getGrantInterval()) >=  ( mac_->getFrameDuration() * 1000)) {
+                            debug10 ("\tPoll_ertPS(yes): Issues unicast poll, lastpoll :%d, period :%d\n", tmp_getpoll, sfQosSet->getGrantInterval());
 
                             allocationsize = GENERIC_HEADER_SIZE;                                        //for explicit polling
                             con->setPOLL_interval(0);
                             issue_pol = 1;
                         } else {
-                            debug10 ("\tPoll_ertPS(no): Don't issues unicast poll, lastpoll :%d, period :%d\n", tmp_getpoll, sfqos->getPeriod());
+                            debug10 ("\tPoll_ertPS(no): Don't issues unicast poll, lastpoll :%d, period :%d\n", tmp_getpoll, sfQosSet->getGrantInterval());
                             allocationsize = 0;
                         }
-                        debug10 ("\tPoll_ertPS: Current polling_counter :%d, update_polling :%d, period :%d\n", tmp_getpoll, tmp_getpoll+1, sfqos->getPeriod());
-                        tmp_getpoll++;
+                        debug10 ("\tPoll_ertPS: Current polling_counter :%d, update_polling :%d, period :%d\n", tmp_getpoll, tmp_getpoll+1, sfQosSet->getGrantInterval());
+                        tmp_getpoll += int( mac_->getFrameDuration() * 1000);
                         con->setPOLL_interval(tmp_getpoll);
                     }
 
@@ -2682,14 +2684,13 @@ struct mac802_16_ul_map_frame * BSScheduler::ul_stage2(Connection *head, int tot
                     } else leftOTHER_slots=leftOTHER_slots-num_of_slots;
 
 
-                    debug10 ("UL.Check1.3.ertPS, DataSize :%f, period :%d, PRE-GRANT-SLOTS :%d, Peer-CID :%d, returnCID :%d, DIUC :%d\n", sfqos->getDataSize(), sfqos->getPeriod(), grant_slots, con->getPeerNode()->getBasic(OUT_CONNECTION)->get_cid(), return_cid_tmp, con->getPeerNode()->getDIUC());
+                    debug10 ("UL.Check1.3.ertPS, DataSize :%f, period :%d, PRE-GRANT-SLOTS :%d, Peer-CID :%d, returnCID :%d, DIUC :%d\n", sfQosSet->getMinReservedTrafficRate(), sfQosSet->getGrantInterval(), grant_slots, con->getPeerNode()->getBasic(OUT_CONNECTION)->get_cid(), return_cid_tmp, con->getPeerNode()->getDIUC());
                     debug10 ("\tAllocatedSLots :%d, BeforeFree :%d, LeftforOTHER :%d, NumofertPS :%d\n", num_of_slots, freeslots, leftOTHER_slots, conn_per_schetype[1]);
 
                 }
 
-                if (schedtype == SERVICE_rtPS) {
-                    ServiceFlow *sf = con->get_serviceflow();
-                    ServiceFlowQoS *sfqos = sf->getQoS();
+                if (ulGrantSchedulingType == UL_rtPS) {
+                	ServiceFlowQosSet *sfQosSet = con->get_serviceflow()->getQosSet();
                     req_slots_tmp1 = (int) ceil((double)con->getBw()/(double)mac_->getPhy()->getSlotCapacity(mod_rate, UL_));
                     int issue_pol = 0;
 
@@ -2700,22 +2701,22 @@ struct mac802_16_ul_map_frame * BSScheduler::ul_stage2(Connection *head, int tot
 
                     int tmp_getpoll = con->getPOLL_interval();
                     if (req_slots_tmp1>0) {
-                        allocationsize = ceil((sfqos->getMinReservedRate()*FRAME_SIZE)/8);
-                        debug10 ("\tPoll_rtPS: No polling (bw-req>0), lastpoll :%d, period :%d\n", tmp_getpoll, sfqos->getPeriod());
+                        allocationsize = ceil( double(sfQosSet->getMinReservedTrafficRate()) * double(sfQosSet->getPollingInterval()) / ( 1000 * 8 ));
+                        debug10 ("\tPoll_rtPS: No polling (bw-req>0), lastpoll :%d, period :%d\n", tmp_getpoll, sfQosSet->getPollingInterval());
                         con->setPOLL_interval(0);
                     } else  {
-                        if ( (tmp_getpoll % sfqos->getPeriod())== 0 ) {
-                            debug10 ("\tPoll_rtPS(yes): Issues unicast poll, lastpoll :%d, period :%d\n", tmp_getpoll, sfqos->getPeriod());
+                        if ( (tmp_getpoll % sfQosSet->getPollingInterval()) >=  ( mac_->getFrameDuration() * 1000) ) {
+                            debug10 ("\tPoll_rtPS(yes): Issues unicast poll, lastpoll :%d, period :%d\n", tmp_getpoll, sfQosSet->getPollingInterval());
 
                             allocationsize = GENERIC_HEADER_SIZE;                                        //for explicit polling
                             con->setPOLL_interval(0);
                             issue_pol = 1;
                         } else {
-                            debug10 ("\tPoll_rtPS(no): Don't issue unicast poll, lastpoll :%d, period :%d\n", tmp_getpoll, sfqos->getPeriod());
+                            debug10 ("\tPoll_rtPS(no): Don't issue unicast poll, lastpoll :%d, period :%d\n", tmp_getpoll, sfQosSet->getPollingInterval());
                             allocationsize = 0;
                         }
-                        debug10 ("\tPoll_rtPS: Current polling_counter :%d, update_polling :%d, period :%d\n", tmp_getpoll, tmp_getpoll+1, sfqos->getPeriod());
-                        tmp_getpoll++;
+                        debug10 ("\tPoll_rtPS: Current polling_counter :%d, update_polling :%d, period :%d\n", tmp_getpoll, tmp_getpoll+1, sfQosSet->getPollingInterval());
+                        tmp_getpoll += int( mac_->getFrameDuration() * 1000);
                         con->setPOLL_interval(tmp_getpoll);
                     }
 
@@ -2752,20 +2753,19 @@ struct mac802_16_ul_map_frame * BSScheduler::ul_stage2(Connection *head, int tot
 
                     if (grant_slots<req_slots_tmp1) needmore_con[0]++;
 
-                    debug10 ("UL.Check1.3.rtPS, MinReservedRate :%d, PRE-GRANT-SLOTS :%d, Peer-CID :%d, returnCID :%d, DIUC :%d, bw_req_header :%d, getBw :%d\n", sfqos->getMinReservedRate(), grant_slots, con->getPeerNode()->getBasic(OUT_CONNECTION)->get_cid(), return_cid_tmp, con->getPeerNode()->getDIUC(), GENERIC_HEADER_SIZE, con->getBw());
+                    debug10 ("UL.Check1.3.rtPS, MinReservedRate :%d, PRE-GRANT-SLOTS :%d, Peer-CID :%d, returnCID :%d, DIUC :%d, bw_req_header :%d, getBw :%d\n", sfQosSet->getMinReservedTrafficRate(), grant_slots, con->getPeerNode()->getBasic(OUT_CONNECTION)->get_cid(), return_cid_tmp, con->getPeerNode()->getDIUC(), GENERIC_HEADER_SIZE, con->getBw());
                     debug10 ("\tAllocatedSLots :%d, BeforeFree :%d, LeftforOTHER :%d, NumofrtPS :%d\n", num_of_slots, freeslots, leftOTHER_slots, conn_per_schetype[2]);
 
                 }
 
 
-                if (schedtype == SERVICE_nrtPS) {
-                    ServiceFlow *sf = con->get_serviceflow();
-                    ServiceFlowQoS *sfqos = sf->getQoS();
+                if (ulGrantSchedulingType == UL_nrtPS) {
+                	ServiceFlowQosSet *sfQosSet = con->get_serviceflow()->getQosSet();
                     int issue_pol = 0;
                     req_slots_tmp1 = (int) ceil((double)con->getBw()/(double)mac_->getPhy()->getSlotCapacity(mod_rate, UL_));
 
                     if (req_slots_tmp1>0) {
-                        allocationsize = (int) ceil((sfqos->getMinReservedRate()*FRAME_SIZE)/8);
+                        allocationsize = (int) ceil( double(sfQosSet->getMinReservedTrafficRate()) * mac_->getFrameDuration() / 8 );
                     } else  {
                         if (con->getCDMA() == 1) {
                             if (GENERIC_HEADER_SIZE > con->getBw()) {
@@ -2813,12 +2813,12 @@ struct mac802_16_ul_map_frame * BSScheduler::ul_stage2(Connection *head, int tot
 
                     if (grant_slots<req_slots_tmp1) needmore_con[1]++;
 
-                    debug10 ("UL.Check1.3.nrtPS, MinReservedRate :%d, PRE-GRANT-SLOTS :%d, Peer-CID :%d, returnCID :%d, DIUC :%d, getBw :%d\n", sfqos->getMinReservedRate(), grant_slots, con->getPeerNode()->getBasic(OUT_CONNECTION)->get_cid(), return_cid_tmp, con->getPeerNode()->getDIUC(), con->getBw());
+                    debug10 ("UL.Check1.3.nrtPS, MinReservedRate :%d, PRE-GRANT-SLOTS :%d, Peer-CID :%d, returnCID :%d, DIUC :%d, getBw :%d\n", sfQosSet->getMinReservedTrafficRate(), grant_slots, con->getPeerNode()->getBasic(OUT_CONNECTION)->get_cid(), return_cid_tmp, con->getPeerNode()->getDIUC(), con->getBw());
                     debug10 ("\tAllocatedSLots :%d, BeforeFree :%d, LeftforOTHER :%d, NumofnrtPS :%d\n", num_of_slots, freeslots, leftOTHER_slots, conn_per_schetype[3]);
 
                 }
 
-                if (schedtype==SERVICE_BE) {
+                if (ulGrantSchedulingType==UL_BE) {
                     req_slots_tmp1 = (int) ceil((double)con->getBw()/(double)mac_->getPhy()->getSlotCapacity(mod_rate, UL_));
 
                     if (req_slots_tmp1>0) needmore_con[2]++;
@@ -2874,7 +2874,7 @@ struct mac802_16_ul_map_frame * BSScheduler::ul_stage2(Connection *head, int tot
                         leftOTHER_slots += num_of_slots; 		//return back the slots
                     }
 
-                    debug10 ("UL.Check1.3, First Assign (ugs/ertps/rtps/nrtps/no be): CID(%d), Schetype :%d, Numslots :%d, Freeleft :%d, StoreSlots[%d] :%d, mod_rate :%d, UIUC :%d\n", cid_list[temp_index], schedtype, num_of_slots, freeslots, temp_index, slots_per_con[temp_index], mod_rate, uiuc_list[temp_index]);
+                    debug10 ("UL.Check1.3, First Assign (ugs/ertps/rtps/nrtps/no be): CID(%d), Schetype :%d, Numslots :%d, Freeleft :%d, StoreSlots[%d] :%d, mod_rate :%d, UIUC :%d\n", cid_list[temp_index], ulGrantSchedulingType, num_of_slots, freeslots, temp_index, slots_per_con[temp_index], mod_rate, uiuc_list[temp_index]);
                 }
 
 
@@ -2901,18 +2901,18 @@ struct mac802_16_ul_map_frame * BSScheduler::ul_stage2(Connection *head, int tot
 
         for (i=0; i<5; ++i) {
             con = head;
-            if (i==0)        schedtype = SERVICE_UGS;
-            else if (i==1)   schedtype = SERVICE_ertPS;
-            else if (i==2)   schedtype = SERVICE_rtPS;
-            else if (i==3)   schedtype = SERVICE_nrtPS;
-            else            schedtype = SERVICE_BE;
+            if (i==0)        ulGrantSchedulingType = UL_UGS;
+            else if (i==1)   ulGrantSchedulingType = UL_ertPS;
+            else if (i==2)   ulGrantSchedulingType = UL_rtPS;
+            else if (i==3)   ulGrantSchedulingType = UL_nrtPS;
+            else            ulGrantSchedulingType = UL_BE;
 
             if ( (i==0) || (i==1) ) continue;
 
             first_assign = 0;
             while (con!=NULL) {
 
-                if (con->get_category() == CONN_DATA && con->get_serviceflow()->getScheduling() == schedtype) {
+                if (con->get_category() == CONN_DATA && con->get_serviceflow()->getQosSet()->getUlGrantSchedulingType() == ulGrantSchedulingType) {
 
                     //mod_rate = mac_->getMap()->getUlSubframe()->getProfile(con->getPeerNode()->getDIUC()-DIUC_PROFILE_1+UIUC_PROFILE_1)->getEncoding();
                     mod_rate = mac_->getMap()->getUlSubframe()->getProfile(con->getPeerNode()->getUIUC())->getEncoding();
@@ -2929,7 +2929,7 @@ struct mac802_16_ul_map_frame * BSScheduler::ul_stage2(Connection *head, int tot
                     int req_slots = 0;
                     req_slots = (int) ceil((double)con->getBw()/(double)mac_->getPhy()->getSlotCapacity(mod_rate, UL_));
 
-                    if ( (schedtype==SERVICE_rtPS) || (schedtype==SERVICE_nrtPS) ) {
+                    if ( (ulGrantSchedulingType==UL_rtPS) || (ulGrantSchedulingType==UL_nrtPS) ) {
                         if (return_cid_tmp == -1) {
                             debug10 ("UL.Check1.4.rtps/nrtps, No_CID(%d), n_Conn :%d, Free :%d\n", return_cid_tmp, needmore_c, freeslots);
                             con = con->next_entry();
@@ -2944,7 +2944,7 @@ struct mac802_16_ul_map_frame * BSScheduler::ul_stage2(Connection *head, int tot
 
                     int t_num_of_slots = 0;
 
-                    if ( (schedtype==SERVICE_rtPS) || (schedtype==SERVICE_nrtPS) ) {
+                    if ( (ulGrantSchedulingType==UL_rtPS) || (ulGrantSchedulingType==UL_nrtPS) ) {
                         first_assign = slots_per_con[return_cid_tmp];
 
                         if (req_slots <= (first_assign + share_next_slots) ) {

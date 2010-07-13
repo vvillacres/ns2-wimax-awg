@@ -21,6 +21,8 @@
 #include "scheduling/wimaxscheduler.h"
 #include "arqstatus.h"
 
+#define DEFAULT_POLLING_INTERVAL 1000
+
 static int TransactionID = 0;
 /*
  * Create a service flow
@@ -78,7 +80,7 @@ void ServiceFlowHandler::process (Packet * p)
  * @param qos The QoS for the flow
  * @return the created ServiceFlow
  */
-ServiceFlow* ServiceFlowHandler::addFlow (ServiceFlowQoS * qos)
+ServiceFlow* ServiceFlowHandler::addFlow (ServiceFlowQosSet * qosSet)
 {
     return NULL;
 }
@@ -190,15 +192,15 @@ void ServiceFlowHandler::processDSA_req (Packet *p)
 
         data->set_serviceflow(dsa_req_frame->staticflow);
         // We will move all the ARQ information in the service flow to the isArqStatus that maintains the Arq Information.
-        if (data->get_serviceflow ()->getQoS ()->getIsArqEnabled () == 1 ) {
+        if (data->get_serviceflow ()->getQosSet ()->isArqEnabled () == true ) {
             debug2("ARQ status is enable.\n");
             arqstatus = new Arqstatus ();
             data->setArqStatus (arqstatus);
-            data->getArqStatus ()->setArqEnabled (data->get_serviceflow ()->getQoS ()->getIsArqEnabled ());
-            data->getArqStatus ()->setRetransTime (data->get_serviceflow ()->getQoS ()->getArqRetransTime ());
-            data->getArqStatus ()->setMaxWindow (data->get_serviceflow ()->getQoS ()->getArqMaxWindow ());
-            data->getArqStatus ()->setCurrWindow (data->get_serviceflow ()->getQoS ()->getArqMaxWindow ());
-            data->getArqStatus ()->setAckPeriod (data->get_serviceflow ()->getQoS ()->getArqAckPeriod ());
+            data->getArqStatus ()->setArqEnabled (data->get_serviceflow ()->getQosSet ()->isArqEnabled ());
+            data->getArqStatus ()->setRetransTime (data->get_serviceflow ()->getQosSet ()->getArqRetransTime ());
+            data->getArqStatus ()->setMaxWindow (data->get_serviceflow ()->getQosSet ()->getArqMaxWindow ());
+            data->getArqStatus ()->setCurrWindow (data->get_serviceflow ()->getQosSet ()->getArqMaxWindow ());
+            data->getArqStatus ()->setAckPeriod (data->get_serviceflow ()->getQosSet ()->getArqAckProcessingTime ());
             // setting timer array for the flow
             data->getArqStatus ()->arqRetransTimer = new ARQTimer(data);        /*RPI*/
             debug2("In DSA req STA_MN, generate a ARQ Timer and cid is %d.\n", data->get_cid());
@@ -225,15 +227,15 @@ void ServiceFlowHandler::processDSA_req (Packet *p)
 
         data->set_serviceflow(dsa_req_frame->staticflow);
         // We will move all the ARQ information in the service flow to the isArqStatus that maintains the Arq Information.
-        if (data->get_serviceflow ()->getQoS ()->getIsArqEnabled () == 1 ) {
+        if (data->get_serviceflow ()->getQosSet ()->isArqEnabled () == true ) {
             debug2("Going to set ARQ parameters.\n");
             arqstatus = new Arqstatus ();
             data->setArqStatus (arqstatus);
-            data->getArqStatus ()->setArqEnabled (data->get_serviceflow ()->getQoS ()->getIsArqEnabled ());
-            data->getArqStatus ()->setRetransTime (data->get_serviceflow ()->getQoS ()->getArqRetransTime ());
-            data->getArqStatus ()->setMaxWindow (data->get_serviceflow ()->getQoS ()->getArqMaxWindow ());
-            data->getArqStatus ()->setCurrWindow (data->get_serviceflow ()->getQoS ()->getArqMaxWindow ());
-            data->getArqStatus ()->setAckPeriod (data->get_serviceflow ()->getQoS ()->getArqAckPeriod ());
+            data->getArqStatus ()->setArqEnabled (data->get_serviceflow ()->getQosSet ()->isArqEnabled ());
+            data->getArqStatus ()->setRetransTime (data->get_serviceflow ()->getQosSet ()->getArqRetransTime ());
+            data->getArqStatus ()->setMaxWindow (data->get_serviceflow ()->getQosSet ()->getArqMaxWindow ());
+            data->getArqStatus ()->setCurrWindow (data->get_serviceflow ()->getQosSet ()->getArqMaxWindow ());
+            data->getArqStatus ()->setAckPeriod (data->get_serviceflow ()->getQosSet ()->getArqAckProcessingTime ());
             // setting timer array for the flow
             data->getArqStatus ()->arqRetransTimer = new ARQTimer(data);        /*RPI*/
             debug2("In DSA req STA_BS, generate a ARQ Timer and cid is %d.\n", data->get_cid());
@@ -249,7 +251,7 @@ void ServiceFlowHandler::processDSA_req (Packet *p)
             peer->setOutData (data);
             debug2("set outcoming data connection for mac %d\n", mac_->addr());
 //Begin RPI
-            if (data->get_serviceflow ()->getQoS ()->getIsArqEnabled () == 1 ) {
+            if (data->get_serviceflow ()->getQosSet ()->isArqEnabled () == true ) {
                 //schedule timer based on retransmission time setting
                 //mac_->debug(" ARQ Timer Setting Downlink\n");
                 data->getArqStatus ()->arqRetransTimer->sched(data->getArqStatus ()->getRetransTime ());
@@ -302,14 +304,14 @@ void ServiceFlowHandler::processDSA_rsp (Packet *p)
 
         data->set_serviceflow(dsa_rsp_frame->staticflow);
         // We will move all the ARQ information in the service flow to the isArqStatus that maintains the Arq Information.
-        if (data->get_serviceflow ()->getQoS ()->getIsArqEnabled () == 1 ) {
+        if (data->get_serviceflow ()->getQosSet ()->isArqEnabled () == true ) {
             arqstatus = new Arqstatus ();
             data->setArqStatus (arqstatus);
-            data->getArqStatus ()->setArqEnabled (data->get_serviceflow ()->getQoS ()->getIsArqEnabled ());
-            data->getArqStatus ()->setRetransTime (data->get_serviceflow ()->getQoS ()->getArqRetransTime ());
-            data->getArqStatus ()->setMaxWindow (data->get_serviceflow ()->getQoS ()->getArqMaxWindow ());
-            data->getArqStatus ()->setCurrWindow (data->get_serviceflow ()->getQoS ()->getArqMaxWindow ());
-            data->getArqStatus ()->setAckPeriod (data->get_serviceflow ()->getQoS ()->getArqAckPeriod ());
+            data->getArqStatus ()->setArqEnabled (data->get_serviceflow ()->getQosSet ()->isArqEnabled ());
+            data->getArqStatus ()->setRetransTime (data->get_serviceflow ()->getQosSet ()->getArqRetransTime ());
+            data->getArqStatus ()->setMaxWindow (data->get_serviceflow ()->getQosSet ()->getArqMaxWindow ());
+            data->getArqStatus ()->setCurrWindow (data->get_serviceflow ()->getQosSet ()->getArqMaxWindow ());
+            data->getArqStatus ()->setAckPeriod (data->get_serviceflow ()->getQosSet ()->getArqAckProcessingTime ());
             // setting timer array for the flow
             data->getArqStatus ()->arqRetransTimer = new ARQTimer(data);             /*RPI*/
             debug2("In DSA rsp STA_MN, generate a ARQ Timer and cid is %d.\n", data->get_cid());
@@ -319,7 +321,7 @@ void ServiceFlowHandler::processDSA_rsp (Packet *p)
             peer->setOutData (data);
             debug2("set outcoming data connection for mac %d\n", mac_->addr());
 //Begin RPI
-            if (data->get_serviceflow ()->getQoS ()->getIsArqEnabled () == 1 ) {
+            if (data->get_serviceflow ()->getQosSet ()->isArqEnabled () == true ) {
                 //schedule timer based on retransmission time setting
                 //mac_->debug(" ARQ Timer Setting -Uplink\n");
                 data->getArqStatus ()->arqRetransTimer->sched(data->getArqStatus ()->getRetransTime ());
@@ -360,11 +362,215 @@ void ServiceFlowHandler::processDSA_ack (Packet *p)
     mac_->debug ("At %f in Mac %d received DSA ack\n", NOW, mac_->addr());
 }
 
+
 /*
  * Add a static flow
  * @param argc The number of parameter
  * @param argv The list of parameters
  */
+int ServiceFlowHandler::addStaticFlow (int argc, const char*const* argv)
+{
+
+	// see serviceflowqosset.h for explanations of the parameters
+	Dir_t direction; // Direction of the service flow
+
+	u_int8_t trafficPriority = 0;
+    u_int32_t maxSustainedTrafficRate;
+    u_int32_t maxTrafficBurst;
+    u_int32_t minReservedTrafficRate;
+    UlGrantSchedulingType_t	ulGrantSchedulingType = UL_BE;
+    std::bitset<8> reqTransmitPolicy;
+    u_int32_t toleratedJitter;
+    u_int32_t maxLatency;
+    bool isFixedLengthSdu;
+    u_int8_t sduSize;
+    bool isArqEnabled;
+    u_int16_t arqMaxWindow;
+    double arqRetransTime; // Not IEEE 802.16-2009 conform
+    u_int8_t ackProcessingTime; // Not conform
+    u_int16_t arqBlockSize;
+    u_int16_t unsolicitedGrantInterval = 0;
+    u_int16_t unsolicitedPollingInterval = 0;
+    DataDeliveryServiceType_t dataDeliveryServiceType = DL_BE;
+    u_int16_t timeBase;
+    double packetErrorRate;
+
+
+	// TODO: Check for mandatory parameters
+
+	// get direction of the service flow
+	if ( strcmp(argv[2], "DL") == 0 ) {
+		direction = DL;
+
+		// get data delivery service type
+		if ( strcmp(argv[3], "UGS") == 0 ) {
+			dataDeliveryServiceType = DL_UGS;
+		} else if ( strcmp(argv[3], "ERT-VR") == 0) {
+			dataDeliveryServiceType = DL_ERTVR;
+		} else if ( strcmp(argv[3], "RT-VR") == 0) {
+			dataDeliveryServiceType = DL_RTVR;
+		} else if ( strcmp(argv[3], "NRT-VR") == 0 ) {
+			dataDeliveryServiceType = DL_NRTVR;
+		} else if ( strcmp(argv[3], "BE") == 0 ) {
+			dataDeliveryServiceType = DL_BE;
+		} else {
+			return TCL_ERROR;
+		}
+
+	} else if (strcmp(argv[2], "UL") == 0) {
+		direction = UL;
+
+		// get uplink grant scheduling type
+		if ( strcmp(argv[3], "UGS") == 0 ) {
+			ulGrantSchedulingType = UL_UGS;
+		} else if ( strcmp(argv[3], "ertPS") == 0 ) {
+			ulGrantSchedulingType = UL_ertPS;
+		} else if ( strcmp(argv[3], "rtPS") == 0 ) {
+			ulGrantSchedulingType = UL_rtPS;
+		} else if ( strcmp(argv[3], "nrtPS") == 0 ) {
+			ulGrantSchedulingType = UL_nrtPS;
+		} else if ( strcmp(argv[3], "BE") == 0 ){
+				ulGrantSchedulingType = UL_BE;
+		} else {
+			return TCL_ERROR;
+		}
+	}
+
+	// Read arguments
+
+	// Set Trafic Priority
+	trafficPriority = u_int8_t( atoi( argv[4]));
+	if (trafficPriority  < 0) {
+		trafficPriority = 0;
+		fprintf(stderr, "QoS Parameter Traffic Priority is out of range from 0 to 7 \n");
+	}
+	if (trafficPriority > 7) {
+		trafficPriority = 7;
+		fprintf(stderr, "QoS Parameter Traffic Priority is out of range from 0 to 7 \n");
+	}
+
+	// Set Maximum Sustained Traffic Rate
+	maxSustainedTrafficRate = u_int32_t( atof( argv[5]));
+	if ( maxSustainedTrafficRate <= 0) {
+		// "0" specifies that no limit is given
+		maxSustainedTrafficRate = 4294967295;
+	}
+
+	// Set Maximum Traffic Burst Size
+	maxTrafficBurst = u_int32_t( atof( argv[6]));
+
+	// Set Minimum Reserved Traffic Rate
+	minReservedTrafficRate = u_int32_t( atof( argv[7]));
+	if ( minReservedTrafficRate > maxSustainedTrafficRate ) {
+		minReservedTrafficRate = maxSustainedTrafficRate;
+		fprintf(stderr, "Minimum Revered Traffic Rate can not be greater than the Maximum Sustained Traffic Rate \n");
+	}
+
+	// Set Request/Transmission Policy (Currently Unused)
+	reqTransmitPolicy = std::bitset<8>( atoi( argv[8]));
+
+	// Set Tolerated Jitter
+	toleratedJitter = u_int32_t( atof( argv[9]));
+
+	// Set Maximum Latency
+	maxLatency = u_int32_t( atof( argv[10]));
+
+	// Set Fixed Length SDU (Currently Unused)
+	isFixedLengthSdu = bool( atoi( argv[11]));
+	sduSize = u_int8_t( atoi( argv[12]));
+
+	// Enable ARQ
+	isArqEnabled = bool( atoi( argv[13]));
+	if (isArqEnabled) {
+		debug2("ARQ is enabled for this static flow.\n");
+	}
+    arqMaxWindow = u_int16_t( atoi( argv[14]));
+    arqRetransTime = double( atof( argv[15])); // Not IEEE 802.16-2009 conform
+    ackProcessingTime = u_int8_t( atoi( argv[16]));
+    arqBlockSize = u_int16_t( atoi( argv[17]));
+
+    // Set Unsolicited Grant Interval or unsolicited Polling Interval
+
+    // Frame Duration is in seconds but Grant or Polling Interval is defined in Milliseconds
+	double frameDuration = mac_->getFrameDuration() * 1e3;
+	// only for uplink connections
+	if ( direction == UL ) {
+		if (( ulGrantSchedulingType == UL_UGS) or ( ulGrantSchedulingType == UL_ertPS) ) {
+			unsolicitedGrantInterval = u_int16_t( atof( argv[18]));
+			// check if Grant Interval is less than the frame duration
+			if ( unsolicitedGrantInterval < frameDuration) {
+				fprintf(stderr, "Grant Intervals below Frame Duration are not possible \n");
+				unsolicitedGrantInterval = u_int16_t( frameDuration);
+			}
+		} else if ( ulGrantSchedulingType == UL_rtPS) {
+			unsolicitedPollingInterval = u_int16_t( atof( argv[18])); // IEEE 802.16-2009 page 372
+			if ( unsolicitedPollingInterval == 0) {
+				unsolicitedPollingInterval = u_int16_t( DEFAULT_POLLING_INTERVAL);
+			}
+			if ( unsolicitedPollingInterval < frameDuration) {
+				fprintf(stderr, "Polling Intervals below Frame Duration are not possible \n");
+				unsolicitedPollingInterval = u_int16_t( frameDuration);
+			}
+		} else if ( ulGrantSchedulingType == UL_nrtPS) {
+			// Parameter not defined of nrtPS
+			// default for nrtPS (one second or less)
+			unsolicitedPollingInterval = u_int16_t( DEFAULT_POLLING_INTERVAL);
+		}
+	}
+
+	// Set Time Base
+	timeBase = u_int16_t( atof( argv[19]));
+	if ( timeBase < frameDuration ) {
+		fprintf(stderr, "Time Base below Frame Duration are not possible \n");
+		timeBase = u_int16_t( frameDuration);
+	}
+
+	packetErrorRate = double( atof( argv[20]));
+
+
+	/* Create new Service Flow QoS Set Object */
+
+	ServiceFlowQosSet * staticflowqosset = new ServiceFlowQosSet (
+			trafficPriority,
+			maxSustainedTrafficRate,
+			maxTrafficBurst,
+			minReservedTrafficRate,
+			ulGrantSchedulingType,
+			reqTransmitPolicy,
+			toleratedJitter,
+			maxLatency,
+			isFixedLengthSdu,
+			sduSize,
+			isArqEnabled,
+			arqMaxWindow,
+			arqRetransTime, // Not IEEE 802.16-2009 conform
+			ackProcessingTime, // Not confo
+			arqBlockSize,
+			unsolicitedGrantInterval,
+			unsolicitedPollingInterval,
+			dataDeliveryServiceType,
+			timeBase,
+			packetErrorRate
+			);
+
+    /* Create the Static Service Flow */
+    ServiceFlow * staticflow = new ServiceFlow ( direction, staticflowqosset);
+
+    /* Add the Service Flow to the Static Flow List*/
+    staticflow->insert_entry_head (&static_flow_head_);
+    debug2(" service flow static flow created ");
+    return TCL_OK;
+}
+
+
+
+
+/*
+ * Add a static flow
+ * @param argc The number of parameter
+ * @param argv The list of parameters
+ */
+/* old version vr@tud
 int ServiceFlowHandler::addStaticFlow (int argc, const char*const* argv)
 {
     dir_t dir;
@@ -427,7 +633,7 @@ int ServiceFlowHandler::addStaticFlow (int argc, const char*const* argv)
     }
 
 
-    /* Create the Service Flow Qos object */
+    // Create the Service Flow Qos object
     ServiceFlowQoS * staticflowqos = new ServiceFlowQoS (delay, datarate, burstsize) ;
     staticflowqos->setDataSize(data_size);
     staticflowqos->setPeriod(period);
@@ -451,15 +657,18 @@ int ServiceFlowHandler::addStaticFlow (int argc, const char*const* argv)
 
 
 
-    /* Create the Static Service Flow */
+    // Create the Static Service Flow
     ServiceFlow * staticflow = new ServiceFlow (flow_type, staticflowqos);
     staticflow->setDirection(dir);
 
-    /* Add the Service Flow to the Static Flow List*/
+    // Add the Service Flow to the Static Flow List
     staticflow->insert_entry_head (&static_flow_head_);
     debug2(" service flow static flow created ");
     return TCL_OK;
 }
+end old version
+*/
+
 
 /**
  * Send a flow request to the given node
@@ -506,15 +715,15 @@ void ServiceFlowHandler::init_static_flows (int index)
 
             data->set_serviceflow(n);
             // We will move all the ARQ information in the service flow to the isArqStatus that maintains the Arq Information.
-            if (data->get_serviceflow ()->getQoS ()->getIsArqEnabled () == 1 ) {
+            if (data->get_serviceflow ()->getQosSet ()->isArqEnabled () == true ) {
                 debug2("add an ARQ enabled connection.\n");
                 arqstatus = new Arqstatus ();
                 data->setArqStatus (arqstatus);
-                data->getArqStatus ()->setArqEnabled (data->get_serviceflow ()->getQoS ()->getIsArqEnabled ());
-                data->getArqStatus ()->setRetransTime (data->get_serviceflow ()->getQoS ()->getArqRetransTime ());
-                data->getArqStatus ()->setMaxWindow (data->get_serviceflow ()->getQoS ()->getArqMaxWindow ());
-                data->getArqStatus ()->setCurrWindow (data->get_serviceflow ()->getQoS ()->getArqMaxWindow ());
-                data->getArqStatus ()->setAckPeriod (data->get_serviceflow ()->getQoS ()->getArqAckPeriod ());
+                data->getArqStatus ()->setArqEnabled (data->get_serviceflow ()->getQosSet ()->isArqEnabled ());
+                data->getArqStatus ()->setRetransTime (data->get_serviceflow ()->getQosSet ()->getArqRetransTime ());
+                data->getArqStatus ()->setMaxWindow (data->get_serviceflow ()->getQosSet ()->getArqMaxWindow ());
+                data->getArqStatus ()->setCurrWindow (data->get_serviceflow ()->getQosSet ()->getArqMaxWindow ());
+                data->getArqStatus ()->setAckPeriod (data->get_serviceflow ()->getQosSet ()->getArqAckProcessingTime ());
                 // setting timer array for the flow
                 data->getArqStatus ()->arqRetransTimer = new ARQTimer(data);      /*RPI*/
                 debug2("In init_static_flow, ARQ connection timer is generated.\n");

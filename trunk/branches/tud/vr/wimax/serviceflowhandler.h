@@ -19,7 +19,7 @@
 #ifndef SERVICEFLOWHANDLER_H
 #define SERVICEFLOWHANDLER_H
 
-#include "serviceflowqos.h"
+#include "serviceflowqosset.h"
 #include "serviceflow.h"
 #include "packet.h"
 
@@ -55,7 +55,7 @@ public:
      * Add a flow
      * @param qos The qos for the new connection
      */
-    ServiceFlow* addFlow (ServiceFlowQoS * qos);
+    ServiceFlow * addFlow (ServiceFlowQosSet * qosSet);
 
     /**
      * Remove a flow

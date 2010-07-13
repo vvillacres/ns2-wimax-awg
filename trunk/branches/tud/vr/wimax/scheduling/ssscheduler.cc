@@ -458,7 +458,8 @@ void SSscheduler::schedule ()
                 if (con_tmp->get_category()==CONN_BASIC || con_tmp->get_category()==CONN_PRIMARY
                         || con_tmp->get_category()==CONN_SECONDARY || con_tmp->get_category()==CONN_DATA) {
                     if (con_tmp->get_category()==CONN_DATA) {
-                        if ( (con_tmp->get_serviceflow()->getScheduling()==SERVICE_UGS) || (con_tmp->get_serviceflow()->getScheduling()==SERVICE_rtPS) ) {
+                    	// TOTO: Check if ertPS shall be included vr@tud
+                        if ( (con_tmp->get_serviceflow()->getQosSet()->getUlGrantSchedulingType()==UL_UGS) || (con_tmp->get_serviceflow()->getQosSet()->getUlGrantSchedulingType()==UL_rtPS) ) {
                         } else {
                             create_cdma_request(con_tmp);
                         }

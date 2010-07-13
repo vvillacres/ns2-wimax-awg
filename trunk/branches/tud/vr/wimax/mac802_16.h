@@ -25,7 +25,7 @@
 #include "sduclassifier.h"
 #include "connectionmanager.h"
 #include "serviceflowhandler.h"
-#include "serviceflowqos.h"
+#include "serviceflowqosset.h"
 #include "peernode.h"
 #include "mac.h"
 #include "mac802_16pkt.h"

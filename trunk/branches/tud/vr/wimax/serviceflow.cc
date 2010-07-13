@@ -14,7 +14,9 @@
  * FROM THE USE OF THIS SOFTWARE.
  * </PRE></P>
  * @author  rouil
+ * @changed vr@tud
  */
+
 
 #include "serviceflow.h"
 
@@ -22,11 +24,13 @@
  * Create a flow with the given parameter
  */
 static int FlowIndex = 0;
-ServiceFlow::ServiceFlow (SchedulingType_t scheduling, ServiceFlowQoS *qos)
+
+ServiceFlow::ServiceFlow (Dir_t direction, ServiceFlowQosSet * activeQosSet )
 {
-    id_ = UNASSIGNED_FLOW_ID; //assign and increment flow id
-    scheduling_ = scheduling;
-    qos_ = qos;
+	direction_ = direction; // assign the direction of this flow
+    sfid_ = UNASSIGNED_FLOW_ID; //assign and increment flow id
+    sfState_ = ACTIVE; // since no dynamic SF has been implemented yet
+    qosSet_ = activeQosSet;
 }
 
 /**
@@ -34,16 +38,14 @@ ServiceFlow::ServiceFlow (SchedulingType_t scheduling, ServiceFlowQoS *qos)
  */
 void ServiceFlow::pickID ()
 {
-    id_ = FlowIndex++;
+    sfid_ = FlowIndex++;
 }
 
 /**
  * Assign an ID to the service flow
  * @param id The ID to set
  */
-void ServiceFlow::setID (int id)
+void ServiceFlow::setSFID (int sfid)
 {
-    id_ = id;
+    sfid_ = sfid;
 }
-
-
