@@ -311,7 +311,7 @@ public:
     int getBw ();
 
     /**
-     * Get and Set polling interval
+     * Get and Set polling interval in milliseconds
      */
     int getPOLL_interval ();
     void setPOLL_interval (int poll_int);

@@ -14,28 +14,32 @@
  * FROM THE USE OF THIS SOFTWARE.
  * </PRE></P>
  * @author  rouil
+ * changed vr@tud
  */
 
 #ifndef SERVICEFLOW_H
 #define SERVICEFLOW_H
 
-#include "serviceflowqos.h"
-//#include "connection.h"
+#include "serviceflowqosset.h"
 #include "packet.h"
 
 #define UNASSIGNED_FLOW_ID -1
 
-/** Defines the supported scheduling mechanism for the flow */
-enum SchedulingType_t {
-    SERVICE_UGS,
-    SERVICE_ertPS,
-    SERVICE_rtPS,
-    SERVICE_nrtPS,
-    SERVICE_BE
+// TODO: Implement ADMITTED and PROVISIONES service flow states
+
+/**
+ * Defines the state for the serviceflow
+ */
+enum ServiceFlowState_t {
+	PROVISIONED,
+	ADMITTED,
+	ACTIVE
 };
 
+
+
 /** Direction of the flow */
-enum dir_t {
+enum Dir_t {
     NONE,  // flow not used
     DL,    // downlink flow
     UL     // uplink flow
@@ -54,22 +58,23 @@ class ServiceFlow
 public:
     /**
      * Constructor
+     * @param Direction and active QoS Parameter Set
      */
-    ServiceFlow (SchedulingType_t, ServiceFlowQoS*);
+    ServiceFlow( Dir_t direction, ServiceFlowQosSet * qosSet );
 
     /**
      * Return the service flow id
      * @return The service flow id. -1 if not yet assigned
      */
-    inline int getID () {
-        return id_;
+    inline int getSFID () {
+        return sfid_;
     }
 
     /**
      * Assign an ID to the service flow
      * @param id The ID to set
      */
-    void setID (int id);
+    void setSFID (int sfid);
 
     /**
      * Pick the next available ID. Should be called by a BS to assign a unique ID
@@ -77,32 +82,23 @@ public:
     void pickID ();
 
     /**
-     * Set the scheduling mechanism for this flow
-     * @param scheduling The scheduling type
+     * Return the operational state of the Service Flow
      */
-    inline void setScheduling (SchedulingType_t scheduling) {
-        scheduling_ = scheduling;
+    inline ServiceFlowState_t getServiceFlowState () {
+    	return sfState_;
     }
 
     /**
-     * Return the scheduling type for this service flow
+     * Set the operational state of the Service Flow
      */
-    inline SchedulingType_t getScheduling () {
-        return scheduling_;
-    }
-
-    /**
-     * Set the QoS for this flow
-     * @param qos The new QoS for this flow
-     */
-    inline void setQoS (ServiceFlowQoS* qos) {
-        qos_ = qos;
+    inline void setServiceFlowState(ServiceFlowState_t sfState) {
+    	sfState_ = sfState;
     }
 
     /**
      * Return the QoS for this connection
      */
-    inline dir_t getDirection () {
+    inline Dir_t getDirection () {
         return direction_;
     }
 
@@ -110,15 +106,23 @@ public:
      * Set the QoS for this flow
      * @param qos The new QoS for this flow
      */
-    inline void setDirection (dir_t dir) {
+    inline void setDirection (Dir_t dir) {
         direction_ = dir;
     }
 
     /**
-     * Return the QoS for this connection
+     * Return the Active QoS Parameter Set for this service flow
      */
-    inline ServiceFlowQoS * getQoS () {
-        return qos_;
+    inline ServiceFlowQosSet * getQosSet () {
+        return qosSet_;
+    }
+
+    /**
+     * Set the Active QoS Parameter Set for this flow
+     */
+    inline void setActiveQosSet (ServiceFlowQosSet* activeQosSet) {
+        qosSet_ = activeQosSet;
+        sfState_ = ACTIVE;
     }
 
     // Chain element to the list
@@ -153,22 +157,22 @@ private:
     /**
      * The service flow id
      */
-    int id_;
+    int sfid_;
 
     /**
-     * The scheduling type (UGS, rtPS...)
+     * The operational state of the service flow
      */
-    SchedulingType_t scheduling_;
+    ServiceFlowState_t sfState_;
 
     /**
      * Flow direction
      */
-    dir_t direction_;
+    Dir_t direction_;
 
     /**
-     * The quality of service for this flow
+     * The Active Quality of Service Parameter Set this service flow
      */
-    ServiceFlowQoS * qos_;
+    ServiceFlowQosSet * qosSet_;
 
 };
 #endif //SERVICEFLOW_H
