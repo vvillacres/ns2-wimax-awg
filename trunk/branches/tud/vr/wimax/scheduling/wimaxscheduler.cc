@@ -59,7 +59,7 @@ void WimaxScheduler::init()
 #endif
     int nbPS_left = nbPS - mac_->phymib_.rtg - mac_->phymib_.ttg;
     int nbSymbols = (int) floor((phy->getPS()*nbPS_left)/phy->getSymbolTime());  // max num of OFDM symbols available per frame.
-    assert (nbSymbols*phy->getSymbolTime()+(mac_->phymib_.rtg + mac_->phymib_.ttg)*phy->getPS() < mac_->getFrameDuration());
+    assert (nbSymbols*phy->getSymbolTime()+(mac_->phymib_.rtg + mac_->phymib_.ttg)*phy->getPS() <= mac_->getFrameDuration());
     int maxdlduration = (int) (nbSymbols / (1.0/dlratio_)); //number of symbols for downlink
     int maxulduration = nbSymbols - maxdlduration;            //number of symbols for uplink
 

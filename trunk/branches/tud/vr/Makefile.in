@@ -343,7 +343,7 @@ OBJ_CC = \
         wimax/scheduling/framemap.o wimax/scheduling/phypdu.o \
         wimax/scheduling/profile.o wimax/scheduling/subframe.o \
         wimax/scheduling/scanningstation.o \
-        wimax/serviceflowqos.o wimax/serviceflow.o \
+        wimax/serviceflowqosset.o wimax/serviceflow.o \
         wimax/serviceflowhandler.o \
         wimax/connection.o wimax/connectionmanager.o wimax/peernode.o \
         wimax/mac802_16.o wimax/mac802_16BS.o wimax/mac802_16SS.o \
