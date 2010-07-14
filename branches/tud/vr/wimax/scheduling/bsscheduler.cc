@@ -657,12 +657,12 @@ void BSScheduler::schedule ()
     FrameMap *map = mac_->getMap();
     int nbPS = (int) floor((mac_->getFrameDuration()/phy->getPS()));
 #ifdef DEBUG_WIMAX
-    assert (nbPS*phy->getPS()<=mac_->getFrameDuration()); //check for rounding errors
+    assert (nbPS*phy->getPS() <= mac_->getFrameDuration()); //check for rounding errors
 #endif
 
     int nbPS_left = nbPS - mac_->phymib_.rtg - mac_->phymib_.ttg;
     int nbSymbols = (int) floor((phy->getPS()*nbPS_left)/phy->getSymbolTime());  // max num of OFDM symbols available per frame.
-    assert (nbSymbols*phy->getSymbolTime()+(mac_->phymib_.rtg + mac_->phymib_.ttg)*phy->getPS() < mac_->getFrameDuration());
+    assert (nbSymbols*phy->getSymbolTime()+(mac_->phymib_.rtg + mac_->phymib_.ttg)*phy->getPS() <= mac_->getFrameDuration());
     int dlduration = DL_PREAMBLE;                             //number of symbols currently used for downlink
     int maxdlduration = (int) (nbSymbols / (1.0/dlratio_)); //number of symbols for downlink
 
@@ -703,10 +703,10 @@ void BSScheduler::schedule ()
     debug10 ("Start BS Scheduling: TotalSymbols :%d, MAXDL :%d, MAXUL :%d, Preamble :%d, dlduration after preamble :%d\n", nbSymbols, maxdlduration, maxulduration, DL_PREAMBLE, dlduration);
 
 #ifdef DEBUG_WIMAX
-    assert ((nbSymbols*phy->getSymbolPS()+mac_->phymib_.rtg + mac_->phymib_.ttg)*phy->getPS()< mac_->getFrameDuration());
+    assert ((nbSymbols*phy->getSymbolPS()+mac_->phymib_.rtg + mac_->phymib_.ttg)*phy->getPS() <= mac_->getFrameDuration());
 #endif
 #ifdef DEBUG_WIMAX
-    assert (maxdlduration*phy->getSymbolTime()+mac_->phymib_.rtg*phy->getPS()+maxulduration*phy->getSymbolTime()+mac_->phymib_.ttg*phy->getPS() < mac_->getFrameDuration());
+    assert (maxdlduration*phy->getSymbolTime()+mac_->phymib_.rtg*phy->getPS()+maxulduration*phy->getSymbolTime()+mac_->phymib_.ttg*phy->getPS() <= mac_->getFrameDuration());
 #endif
 
     mac_->setMaxDlduration (maxdlduration);

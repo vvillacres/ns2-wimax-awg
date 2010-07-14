@@ -281,9 +281,9 @@ int Mac802_16::command(int argc, const char*const* argv)
                 return TCL_ERROR;
             return TCL_OK;
         }
-    } else if (argc == 21) {
+    } else if (argc == 22) {
         if (strcmp(argv[1], "setflow") == 0) {
-            //debug (" ***********************************argc is 21 is taken \n" );
+            debug (" Command setflow with argc 22 is executed \n" );
             result = serviceFlowHandler_->addStaticFlow(argc, argv);
             return result;
         } else {
