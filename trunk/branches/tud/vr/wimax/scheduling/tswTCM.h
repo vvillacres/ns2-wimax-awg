@@ -8,58 +8,62 @@
 #ifndef TSWTCM_H_
 #define TSWTCM_H_
 
-
+#include "serviceflowqosset.h"
 #include "scheduler.h"
 #include "connection.h"
-#include "mac802_16.h"
 #include <map>
+#include <deque>
 using namespace std;
 
 //MAKRO MIN
 #define MIN(a,b) ( (a)<= (b) ? (a) : (b) )
 /*typedef enum { green, yellow, red }Data_color_;*/
 // ---------------------Rahmendauer beträgt 5ms-----------------------------------
-#define FRAMEDURATION 0.005
+#define FRAMEDURATION 0.005 // in second
 
 //----------------Prediction Data-------------------------------
 
 struct LastAllocationSize{
-				u_int32_t mrtrSize;
-				u_int32_t mstrSize;
-				double timeStamp;
-};
+				u_int32_t lastMrtr;
+				u_int32_t lastMstr;
+				double   timeStamp;
+				};
+// deque < TrafficRate > dequeTrafficRate;
 //----Abbildungen von cid auf Prediction Data heiß  LastAllocationSize(mrtrSize; mstrSize;timeStamp;)------------
 
 typedef map< int, LastAllocationSize > MapLastAllocationSize_t;
 typedef MapLastAllocationSize_t::iterator LastAllocationSizeIt_t;
-
+//typedef pair < int,LastAllocationSize > pair_t;
 
 class tswTCM {
 
 public:
-	 tswTCM();
+	tswTCM();
 
-	 tswTCM( double frameDuration);
+	tswTCM( double frameDuration);
 
-     virtual ~tswTCM();
+    virtual ~tswTCM();
 
      //------------------Gettting the Prediction Ddata---------------------
-    void getDataSize(Connection *con,u_int32_t &mstrsize,u_int32_t &mrtsize);
+    void getDataSize(Connection *con,u_int32_t &mstrSize,u_int32_t &mrtrSize);
 
     //------------------Update the Allocation -----------------------
-    void UpdateAllocation(Connection *con,u_int32_t &mstrsize,u_int32_t &mrtsize);
+    void updateAllocation(Connection *con,u_int32_t &mstrSize,u_int32_t &mrtSize);
 
     //--------------------------Clear the Connection--------------------
-    void ClearConnection(Connection *con);
+    void clearConnection(Connection *con);
 
     //------------------Setting the Frame Duration----------------------
     void setFrameDuration(double frameDuration) {
     	frameDuration_ = frameDuration;}
+   // MapLastAllocationSize_t updatemapLastAllocationSize_;
 
 private :
-    //void interneMethode () ;
-    MapLastAllocationSize_t mapLastAllocationSize_; // Ich bekomme ein MAP von BS.
+
+    MapLastAllocationSize_t mapLastAllocationSize_ ; // Ich bekomme ein MAP von BS.
     double frameDuration_;
+
+
         };
 
 #endif /* TSWTCM_H_ */
