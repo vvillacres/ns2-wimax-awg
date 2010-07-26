@@ -22,34 +22,9 @@ tswTCM::~tswTCM() {
 	// TODO Auto-generated destructor stub
 }
 
-
-
-//--------------------------Interne Methoden-------------------------------
-void tswTCM::interneMethode ()
-{
-	// ----------------- MAP Element muss aktualliziert werden--------------------
-	//---------------neues MAP Element erstellen--------------------//
-
-lastAllocationSize.mrtrSize = mrtr;
-
-lastAllocationSize.mstrSize = mstr;
-
-lastAllocationSize.timeStamp = lastTime;
-
-}
-
-
-
-/*struct LastAllocationSize{
-				u_int32_t mrtrSize;
-				u_int32_t mstrSize;
-				double timeStamp;
-};*/
-
-
-
 //--------------------------------getting Data Size ------------------------------
-void tswTCM::getDataSize(Connection *con,u_int32_t mstrsize,u_int32_t mrtrsize )
+// Scheduler fragt nach den maximal möglichen Zuteilung (Datenvolumen)
+void tswTCM::getDataSize(Connection *con,u_int32_t &mstrSize,u_int32_t &mrtrSize )
     {
 	//-----------------------Initialization of the Map---------------------------------
 	LastAllocationSizeIt_t mapIterator;
@@ -62,112 +37,152 @@ void tswTCM::getDataSize(Connection *con,u_int32_t mstrsize,u_int32_t mrtrsize )
 	// Suchen der CID in der Map - Eintrag vorhanden ?
 	mapIterator = mapLastAllocationSize_.find(currentCid);
 
+
 	if ( mapIterator == mapLastAllocationSize_.end()) {
 
 		// CID nicht vorhanden
-		// mrtrsize berechnen  = 64Kbps VOIP-> 70Kbps
-		mrtrsize = u_int32_t( ceil( double(sfQosSet->getMinReservedTrafficRate()) * frameDuration_ / 8.0 ) );
+		// mrtrsize berechnen  = 64Kbps VOIP -> 70Kbps
+		mrtrSize = u_int32_t( ceil( double(sfQosSet->getMinReservedTrafficRate()) * frameDuration_ / 8.0 ) );
 
-		// mstrsize berechnen  = 344 Kbps MPEG -> 300 Kbps
-		mstrsize = u_int32_t( floor( double(sfQosSet->getMaxSustainedTrafficRate()) * frameDuration_/ 8.0 ) );
+		// mstrsize berechnen  = 25 Mbps MPEG4 AVC/H.264 -> 20 Mbps
+		mstrSize = u_int32_t( floor( double(sfQosSet->getMaxSustainedTrafficRate()) * frameDuration_/ 8.0 ) );
 
-		// neues Map element erstellen
-		LastAllocationSize lastAllocationSize;
 
-		// Zuweisung an Strukturelemente
-		lastAllocationSize.mrtrSize = mrtrsize;
-		lastAllocationSize.mstrSize = mstrsize;
-		lastAllocationSize.timeStamp = NOW;
+	} else {
 
-		// neues Map element in MAP hinzufügen
-		mapLastAllocationSize_.insert( pair<int,LastAllocationSize>( currentCid, lastAllocationSize) );
+//----wenn das CID vorhanden ist,hole ich abgelegte Daten aus Strukture aus, um Datasize zu berechnen---//
+//----Strukturenlemente aus Map element  holen für die Berechnung des Prediction DataSize----//
 
-	} else
-	{
-		//------------------------ QoS Parameter auslesen---------------------------
-					ServiceFlowQosSet sfQosSet = con->getServiceFlow()->getQosSet();
-		// CID vorhanden
-		lastAllocationSize = mapIterator->second;
 
-		// Structurelemente aus Map element  holen für Berechnung des Prediction Size
-		u_int32_t lastmrtr = lastAllocationSize.mrtrSize;
-		u_int32_t lastmstr = lastAllocationSize.mstrSize;
-		double lastTime = lastAllocationSize.timeStamp;
 
-		//-------------------------gültige Datasize ausholen-----------------------------------------//
-		u_int32_t timeBase_ = sfQosSet->getTimeBase();
 
-		u_int32_t com_mstrSize = (timeBase_* sfQosSet->getMaxSustainedTrafficRate() - (timeBase_-frameDuration_)*mstr);
+		u_int32_t lastMrtr = mapIterator->second.lastMrtr;
+		u_int32_t lastMstr = mapIterator->second.lastMstr;
+		double lastTime = mapIterator->second.timeStamp;
 
-		u_int32_t com_mrtrSize = (timeBase_* sfQosSet->getMinReservedTrafficRate() - (timeBase_-frameDuration_)*mrtr);
 
-		u_int32_t maxTrafficBurst_ = sfQosSet->getmaxTrafficBurst();
 
-	//---------nimm minimalen Wert der Datengröße------------------------------
-		u_int32_t mrtrsize = MIN(lastmrtr,mrtrsize);
-		          mrtrsize = MIN(mrtrsize,com_mrtrSize);
+//-------------------------gültige Datasize ausholen-----------------------------------------//
+		double timeBase = double(sfQosSet->getTimeBase()) * 1e-3; // time base in second
 
-     //---------nimm minimalen Wert der Datengröße------------------------------
-		u_int32_t mstrsize = MIN(lastmstr,mstrsize);
-			      mstrsize = MIN(mstrsize,com_mstrSize);
+/*
+ * S_max <Byte> = T_b <second> * MSTR <Bit/second> - (T_b <second> - (current_Time - last_Time) <second> * last_MSTR <Bit/second> )
+ */
+		u_int32_t com_mstrSize = ((timeBase * sfQosSet->getMaxSustainedTrafficRate() - ( timeBase  - (NOW - timeStamp)) * lastMstr) / 8);
+
+//S_max <Byte> = T_b <second> * MSTR <Bit/second> - (T_b <second> - (current_Time - last_Time) <second> * last_MSTR <Bit/second> )
+		u_int32_t com_mrtrSize = ((timeBase * sfQosSet->getMinReservedTrafficRate() - (timeBase - (NOW - timeStamp )) * lastMrtr) / 8);
+
+// ----------- gets maximal traffic burst in oder to compare with the computed DataSize----------------//
+		u_int32_t maxTrafficBurst = sfQosSet->getmaxTrafficBurst();
+
+
+/*------------nimm minimalen Wert der Datengröße----------------------------------------------------------------------//
+//------------die angekommende Datengröße an MAC SAP Trasmitter,die gerechneten Datengröße für mstr und die maximale Rahmengröße--------*/
+		com_mstrSize = MIN( com_mstrSize, maxTrafficBurst);
+		mstrSize = MIN( com_mstrSize, u_int32_t(con->queueByteLength()) );
+
+/*------------nimm minimalen Wert der Datengröße-----------------------------------------------------------------------//
+//------------die angekommende Datengröße an MAC SAP Trasmitter ,die gerechneten Datengröße für mrtr und die maximale Rahmengröße--------*/
+		com_mrtrSize = MIN(com_mrtrSize,maxTrafficBurst);
+		mrtrSize = MIN(com_mrtrSize, u_int32_t(con->queueByteLength()) );
+
+
 	}
-
 }
 
-//-------------------------------Connection aktualisieren-----------------------------------------------
-void tswTCM::UpdateAllocation(Connection *con,u_int32_t mstrsize,u_int32_t mrtsize)
+//---------------------------------------------Connection aktualisieren----------------------------------------------------//
+// Parameter S_k [Byte]
+void tswTCM::updateAllocation(Connection *con,u_int32_t mstrSize,u_int32_t mrtrSize)
 {
+//---------- Pointer erstellen---------//
 	LastAllocationSizeIt_t mapIterator;
+
+//-----------Cid holen-----------------//
 	int currentCid = con->get_cid();
 
-	// QoS Parameter auslesen
-	ServiceFlowQosSet sfQosSet = con->getServiceFlow()->getQosSet();
+//  get Windows Size < millisecond > from QoS Parameter Set
+	double timeBase =  con->get_serviceflow()->getQoS()->getTimeBase() * 1e-3 ; // in seconds
 
-	//  get Windows Size from QoS Parameter Set
-	u_int16_t windowSize =  con->get_serviceflow()->getQoS()->getTimeBase();
-
-
-
-	//------------------------ die Position der Abbildung in der MAP - Eintrag suchen--------------------
+// die Position der Abbildung in der MAP mapLastAllocationSize_ entsprechende Cid  suchen-- verweist die  Position auf MAP Iterator//
 	mapIterator = mapLastAllocationSize_.find(currentCid);
 
-	//----------------------gets the Structure elements from Map element CID of the MAP-----------------------------//
-	lastAllocationSize = mapIterator->second;
-	u_int32_t lastmrtr = lastAllocationSize.mrtrSize;
-	u_int32_t lastmstr = lastAllocationSize.mstrSize;
-	double lastTime = lastAllocationSize.timeStamp;
+
+/*	MAP mapLastAllocationSize_ bis zu MAP_ENDE durchsuchen , if the connection doesn't exist --> Error */
+
+	if ( mapIterator == mapLastAllocationSize_.end())
+	{
+
+		//--neues Map element erstellen-----bzw. neue Strukture erstellen, um aktuellen DatenSize und aktuellen Zeitpunkt ab zu legen----------//
+		LastAllocationSize lastAllocationSize;
+
+		// Berechnet Ak
+		u_int32_t currentMrtr = ( mrtrSize * 8 / frameDuration_ );
+		u_int32_t currentMstr = ( mstrSize * 8 / frameDuration_ );
+
+		//----------Zuweisung auf Strukturelemente------------//
+		lastAllocationSize.mrtr = currentMrtr;
+		lastAllocationSize.mstr = currentMstr;
+		lastAllocationSize.timeStamp = NOW;
+
+		//------------neues Map element lastAllocationSize in MAP mapLastAllocationSize_ hinzufügen----------------------//
+		mapLastAllocationSize_.insert( pair<int,LastAllocationSize>( currentCid, lastAllocationSize) );
+
+        //---Ab jetzt können wir Cid und die Strukture lastAllocationSize(mrtrSize,mstrSize und timeStamp) nutzen-aus MAP--//
 
 
-	//--------------------------die aktuelle MinReser Info-Datenrate---------------------------------------------------------//
-	u_int32_t mrtr = u_int32_t( ceil ((mrtrsize* windowSize + lastmrtr)  / u_int32_t(windowSize + frameDuration_)));
+	} else	{
 
 
-	//--------------------------die aktuelle MaxSus Info-Datenrate---------------------------------------------------------//
-	u_int32_t mstr = u_int32_t( floor ((mstrsize* u_int32_t(windowSize) + lastmstr)  / u_int32_t(windowSize + frameDuration_)));
 
-	//-----------------Update the Structure elements in the MAP-----------------
-	interneMethode();
+		//hole werte
+		u_int32_t lastMrtr = mapIterator->second.lastMrtr;
+		u_int32_t lastMstr = mapIterator->second.lastMstr;
+
+		// berechne Zeitdifferent zum letzten Aufruf / T_D
+		double timeDelta = NOW - mapIterator->second.timeStamp;
 
 
+		/*--------------------------die aktuelle MRTR für die Info-Datenrate---------------------------------------------------------//
+		 * A_k <Bit/second> = ( T_b <second>_double * last_MRTR <Bit/s>_u_int32_t + last_DataSize <Bit>_u_int32_t ) / ( T_b <second>_double + nT_f <second > )
+		 */
+		u_int32_t currentMrtr = ceil(( lastMrtr * timeBase + mrtrSize * 8.0 ) / ( timeBase + timeDelta ));
+/*--------------------------die aktuelle MSTR für die Info-Datenrate---------------------------------------------------------//
+ * A_k <Bit/second> = ( T_b <second>_double * last_MSTR <Bit/s>_u_int32_t + last_DataSize <Bit>_u_int32_t ) / ( T_b <second> + T_f <second > )
+ */
+		u_int32_t currentMstr = floor(( lastMstr * timeBase + mstrSize * 8.0 ) / ( timeBase + timeDelta));
+
+
+		//  Aktuellisierung der Werte  mstrSize mrtrSize in map
+		mapIterator->second.lastMrtr = currentMrtr;
+		mapIterator->second.lastMstr = currentMstr;
+		mapIterator->second.timeStamp = NOW;
+
+
+	}
 }
 
-//--------------------Clear the Connection -------------------------------------------------------------
-void tswTCM::ClearConnection(Connection *con)
+
+
+//---------------------------------Clear the Connection ---------------------------------------------------------------//
+void tswTCM::clearConnection(Connection *con)
 {
 	LastAllocationSizeIt_t mapIterator;
 	int currentCid = con->get_cid();
-
-	// QoS Parameter auslesen
-	ServiceFlowQosSet sfQosSet = con->getServiceFlow()->getQosSet();
 
 	//ist die CID in Map ?
 	// CID aus dem MAP löschen
+
 	mapIterator = mapLastAllocationSize_.find(currentCid);
-		if ( mapIterator == mapLastAllocationSize_.end()) {
-			cout << "  Don't exist the Connection  ";
-		}else
+
+		if ( mapIterator == mapLastAllocationSize_.end())
 		{
-			// Connection exists in MAP so erases Connection
+
+			cout << " the connection doesn't exist   " << endl;
+
+		} else
+		{
+//-------------------- the connection exists in MAP ,so we erase the connection-------------------------------------------//
 			mapLastAllocationSize_.erase( currentCid );
 		}
 }
