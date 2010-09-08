@@ -54,8 +54,6 @@ void tswTCM::getDataSize(Connection *con,u_int32_t &mstrSize,u_int32_t &mrtrSize
 //----Strukturenlemente aus Map element  holen für die Berechnung des Prediction DataSize----//
 
 
-
-
 		u_int32_t lastMrtr = mapIterator->second.lastMrtr;
 		u_int32_t lastMstr = mapIterator->second.lastMstr;
 		double lastTime = mapIterator->second.timeStamp;
@@ -87,7 +85,6 @@ void tswTCM::getDataSize(Connection *con,u_int32_t &mstrSize,u_int32_t &mrtrSize
 		com_mrtrSize = MIN(com_mrtrSize,maxTrafficBurst);
 		mrtrSize = MIN(com_mrtrSize, u_int32_t(con->queueByteLength()) );
 
-
 	}
 }
 
@@ -112,7 +109,7 @@ void tswTCM::updateAllocation(Connection *con,u_int32_t mstrSize,u_int32_t mrtrS
 
 	if ( mapIterator == mapLastAllocationSize_.end())
 	{
-
+         // Cid nicht vorhanden
 		//--neues Map element erstellen-----bzw. neue Strukture erstellen, um aktuellen DatenSize und aktuellen Zeitpunkt ab zu legen----------//
 		LastAllocationSize lastAllocationSize;
 
@@ -121,8 +118,8 @@ void tswTCM::updateAllocation(Connection *con,u_int32_t mstrSize,u_int32_t mrtrS
 		u_int32_t currentMstr = ( mstrSize * 8 / frameDuration_ );
 
 		//----------Zuweisung auf Strukturelemente------------//
-		lastAllocationSize.mrtr = currentMrtr;
-		lastAllocationSize.mstr = currentMstr;
+		lastAllocationSize.lastMrtr = currentMrtr;
+		lastAllocationSize.lastMstr = currentMstr;
 		lastAllocationSize.timeStamp = NOW;
 
 		//------------neues Map element lastAllocationSize in MAP mapLastAllocationSize_ hinzufügen----------------------//
@@ -132,10 +129,8 @@ void tswTCM::updateAllocation(Connection *con,u_int32_t mstrSize,u_int32_t mrtrS
 
 
 	} else	{
-
-
-
-		//hole werte
+		// CiD vorhanden
+		//hole werte und verwende die Werte
 		u_int32_t lastMrtr = mapIterator->second.lastMrtr;
 		u_int32_t lastMstr = mapIterator->second.lastMstr;
 
@@ -157,8 +152,6 @@ void tswTCM::updateAllocation(Connection *con,u_int32_t mstrSize,u_int32_t mrtrS
 		mapIterator->second.lastMrtr = currentMrtr;
 		mapIterator->second.lastMstr = currentMstr;
 		mapIterator->second.timeStamp = NOW;
-
-
 	}
 }
 
@@ -186,4 +179,79 @@ void tswTCM::clearConnection(Connection *con)
 			mapLastAllocationSize_.erase( currentCid );
 		}
 }
+/* Beispiel :
+ * FRAMEDURATION 0.005,
+ *  time base = 25 ms,
+ * 1 pakcet 100Byte kommt aller 5 ms
+ * darauf kommt es:
+ * mrtr = 800 bit 10+e3/5 sekunden = 160 Kbps (bit/sec).
+ * Cid = 1.
+ *
+ * (VoIP Service Klasse ) maxTrafficBurst = 153 000 bit --------nehme an dass(16 QAM 1/2 Modulation-Verfahren)   (1 slot  trägt 96 bit ) (8 slots tragen 768 bit / 5ms)
+ *
+ * 1.Iteration
+ * 1.getDataSize(Connection *con,u_int32_t &mstrSize,u_int32_t &mrtrSize ) wurde aufgerufen.
+ * Kein Verbindung existiert
+ * 1.mrtrSize = 160 Kbps 5-e3 / 8 = 100 Byte ;
+ * 1.updateAllocation(Connection *con,u_int32_t mstrSize ,u_int32_t mrtrSize = 100 Byte)
+ * u_int32_t currentMrtr = ( mrtrSize * 8 / frameDuration_ )  = 800 / 5-e3 = 160 kbps
+ * lastMrtr = 160 kbps
+ * 1.timeStamp = 0
+ *
+ *
+ *
+ * ----------------------------------------2.Iteration--------------------
+ * die Verbindung ist vorhanden
+ * 2.getDataSize(Connection *con,u_int32_t &mstrSize,u_int32_t &mrtrSize )
+ *
+ *                (                          (25e-3 - 5e-3 + 0) * 160e+3) / 8
+ * com_mrtrSize = ((25e-3 * 160e+3    -   (25e-3 - (NOW - timeStamp )) * 160 kbps) / 8);
+ *              =   (4000              -    3200) / 8
+ *              =   100 Byte
+ * ------------------------------------------------------------------------------
+ * com_mrtrSize = MIN(com_mrtrSize,maxTrafficBurst);
+ * mrtrSize = MIN(com_mrtrSize, u_int32_t(con->queueByteLength()) );
+ *          = 100 Byte            (Ahnahme dass queueByteLength = 100 Byte )
+ * ---------------------------------------------------------------------------------
+ *2.updateAllocation(Connection *con,u_int32_t mstrSize ,u_int32_t mrtrSize = 100 Byte)
+ *  2.lastMrtr = 1.lastMrtr = 160 kbps
+ * timeDelta = NOW - mapIterator->second.timeStamp
+ *
+ *                                       Annahme timeDelta = 5e-3
+ * currentMrtr = ( 160kbps * 25e-3 + 100 * 8.0 ) / ( 25e-3 + timeDelta ));
+ *             = (  160 * 25 + 800 ) * 1e+3/ 30
+ *             =  160 kbit/s
+ * lastMrtr = currentMrtr
+ *          = 160 kbit/second;
+ * timeStamp = 5e-3
+ *
 
+ * ----------------------------------------3.Iteration--------------------
+ * die Verbindung ist vorhanden
+ * 3.getDataSize(Connection *con,u_int32_t &mstrSize,u_int32_t &mrtrSize )
+ *
+ *                (                          (25e-3 - 10e-3 + 5e-3) * 160e+3) / 8
+ * com_mrtrSize = ((25e-3 * 160e+3    -   (25e-3 - (NOW - timeStamp )) * 160 kbps) / 8);
+ *              =   (4000              -    3200) / 8
+ *              =   100 Byte
+ * ------------------------------------------------------------------------------
+ * com_mrtrSize = MIN(com_mrtrSize,maxTrafficBurst);
+ * mrtrSize = MIN(com_mrtrSize, u_int32_t(con->queueByteLength()) );
+ *          = 100 Byte            (Ahnahme dass queueByteLength = 100 Byte )
+ * ---------------------------------------------------------------------------------
+ *3.updateAllocation(Connection *con,u_int32_t mstrSize ,u_int32_t mrtrSize = 100 Byte)
+ *  3.lastMrtr = 1.lastMrtr = 160 kbps
+ * timeDelta = NOW - mapIterator->second.timeStamp
+ *           = 10e-3 - 5e-3
+ *           = 5e-3
+ *                                       Annahme timeDelta = 5e-3
+ * currentMrtr = ( 160kbps * 25e-3 + 100 * 8.0 ) / ( 25e-3 + timeDelta ));
+ *             = (  160 * 25 + 800 ) * 1e+3/ 30
+ *             =  160 kbit/s
+ * lastMrtr = currentMrtr
+ *          = 160 kbit/second;
+ * timeStamp = 10e-3
+ *
+ *
+ *
+ * */
