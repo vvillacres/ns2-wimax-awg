@@ -16,13 +16,11 @@
  * @author  rouil
  */
 
-#ifndef BSSCHEDULER_H
-#define BSSCHEDULER_H
+#ifndef BSSCHEDULER26_H
+#define BSSCHEDULER26_H
 
 #include "wimaxscheduler.h"
 #include "scanningstation.h"
-#include "trafficpolicinginterface.h"
-//#include "virtualallocation.h"
 
 #define INIT_DL_DURATION 20 //enough for DL_MAP, UL_MAP, DCD, UCD and some RNG-RSP
 #define MIN_CONTENTION_SIZE 5 //minimum number of opportunity for allocation
@@ -59,7 +57,7 @@ class WimaxCtrlAgent;
  * Class BSScheduler
  * Implement the packet scheduler on the BS side
  */
-class BSScheduler : public WimaxScheduler
+class BSScheduler26 : public WimaxScheduler
 {
 
 
@@ -69,7 +67,7 @@ public:
     /*
      * Create a scheduler
      */
-    BSScheduler ();
+    BSScheduler26 ();
 
     /*
      * Interface with the TCL script

@@ -45,7 +45,7 @@ public:
 	sumDequetswTCM();
 	virtual ~sumDequetswTCM();
 
-    //------------------Gettting the Prediction Ddata---------------------
+    //------------------Getting the Prediction Ddata---------------------
     void getDataSize(Connection *con, u_int32_t &mstrSize, u_int32_t &mrtrSize);
 
     //------------------Update the Allocation -----------------------

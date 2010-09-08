@@ -73,7 +73,8 @@ INCLUDES = \
 	-I./diffusion3/filter_core -I./asim/ -I./qs \
 	-I./diffserv -I./satellite \
 	-I./wpan \
-	-I./wimax
+	-I./wimax \
+	-I./wimax/scheduling
 
 
 LIB	= \
@@ -333,25 +334,34 @@ OBJ_CC = \
 	wpan/p802_15_4sscs.o wpan/p802_15_4timer.o \
 	wpan/p802_15_4trace.o wpan/p802_15_4transac.o \
 	wimax/ofdmphy.o wimax/mac802_16pkt.o \
-        wimax/scheduling/wimaxscheduler.o wimax/scheduling/bsscheduler.o \
-        wimax/scheduling/ssscheduler.o wimax/scheduling/ulsubframetimer.o \
-        wimax/scheduling/dlsubframetimer.o \
-        wimax/scheduling/burst.o wimax/scheduling/contentionslot.o \
+    wimax/scheduling/wimaxscheduler.o \
+    wimax/scheduling/bsscheduler.o \
+    wimax/scheduling/bsscheduler.o \
+    wimax/scheduling/bsscheduler26.o \
+    wimax/scheduling/ssscheduler.o \
+    wimax/scheduling/ulsubframetimer.o \
+    wimax/scheduling/dlsubframetimer.o \
+    wimax/scheduling/burst.o \
+    wimax/scheduling/contentionslot.o \
 	wimax/arqstatus.o \
-        wimax/scheduling/contentionrequest.o wimax/scheduling/contentiontimer.o \
-        wimax/scheduling/dlburst.o wimax/scheduling/ulburst.o \
-        wimax/scheduling/framemap.o wimax/scheduling/phypdu.o \
-        wimax/scheduling/profile.o wimax/scheduling/subframe.o \
-        wimax/scheduling/scanningstation.o \
-        wimax/serviceflowqosset.o wimax/serviceflow.o \
-        wimax/serviceflowhandler.o \
-        wimax/connection.o wimax/connectionmanager.o wimax/peernode.o \
-        wimax/mac802_16.o wimax/mac802_16BS.o wimax/mac802_16SS.o \
-        wimax/sduclassifier.o \
-        wimax/destclassifier.o wimax/mac802_16timer.o \
-        wimax/wimaxneighborentry.o wimax/neighbordb.o \
-        wimax/scheduling/wimaxctrlagent.o \
-        wimax/globalparams_wimax.o \
+    wimax/scheduling/contentionrequest.o wimax/scheduling/contentiontimer.o \
+    wimax/scheduling/dlburst.o wimax/scheduling/ulburst.o \
+    wimax/scheduling/framemap.o wimax/scheduling/phypdu.o \
+    wimax/scheduling/profile.o wimax/scheduling/subframe.o \
+    wimax/scheduling/scanningstation.o \
+    wimax/serviceflowqosset.o wimax/serviceflow.o \
+    wimax/serviceflowhandler.o \
+    wimax/connection.o wimax/connectionmanager.o wimax/peernode.o \
+    wimax/mac802_16.o wimax/mac802_16BS.o wimax/mac802_16SS.o \
+    wimax/sduclassifier.o \
+    wimax/destclassifier.o wimax/mac802_16timer.o \
+    wimax/wimaxneighborentry.o wimax/neighbordb.o \
+    wimax/scheduling/wimaxctrlagent.o \
+    wimax/globalparams_wimax.o \
+    wimax/scheduling/virtualallocationelement.o \
+    wimax/scheduling/virtualallocation.o \
+    wimax/scheduling/trafficpolicinginterface.o \
+    wimax/scheduling/trafficpolicingtswtcm.o \
 	apps/pbc.o \
 	@V_STLOBJ@
 
@@ -362,6 +372,14 @@ OBJ_CC = \
 #	sensor-nets/landmark.o mac-simple-wireless.o \
 #	sensor-nets/tags.o sensor-nets/sensor-query.o \
 #	sensor-nets/flood-agent.o \
+
+#     wimax/scheduling/virtualallocationelement.o \
+#    wimax/scheduling/virtualallocation.o \
+#    wimax/scheduling/trafficpolicinginterface.o \
+#    wimax/scheduling/trafficpolicingaccurate.o \
+#    wimax/scheduling/trafficpolicingtswtcm.o \
+#
+#
 
 # what was here before is now in emulate/
 OBJ_C =

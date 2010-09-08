@@ -55,9 +55,9 @@ Mac802_16BS::Mac802_16BS() : Mac802_16 (), cl_head_(0), cl_tail_(0), ctrlagent_(
     LIST_INIT (&fast_ranging_head_);
     bw_peer_ = NULL;
     bw_node_index_ = 0;
-    sendDCD = false;
+    sendDCD_ = false;
     dlccc_ = 0;
-    sendUCD = false;
+    sendUCD_ = false;
     ulccc_ = 0;
     reg_SS_number = 0;
 
@@ -2606,12 +2606,12 @@ void Mac802_16BS::expire (timer_id id)
 {
     switch (id) {
     case WimaxDCDTimerID:
-        sendDCD = true;
+        sendDCD_ = true;
         debug ("At %f in Mac %d DCDtimer expired\n", NOW, addr());
         dcdtimer_->start (macmib_.dcd_interval);
         break;
     case WimaxUCDTimerID:
-        sendUCD = true;
+        sendUCD_ = true;
         debug ("At %f in Mac %d UCDtimer expired\n", NOW, addr());
         ucdtimer_->start (macmib_.ucd_interval);
         break;
@@ -2654,16 +2654,16 @@ void Mac802_16BS::start_dlsubframe ()
     ((BSScheduler*)scheduler_)->schedule();
 
     //update some information
-    if (sendDCD || map_->getDlSubframe()->getCCC()!= dlccc_) {
-        sendDCD = false;
+    if (sendDCD_ || map_->getDlSubframe()->getCCC()!= dlccc_) {
+        sendDCD_ = false;
         dlccc_ = map_->getDlSubframe()->getCCC();
         //reschedule timer
         dcdtimer_->stop();
         dcdtimer_->start (macmib_.dcd_interval);
     }
 
-    if (sendUCD || map_->getUlSubframe()->getCCC()!= ulccc_) {
-        sendUCD = false;
+    if (sendUCD_ || map_->getUlSubframe()->getCCC()!= ulccc_) {
+        sendUCD_ = false;
         ulccc_ = map_->getUlSubframe()->getCCC();
         //reschedule timer
         ucdtimer_->stop();

@@ -123,8 +123,9 @@ public:
     /**
      * Return the service flow for this connection
      */
-    ServiceFlow *  getServiceFlow ();
-
+    inline ServiceFlow *  getServiceFlow () {
+        return serviceflow_;
+    }
     /**
      * Get the value of cid
      * The connection id
@@ -189,6 +190,13 @@ public:
      * @return The queue size in bytes
      */
     int queueByteLength ();
+
+    /**
+     * Return payload size in bytes
+     * ByteLengt minus MAC overhead
+     * @return The payload size in bytes
+     */
+    int queuePayloadLength ();
 
     Packet * queueLookup (int n);
 
@@ -402,6 +410,7 @@ public:
      * Clear cdma parameter value
      */
     void initCDMA_SSID ();
+
 
 protected:
 
