@@ -166,7 +166,7 @@ void SSscheduler::schedule ()
                 continue;
             } else {
                 peernode = n->getPeerNode ();
-                if (peernode->getOutData () != NULL && peernode->getOutData ()->queueLength () != 0 && getMac()->arqfb_in_ul_data_) {
+                if (peernode->getOutData () != NULL && peernode->getOutData ()->queueLength () != 0 && getMac()->isArqFbinUlData()) {
                     out_datacnx_exists = true;
                 }
 
