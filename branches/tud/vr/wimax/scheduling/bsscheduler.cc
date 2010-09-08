@@ -501,9 +501,9 @@ void BSScheduler::bubble_sort (int arrayLength, con_data_alloc array[], int sort
         }//end 1st for
     }//end sort_field == 1
 
-    for (int k = 0; k < arrayLength; k++) {
+//    for (int k = 0; k < arrayLength; k++) {
 //        debug10 ("-After i :%d, cid :%d, counter :%d, req_slots :%d, mod :%d\n", k, array[k].cid, array[k].counter, array[k].req_slots, (int)array[k].mod_rate);
-    }
+//    }
 
     return;   //arrays are passed to functions by address; nothing is returned
 }
@@ -589,7 +589,7 @@ void BSScheduler::schedule ()
                 continue;
             } else {
                 peernode = n->getPeerNode ();
-                if (peernode->getOutData () != NULL && peernode->getOutData ()->queueLength () != 0 && getMac()->arqfb_in_dl_data_) {
+                if (peernode->getOutData () != NULL && peernode->getOutData ()->queueLength () != 0 && getMac()->isArqFbinDlData()) {
                     out_datacnx_exists = true;
                 }
 
@@ -989,7 +989,7 @@ void BSScheduler::schedule ()
     index_burst++;
 
 //3. Virtual DCD
-    if (getMac()->sendDCD || map->getDlSubframe()->getCCC()!= getMac()->dlccc_) {
+    if (getMac()->isSendDCD() || map->getDlSubframe()->getCCC()!= getMac()->getDlCCC()) {
         p = map->getDCD();
         ch = HDR_CMN(p);
         int byte_dcd = ch->size();
@@ -1018,7 +1018,7 @@ void BSScheduler::schedule ()
     }
 
 //4. Virtual UCD
-    if (getMac()->sendUCD || map->getUlSubframe()->getCCC()!= getMac()->ulccc_) {
+    if (getMac()->isSendUCD() || map->getUlSubframe()->getCCC()!= getMac()->getUlCCC()) {
         p = map->getUCD();
         ch = HDR_CMN(p);
         int byte_ucd = ch->size();
@@ -1274,7 +1274,7 @@ void BSScheduler::schedule ()
     offset += num_of_symbol-2;
     subchannel_offset_wimaxhdr = (subchannel_offset_wimaxhdr + num_of_subchannel)%(total_dl_subchannel_pusc);
 
-    if (getMac()->sendDCD || map->getDlSubframe()->getCCC()!= getMac()->dlccc_) {
+    if (getMac()->isSendDCD() || map->getDlSubframe()->getCCC()!= getMac()->getDlCCC()) {
         b = map->getDlSubframe()->getPdu ()->getBurst (i_burst);
         i_burst++;
         b_data  = 0;
@@ -1320,7 +1320,7 @@ void BSScheduler::schedule ()
     }
 
 
-    if (getMac()->sendUCD || map->getUlSubframe()->getCCC()!= getMac()->ulccc_) {
+    if (getMac()->isSendUCD() || map->getUlSubframe()->getCCC()!= getMac()->getUlCCC()) {
         b = map->getDlSubframe()->getPdu ()->getBurst (i_burst);
         i_burst++;
         b_data  = 0;
@@ -1751,11 +1751,11 @@ mac802_16_dl_map_frame * BSScheduler::dl_stage2(Connection *head, int input_subc
                     int t_bytes = 0;
                     double ori_grant = allocationsize;
                     if ( (arq_enable_f == 1) && (allocationsize > 0) ) {
-                        t_bytes = (int)allocationsize % (int)getMac()->arq_block_size_;
+                        t_bytes = (int)allocationsize % (int)getMac()->getArqBlockSize();
                         if (t_bytes > 0) {
-                            allocationsize = allocationsize + (getMac()->arq_block_size_ - t_bytes);
+                            allocationsize = allocationsize + (getMac()->getArqBlockSize() - t_bytes);
                         }
-                        debug10 ("\tARQ enable CID :%d, arq_block :%d, requested_size :%f, arq_block_boundary_size :%f, all_header_included :%f\n", con->get_cid(), getMac()->arq_block_size_, ori_grant, allocationsize, allocationsize + (double)14);
+                        debug10 ("\tARQ enable CID :%d, arq_block :%d, requested_size :%f, arq_block_boundary_size :%f, all_header_included :%f\n", con->get_cid(), getMac()->getArqBlockSize(), ori_grant, allocationsize, allocationsize + (double)14);
                         allocationsize = allocationsize + 14;	//optional => MAC+frag_sub+pack_sub+gm_sub+mesh_sub
 
                     }
@@ -1881,11 +1881,11 @@ mac802_16_dl_map_frame * BSScheduler::dl_stage2(Connection *head, int input_subc
                 int t_bytes = 0;
                 double ori_grant = withfrag;
                 if ( (arq_enable_f == 1) && (allocationsize > 0) ) {
-                    t_bytes = (int)withfrag % (int)getMac()->arq_block_size_;
+                    t_bytes = (int)withfrag % (int)getMac()->getArqBlockSize();
                     if (t_bytes > 0) {
-                        withfrag = withfrag + (getMac()->arq_block_size_ - t_bytes);
+                        withfrag = withfrag + (getMac()->getArqBlockSize() - t_bytes);
                     }
-                    debug10 ("\t ARQ enable CID :%d, arq_block :%d, requested_size :%f, arq_block_boundary_size :%d, all_header_included :%d\n", con->get_cid(), getMac()->arq_block_size_, ori_grant, withfrag, withfrag + 14);
+                    debug10 ("\t ARQ enable CID :%d, arq_block :%d, requested_size :%f, arq_block_boundary_size :%d, all_header_included :%d\n", con->get_cid(), getMac()->getArqBlockSize(), ori_grant, withfrag, withfrag + 14);
                     withfrag = withfrag + 14;   //optional => MAC+frag_sub+pack_sub+gm_sub+mesh_sub
                 }
                 //End ARQ
@@ -2594,11 +2594,11 @@ struct mac802_16_ul_map_frame * BSScheduler::ul_stage2(Connection *head, int tot
                     int t_bytes = 0;
                     double ori_grant = allocationsize;
                     if ( (arq_enable_f == 1) && (allocationsize > 0) ) {
-                        t_bytes = (int)allocationsize % (int)getMac()->arq_block_size_;
+                        t_bytes = (int)allocationsize % (int)getMac()->getArqBlockSize();
                         if (t_bytes > 0) {
-                            allocationsize = allocationsize + (getMac()->arq_block_size_ - t_bytes);
+                            allocationsize = allocationsize + (getMac()->getArqBlockSize() - t_bytes);
                         }
-                        debug10 (" ARQ enable CID :%d, arq_block :%d, requested_size :%f, arq_block_boundary_size :%f, all_header_included :%f\n", con->get_cid(), getMac()->arq_block_size_, ori_grant, allocationsize, allocationsize + (double)14);
+                        debug10 (" ARQ enable CID :%d, arq_block :%d, requested_size :%f, arq_block_boundary_size :%f, all_header_included :%f\n", con->get_cid(), getMac()->getArqBlockSize(), ori_grant, allocationsize, allocationsize + (double)14);
                         allocationsize = allocationsize + 14;   //optional => MAC+frag_sub+pack_sub+gm_sub+mesh_sub
 
                     }
@@ -2657,11 +2657,11 @@ struct mac802_16_ul_map_frame * BSScheduler::ul_stage2(Connection *head, int tot
                     int t_bytes = 0;
                     double ori_grant = allocationsize;
                     if ( (arq_enable_f == 1) && (allocationsize > 0) ) {
-                        t_bytes = (int)allocationsize % (int)getMac()->arq_block_size_;
+                        t_bytes = (int)allocationsize % (int)getMac()->getArqBlockSize();
                         if (t_bytes > 0) {
-                            allocationsize = allocationsize + (getMac()->arq_block_size_ - t_bytes);
+                            allocationsize = allocationsize + (getMac()->getArqBlockSize() - t_bytes);
                         }
-                        debug10 (" ARQ enable CID :%d, arq_block :%d, requested_size :%f, arq_block_boundary_size :%f, all_header_included :%f\n", con->get_cid(), getMac()->arq_block_size_, ori_grant, allocationsize, allocationsize + (double)14);
+                        debug10 (" ARQ enable CID :%d, arq_block :%d, requested_size :%f, arq_block_boundary_size :%f, all_header_included :%f\n", con->get_cid(), getMac()->getArqBlockSize(), ori_grant, allocationsize, allocationsize + (double)14);
                         allocationsize = allocationsize + 14;   //optional => MAC+frag_sub+pack_sub+gm_sub+mesh_sub
 
                     }
@@ -2727,11 +2727,11 @@ struct mac802_16_ul_map_frame * BSScheduler::ul_stage2(Connection *head, int tot
                     int t_bytes = 0;
                     double ori_grant = allocationsize;
                     if ( (arq_enable_f == 1) && (allocationsize > 0) ) {
-                        t_bytes = (int)allocationsize % (int)getMac()->arq_block_size_;
+                        t_bytes = (int)allocationsize % (int)getMac()->getArqBlockSize();
                         if (t_bytes > 0) {
-                            allocationsize = allocationsize + (getMac()->arq_block_size_ - t_bytes);
+                            allocationsize = allocationsize + (getMac()->getArqBlockSize() - t_bytes);
                         }
-                        debug10 (" ARQ enable CID :%d, arq_block :%d, requested_size :%f, arq_block_boundary_size :%f, all_header_included :%f\n", con->get_cid(), getMac()->arq_block_size_, ori_grant, allocationsize, allocationsize + (double)14);
+                        debug10 (" ARQ enable CID :%d, arq_block :%d, requested_size :%f, arq_block_boundary_size :%f, all_header_included :%f\n", con->get_cid(), getMac()->getArqBlockSize(), ori_grant, allocationsize, allocationsize + (double)14);
                         allocationsize = allocationsize + 14;   //optional => MAC+frag_sub+pack_sub+gm_sub+mesh_sub
                     }
 
@@ -2785,11 +2785,11 @@ struct mac802_16_ul_map_frame * BSScheduler::ul_stage2(Connection *head, int tot
                     int t_bytes = 0;
                     double ori_grant = allocationsize;
                     if ( (arq_enable_f == 1) && (allocationsize > 0) ) {
-                        t_bytes = (int)allocationsize % (int)getMac()->arq_block_size_;
+                        t_bytes = (int)allocationsize % (int)getMac()->getArqBlockSize();
                         if (t_bytes > 0) {
-                            allocationsize = allocationsize + (getMac()->arq_block_size_ - t_bytes);
+                            allocationsize = allocationsize + (getMac()->getArqBlockSize() - t_bytes);
                         }
-                        debug10 (" ARQ enable CID :%d, arq_block :%d, requested_size :%f, arq_block_boundary_size :%f, all_header_included :%f\n", con->get_cid(), getMac()->arq_block_size_, ori_grant, allocationsize, allocationsize + (double)14);
+                        debug10 (" ARQ enable CID :%d, arq_block :%d, requested_size :%f, arq_block_boundary_size :%f, all_header_included :%f\n", con->get_cid(), getMac()->getArqBlockSize(), ori_grant, allocationsize, allocationsize + (double)14);
                         allocationsize = allocationsize + 14;   //optional => MAC+frag_sub+pack_sub+gm_sub+mesh_sub
 
                     }
