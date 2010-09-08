@@ -33,11 +33,16 @@ struct AllocationList{
 			u_int32_t sumMstrSize;
 			deque <AllocationElement> * ptrDequeAllocationElement;
 		};
+
+
 //-------------------------deque < TrafficRate > dequeTrafficRate-----------------------------------------;
 //----Abbildungen von cid auf Prediction Data heiß  LastAllocationSize(mrtrSize; mstrSize;timeStamp;)------------
 
 typedef map< int, AllocationList > MapLastAllocationList_t;
-typedef MapLastAllocationSize_t::iterator AllocationListIt_t;
+
+typedef MapLastAllocationList_t::iterator AllocationListIt_t;
+
+
 
 
 class sumDequetswTCM {
@@ -60,7 +65,7 @@ public:
 
 private :
     // Kommentar ???
-    MapLastAllocationSize_t mapLastAllocationSize_ ;
+    MapLastAllocationList_t mapLastAllocationList_ ;
     double frameDuration_;
 
 };
