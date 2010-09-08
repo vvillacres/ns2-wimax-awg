@@ -8,28 +8,29 @@
 #ifndef VIRTUALALLOCATIONELEMENT_H_
 #define VIRTUALALLOCATIONELEMENT_H_
 
-//#include <sys/types.h>
-#include "wimaxscheduler.h"
+#include <sys/types.h>
+
+class Connection;
 
 class VirtualAllocationElement
 {
 public:
-    VirtualAllocationElement( int cid, int wantedMstrSize = 0, int wantedMrtrSize = 0, int nbOfSlots = 0, int nbOfBytes = 0);
+    VirtualAllocationElement( Connection* connectionPtr, u_int32_t wantedMstrSize, u_int32_t wantedMrtrSize, int slotCapacity, int nbOfSlots = 0, int nbOfBytes = 0);
     virtual ~VirtualAllocationElement();
 
 
     /*
      * Returns cid of the corresponding connection
      */
-    inline int getCid() {
-        return cid_;
+    inline Connection* getConnectionPtr() {
+        return connectionPtr_;
     }
 
     /*
      * Set cid of the corresponding connection
      */
-    inline void setCid( int cid) {
-        cid_ = cid;
+    inline void setConnectionPtr( Connection* connectionPtr) {
+        connectionPtr_ = connectionPtr;
     }
 
 
@@ -59,6 +60,20 @@ public:
      */
     inline void setWantedMrtrSize( u_int32_t wantedMrtrSize) {
         wantedMrtrSize_ = wantedMrtrSize;
+    }
+
+    /*
+     * Returns the transmitting capacity of one slot in Byte
+     */
+    inline int getSlotCapacity() {
+    	return slotCapacity_;
+    }
+
+    /*
+     * Set slot capacity
+     */
+    inline void setSlotCapacity(int slotCapacity) {
+    	slotCapacity_ = slotCapacity;
     }
 
     /*
@@ -95,9 +110,9 @@ public:
 private:
 
     /*
-     * CID of the corresponding Connection
+     * Pointer to the corresponding connection
      */
-    int cid_;
+    Connection* connectionPtr_;
 
     /*
      * Maximum Number of Bytes resulting of the Maximum Sustained Traffic Rate value
@@ -108,6 +123,11 @@ private:
      * Minimum Number of Bytes to fulfill the Minimum Reserved Traffic Rate value
      */
     u_int32_t wantedMrtrSize_;
+
+    /*
+     * Slot capacity
+     */
+    int slotCapacity_;
 
     /*
      * Number of allocated Slots

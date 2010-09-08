@@ -14,7 +14,9 @@
 #include "virtualallocationelement.h"
 using namespace std;
 
-typedef map< int, VirtualAllocationElement > VirtualAllocationMap_t;
+class Connection;
+
+typedef map< Connection*, VirtualAllocationElement > VirtualAllocationMap_t;
 typedef VirtualAllocationMap_t::iterator VirtualAllocationMapIt_t;
 
 class VirtualAllocation
@@ -52,20 +54,32 @@ public:
         nbOfBroadcastBytes_ = nbOfBroadcastBytes;
     }
 
-    /*
-     * Adds a new Virtual Allocation in the Map
-     */
-    void addAllocation( int cid);
 
     /*
      * Adds a new Virtual Allocation in the Map
      */
-    void addAllocation( int cid, u_int32_t wantedMstrSize, u_int32_t wantedMrtrSize, int nbOfSlots = 0, int nbOfBytes = 0);
+    void addAllocation( Connection* connectionPtr, u_int32_t wantedMstrSize, u_int32_t wantedMrtrSize, int slotCapacity, int nbOfSlots = 0, int nbOfBytes = 0);
 
     /*
-     * Returns true if an Entry of this CID exits and set the current Iterator
+     * Returns true if an Entry of this connection exits and set the current Iterator
      */
-    bool findCidEntry(int cid);
+    bool findConnectionEntry( Connection* connectionPtr);
+
+    /*
+     * Return true if the first Entry has a connection and set the Iterator
+     */
+    bool firstConnectionEntry();
+
+    /*
+     * Returns true if next Entry exists and set the Iterator
+     * If the end is reached the Iterator is set to the next Element
+     */
+    bool nextConnectionEntry();
+
+    /*
+     * Returns the slot capacity in byte of the connection
+     */
+    int getSlotCapacity();
 
     /*
      * Returns the number of allocated slots for the current connection
@@ -73,9 +87,19 @@ public:
     int getCurrentNbOfSlots();
 
     /*
+     * Set the number of allocated slots for the current connection
+     */
+    void setCurrentNbOfSlots( int nbOfSlots);
+
+    /*
      * Returns the number of allocated bytes for the current connection
      */
     int getCurrentNbOfBytes();
+
+    /*
+     * Returns the number of allocated bytes for the current connection
+     */
+    void setCurrentNbOfBytes( int nbOfBytes);
 
     /*
      * Update values of the current virtual allocation

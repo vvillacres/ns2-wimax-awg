@@ -6,11 +6,12 @@
  */
 
 #include "virtualallocationelement.h"
+#include "config.h"
 
-VirtualAllocationElement::VirtualAllocationElement(int cid, int wantedMstrSize, int wantedMrtrSize, int nbOfSlots, int nbOfBytes)
+VirtualAllocationElement::VirtualAllocationElement(Connection* connectionPtr, u_int32_t wantedMstrSize, u_int32_t wantedMrtrSize, int slotCapacity, int nbOfSlots, int nbOfBytes)
 {
     // set member variables
-    cid_ = cid;
+    connectionPtr_ = connectionPtr;
     wantedMstrSize_ = wantedMstrSize;
     wantedMrtrSize_ = wantedMrtrSize;
     nbOfSlots_ = nbOfSlots;
