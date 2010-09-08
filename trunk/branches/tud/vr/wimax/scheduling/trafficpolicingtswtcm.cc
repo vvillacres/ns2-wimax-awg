@@ -44,10 +44,18 @@ void TrafficPolicingTswTcm::getDataSizes(Connection *con, u_int32_t &wantedMstrS
         // CID nicht vorhanden
         // mrtrsize berechnen  = 64Kbps VOIP -> 70Kbps
         wantedMrtrSize = u_int32_t( ceil( double(sfQosSet->getMinReservedTrafficRate()) * frameDuration_ / 8.0 ) );
+        u_int32_t maxTrafficBurst = sfQosSet->getMaxTrafficBurst();
+        /*------------nimm minimalen Wert der Datengröße-----------------------------------------------------------------------//
+                //------------die angekommende Datengröße an MAC SAP Trasmitter ,die gerechneten Datengröße für mrtr und die maximale Rahmengröße--------*/
+        wantedMrtrSize = MIN(wantedMrtrSize,maxTrafficBurst);
+                wantedMrtrSize = MIN(wantedMrtrSize, u_int32_t(con->queueByteLength()) );
 
         // mstrsize berechnen  = 25 Mbps MPEG4 AVC/H.264 -> 20 Mbps
         wantedMstrSize = u_int32_t( floor( double(sfQosSet->getMaxSustainedTrafficRate()) * frameDuration_/ 8.0 ) );
-
+        /*------------nimm minimalen Wert der Datengröße----------------------------------------------------------------------//
+                //------------die angekommende Datengröße an MAC SAP Trasmitter,die gerechneten Datengröße für mstr und die maximale Rahmengröße--------*/
+        wantedMstrSize = MIN( wantedMstrSize, maxTrafficBurst);
+                wantedMstrSize = MIN( wantedMstrSize, u_int32_t(con->queueByteLength()) );
 
     } else {
 
