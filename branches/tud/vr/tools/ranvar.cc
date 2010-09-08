@@ -216,7 +216,8 @@ double GammaRandomVariable::value()
 	// ACM Transactions on mathematical software, Vol. 26, No. 3, Sept. 2000
 	if (alpha_ < 1) {
 		double u = rng_->uniform(1.0);
-		return GammaRandomVariable::GammaRandomVariable(1.0 + alpha_, beta_).value() * pow (u, 1.0 / alpha_);
+		// vr@tud 08-10 return GammaRandomVariable::GammaRandomVariable(1.0 + alpha_, beta_).value() * pow (u, 1.0 / alpha_);
+		return GammaRandomVariable(1.0 + alpha_, beta_).value() * pow (u, 1.0 / alpha_);
 	}
 	
 	double x, v, u;

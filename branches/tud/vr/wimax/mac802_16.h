@@ -55,7 +55,8 @@
 
 #define BS_NOT_CONNECTED -1 //bs_id when MN is not connected
 
-#define DL_PREAMBLE 3  			//preamble+fch
+#define DL_PREAMBLE 1  			//	number of symbols for Preamble
+#define FCH_NB_OF_SLOTS	 4		// number of slots for FCH
 #define INIT_RNG_PREAMBLE 0         	// no preamble for ranging
 #define BW_REQ_PREAMBLE 0           	// no preamble for bw req
 
@@ -246,8 +247,8 @@ class Mac802_16 : public Mac
     friend class WimaxFrameTimer;
     friend class FrameMap;
     friend class WimaxScheduler;
-    friend class BSScheduler;
-    friend class SSscheduler;
+ //   friend class BSScheduler;
+ //   friend class SSscheduler;
     friend class ServiceFlowHandler;
     friend class Connection;
     friend class StatTimer;
@@ -638,17 +639,11 @@ public:
     /*used in Ssscheduler to begin checking ffb report and CQICH slot.*/
     bool received_cqich_allocation_ie_;
 
-protected:
 
     /**
      * Init the MAC
      */
     virtual void init ();
-
-    /**
-     * The packet scheduler
-     */
-    WimaxScheduler * scheduler_;
 
     /**
      * Return a new allocated packet
@@ -674,11 +669,40 @@ protected:
     void addClassifier (SDUClassifier *);
 
     /**
+     * The packet scheduler
+     */
+    WimaxScheduler * scheduler_;
+
+    /**
      * Run the packet through the classifiers
      * to find the proper connection
      * @param p the packet to classify
      */
     int classify (Packet *p);
+
+
+    /**
+     * Allows sending ARQFB in data connection
+     */
+    int isArqFbinDlData() {
+    	return arqfb_in_dl_data_;
+    }
+
+    /**
+     * Allows sending ARQFB in data connection
+     */
+    int isArqFbinUlData() {
+    	return arqfb_in_ul_data_;
+    }
+
+    /**
+     * Allows ARQ_BLOCK_SIZE in data connection
+     */
+    int getArqBlockSize() {
+    	return arq_block_size_ ;
+    }
+
+protected:
 
     /**
      * Timer to init the MAC

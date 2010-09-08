@@ -207,6 +207,41 @@ public:
 
 #endif
 
+    virtual void set_cqich_alloc_ie_ind(bool indicator) {
+        printf("BS set CQICH_ALLOC_IE Indicator flag to %d\n",indicator);
+        bs_cqich_alloc_ie_indicator_ = indicator;
+    }
+    virtual  bool get_cqich_alloc_ie_ind() {
+        return bs_cqich_alloc_ie_indicator_;
+    }
+
+    /**
+     * Indicates if it is time to send a DCD message
+     */
+    bool isSendDCD() {
+    	return sendDCD_;
+    }
+
+    /**
+     * DL configuration change count
+     */
+    int getDlCCC() {
+    	return dlccc_;
+    }
+
+    /**
+     * Indicates if it is time to send a UCD message
+     */
+    bool isSendUCD() {
+    	return sendUCD_;
+    }
+    /**
+     * UL configuration change count
+     */
+    int getUlCCC() {
+    	return ulccc_;
+    }
+
 protected:
 
     /**
@@ -262,15 +297,6 @@ protected:
 
     /*Indicator to show if there is a cqich alloc ie.*/
     bool bs_cqich_alloc_ie_indicator_;
-
-    virtual void set_cqich_alloc_ie_ind(bool indicator) {
-        printf("BS set CQICH_ALLOC_IE Indicator flag to %d\n",indicator);
-        bs_cqich_alloc_ie_indicator_ = indicator;
-    }
-    virtual  bool get_cqich_alloc_ie_ind() {
-        return bs_cqich_alloc_ie_indicator_;
-    }
-
 
     /*xingting set get modulation configure*/
     virtual bool get_registered_flag(int mac_index)  {
@@ -401,25 +427,7 @@ protected:
      */
     void send_scan_response (mac802_16_mob_scn_rsp_frame *rsp, int cid);
 
-    /**
-     * Indicates if it is time to send a DCD message
-     */
-    bool sendDCD;
 
-    /**
-     * DL configuration change count
-     */
-    int dlccc_;
-
-    /**
-     * Indicates if it is time to send a UCD message
-     */
-    bool sendUCD;
-
-    /**
-     * UL configuration change count
-     */
-    int ulccc_;
 
 private:
 
@@ -554,6 +562,26 @@ private:
      * List of the upcoming Fast Ranging allocation
      */
     struct fastRangingInfo fast_ranging_head_;
+
+    /**
+     * Indicates if it is time to send a DCD message
+     */
+    bool sendDCD_;
+
+    /**
+     * DL configuration change count
+     */
+    int dlccc_;
+
+    /**
+     * Indicates if it is time to send a UCD message
+     */
+    bool sendUCD_;
+
+    /**
+     * UL configuration change count
+     */
+    int ulccc_;
 
 };
 
