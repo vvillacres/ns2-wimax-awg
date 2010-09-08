@@ -10,6 +10,12 @@
 #include "serviceflow.h"
 #include "connection.h"
 
+
+/*
+ * Timebaseboundary * FrameDuration defines the time when an deque elements is removed
+ */
+#define TIMEBASEBOUNDARY 1.5
+
 TrafficPolicingAccurate::TrafficPolicingAccurate(double frameDuration) : TrafficPolicingInterface( frameDuration)
 {
     // Nothing to do
@@ -70,12 +76,12 @@ void TrafficPolicingAccurate::getDataSize(Connection *con, u_int32_t &wantedMstr
         //-------------------------gültige Datasize ausholen-----------------------------------------//
         double timeBase = double(sfQosSet->getTimeBase()) * 1e-3; // time base in second
 
-        // S_k <Bit> = T_b <second> * MSTR <Bit/second> - (T_b <second> - (current_Time - last_Time) <second> * last_MSTR <Bit/second> )
-         //
-        u_int32_t com_mstrSize = (timeBase * sfQosSet->getMaxSustainedTrafficRate() - mapIterator->second.sumMstrSize);
+        // maximum new allocated data volume = Time base(s)*mstr(bit/s) / 8 - Summe von MSTRSize(Byte)
+         //                              	 = Byte
+        u_int32_t com_mstrSize = (timeBase * sfQosSet->getMaxSustainedTrafficRate()/8 - mapIterator->second.sumMstrSize);
 
-        //S_k <Bit> = T_b <second> * MSTR <Bit/second> - (T_b <second> - (current_Time - last_Time) <second> * last_MSTR <Bit/second> )
-        u_int32_t com_mrtrSize = (timeBase * sfQosSet->getMinReservedTrafficRate() - mapIterator->second.sumMrtrSize);
+        // minimum new allocated data volume = Time base()
+        u_int32_t com_mrtrSize = (timeBase * sfQosSet->getMinReservedTrafficRate()/8 - mapIterator->second.sumMrtrSize);
 
         //------------------------gets maximal traffic burst in oder to compare with the computed DataSize--------------------------//
         u_int32_t maxTrafficBurst = sfQosSet->getMaxTrafficBurst();
@@ -105,6 +111,9 @@ void TrafficPolicingAccurate::updateAllocation(Connection *con,u_int32_t realMst
     //-----------Cid holen-----------------//
     int currentCid = con->get_cid();
 
+
+
+
     //  get Windows Size < millisecond > from QoS Parameter Set
     double timeBase = double(sfQosSet->getTimeBase()) * 1e-3; // time base in second
 
@@ -113,29 +122,60 @@ void TrafficPolicingAccurate::updateAllocation(Connection *con,u_int32_t realMst
 
     /*	MAP mapLastAllocationSize_ bis zu MAP_ENDE durchsuchen , if the connection doesn't exist --> Error */
 
+
+
     if ( mapIterator == mapLastAllocationList_.end()) {
-        //--neues Map element erstellen-----bzw. neue Strukture erstellen, um aktuellen DatenSize und aktuellen Zeitpunkt ab zu legen----------//
+
+    	// CID nicht vorhanden
+    	//--neues Map element erstellen-----bzw. neue Strukture erstellen, um aktuellen DatenSize und aktuellen Zeitpunkt ab zu legen----------//
 
         AllocationList currentAllocationList;
 
         //----------Zuweisung auf Strukturelemente------------//
-        currentAllocationList.sumMrtrSize = realMrtrSize;
-        currentAllocationList.sumMstrSize = realMstrSize;
+      //  currentAllocationList.sumMrtrSize = realMrtrSize;
+       // currentAllocationList.sumMstrSize = realMstrSize;
         //------------------Erstellen der genügenden Speicher für deque_mrtrSize  und deque_mstr <u_int_32_t>------------------------//
 
         currentAllocationList.ptrDequeAllocationElement = new deque<AllocationElement>;
 
-
         // Neuer deque eintrag
 
         AllocationElement currentAllocationElement;
+        // now i fill the current element in the Deque
 
-        currentAllocationElement.mrtrSize = realMrtrSize;
-        currentAllocationElement.mstrSize = realMstrSize;
-        currentAllocationElement.timeStamp = NOW;
+                currentAllocationElement.mrtrSize = realMrtrSize;
+                currentAllocationElement.mstrSize = realMstrSize;
+                currentAllocationElement.timeStamp = NOW;
 
-        // Neuen Eintrag in deque spreichern
-        currentAllocationList.ptrDequeAllocationElement->push_back( currentAllocationElement);
+                // Neuen Eintrag in deque spreichern
+                currentAllocationList.ptrDequeAllocationElement->push_back( currentAllocationElement);
+
+
+
+    	// mrtrSize wieder berechnen  = 64Kbps VOIP -> 70Kbps
+        u_int32_t defaultMrtrSize = u_int32_t( ceil( double(sfQosSet->getMinReservedTrafficRate()) * frameDuration_ / 8.0 ) );
+
+        // mstrSize wieder berechnen um angenommennen Datenvolumen in Deque hinzufügen
+
+        u_int32_t defaultMstrSize = u_int32_t( floor( double(sfQosSet->getMaxSustainedTrafficRate()) * frameDuration_/ 8.0 ) );
+
+
+        // as long as the time base is not full , i will fill the default value into the deque
+    	double defaulttimeStamp = NOW- frameDuration_;
+        while((NOW - defaulttimeStamp) < (timeBase - TIMEBASEBOUNDARY*frameDuration_ ) )
+    	 {
+        	// default value of the deque elements
+          currentAllocationElement.mrtrSize =  defaultMrtrSize;
+          currentAllocationElement.mstrSize =  defaultMstrSize;
+          currentAllocationElement.timeStamp -= frameDuration_;
+          defaulttimeStamp -= frameDuration_;
+    	  // now i push the value into the front of the Deque
+          currentAllocationList.ptrDequeAllocationElement->push_back( currentAllocationElement);
+
+    	 }
+
+
+
 
         // aktuelle AllocationList in der Map speichern
         //------------neues Map element lastAllocationSize in MAP mapLastAllocationSize_ hinzufügen----------------------//
@@ -166,7 +206,7 @@ void TrafficPolicingAccurate::updateAllocation(Connection *con,u_int32_t realMst
 
         double time_begin = begin_deque.timeStamp;
         // solange (time_end - time_begin) > timeBase noch wahr ist ,lösche ich letzte Element mit pop_front()
-        while(( NOW - time_begin) >= timeBase) {
+        while(( NOW - time_begin) >= ( timeBase - TIMEBASEBOUNDARY * frameDuration_)){
             //------update summe - ,ich subtrahiere begin_deque von meine Summe
             mapIterator->second.sumMrtrSize -= begin_deque.mrtrSize;
             mapIterator->second.sumMstrSize -= begin_deque.mstrSize;
@@ -182,3 +222,41 @@ void TrafficPolicingAccurate::updateAllocation(Connection *con,u_int32_t realMst
 
     }
 }
+/* Beispiel :
+ * FRAMEDURATION 0.005,
+ *  time base = 25 ms,
+ * 1 pakcet 100Byte kommt aller 5 ms
+ * darauf kommt es:
+ * mrtr = 800 bit 10+e3/5 sekunden = 160 Kbps (bit/sec).
+ *
+ *
+ *
+ *wantedMrtrSize = 160*1e3  * frameDuration_ / 8.0
+ *wantedMrtrSize = 100 Byte
+        wantedMrtrSize = MIN( wantedMrtrSize, maxTrafficBurst);
+        wantedMrtrSize = MIN( wantedMrtrSize,u_int32_t(con->queueByteLength()));
+ *
+ * 1.Iteration
+ * 1.getDataSize(Connection *con,u_int32_t &mstrSize,u_int32_t &mrtrSize ) wurde aufgerufen.
+ * Kein Verbindung existiert
+ * 1.mrtrSize = 160 Kbps * 5-e3 / 8 = 100 Byte ;
+ *
+ *
+ * 1.updateAllocation(Connection *con,u_int32_t mstrSize ,u_int32_t mrtrSize = 100 Byte)
+ *
+ * // Neuer deque eintrag
+		AllocationElement currentAllocationElement;
+
+ * currentAllocationList.sumMrtrSize = mrtrSize;
+ *                       sumMrtrSize = 100 Byte
+ * currentAllcoationElement.timeStamp = 0;
+ * bei 1.Iteration wurde die mrtrSize in die Summegröße Variable hinzugefügt .
+ *
+ * MAP: Size:		100
+ *      TempStamp:	0
+ *
+2.iteration
+2.getDataSize()
+2. mrtrSize = 160 Kbps * 25-e3 - 100
+            = 100 Byte -
+*/
