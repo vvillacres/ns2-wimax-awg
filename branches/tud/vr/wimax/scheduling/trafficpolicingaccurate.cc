@@ -101,7 +101,7 @@ void TrafficPolicingAccurate::getDataSize(Connection *con, u_int32_t &wantedMstr
 /*
  * Sends occurred allocation back to traffic policing
  */
-void TrafficPolicingAccurate::updateAllocation(Connection *con,u_int32_t realMstrSize,u_int32_t realMrtrSize)
+void TrafficPolicingAccurate::updateAllocation(Connection *con,u_int32_t wantedMrtrSize,u_int32_t wantedMstrSize)
 {
     //---------- Pointer erstellen---------//
 	MapLastAllocationList_t::iterator mapIterator;
@@ -132,8 +132,8 @@ void TrafficPolicingAccurate::updateAllocation(Connection *con,u_int32_t realMst
         AllocationList currentAllocationList;
 
         //----------Zuweisung auf Strukturelemente------------//
-      //  currentAllocationList.sumMrtrSize = realMrtrSize;
-       // currentAllocationList.sumMstrSize = realMstrSize;
+        currentAllocationList.sumMrtrSize = wantedMrtrSize;
+        currentAllocationList.sumMstrSize = wantedMstrSize;
         //------------------Erstellen der genügenden Speicher für deque_mrtrSize  und deque_mstr <u_int_32_t>------------------------//
 
         currentAllocationList.ptrDequeAllocationElement = new deque<AllocationElement>;
@@ -143,8 +143,8 @@ void TrafficPolicingAccurate::updateAllocation(Connection *con,u_int32_t realMst
         AllocationElement currentAllocationElement;
         // now i fill the current element in the Deque
 
-                currentAllocationElement.mrtrSize = realMrtrSize;
-                currentAllocationElement.mstrSize = realMstrSize;
+                currentAllocationElement.mrtrSize = wantedMrtrSize;
+                currentAllocationElement.mstrSize = wantedMstrSize;
                 currentAllocationElement.timeStamp = NOW;
 
                 // Neuen Eintrag in deque spreichern
@@ -188,16 +188,16 @@ void TrafficPolicingAccurate::updateAllocation(Connection *con,u_int32_t realMst
         // Wenn der Cid vorhanden ist,lege ich neues Allocation Element an
         AllocationElement currentAllocationElement;
         // Neue Werte speichern
-        currentAllocationElement.mrtrSize = realMrtrSize;
-        currentAllocationElement.mstrSize = realMstrSize;
+        currentAllocationElement.mrtrSize = wantedMrtrSize;
+        currentAllocationElement.mstrSize = wantedMstrSize;
         currentAllocationElement.timeStamp = NOW;
 
         //-----in Deque speichern
         mapIterator->second.ptrDequeAllocationElement->push_back(currentAllocationElement);
 
         // update summe +
-        mapIterator->second.sumMrtrSize += realMrtrSize;
-        mapIterator->second.sumMstrSize += realMstrSize;
+        mapIterator->second.sumMrtrSize += wantedMrtrSize;
+        mapIterator->second.sumMstrSize += wantedMstrSize;
 
         //----Überprüfen ob Element entfernt werden muss ?
 
