@@ -267,7 +267,7 @@ void TrafficPolicingAccurate::updateAllocation(Connection *con,u_int32_t wantedM
  *   Summe = 100
  *   defaultTimeStamp = -5 -5 = -10;
  *  füge ein neuer Deque-Eintrag in Deque hinzu
- *        ----------------Deque----------
+ *        |---------------Deque----------
  *        |                          100|
  *        |------------------------------
  *        |                          -15|
@@ -278,11 +278,11 @@ void TrafficPolicingAccurate::updateAllocation(Connection *con,u_int32_t wantedM
  *   TimeStamp = - 25 + 5 + 10 = -10;
  *   Summe = 200
  *   defaultTimeStamp = -5-10 = -15;
- *        ----------------Deque----------
+ *        |---------------Deque---------|
  *        |                    |100 |100|
- *        |------------------------------
+ *        |-----------------------------|
  *        |                    |-15 |-10|
- *        |------------------------------
+ *        |-----------------------------|
  *         füge ein neuer Deque-Eintrag in Deque hinzu
  * 3.Iteration der While schleife ((NOW(0)-(-15) < 17.5 )
  *   mrtrSize = 100 Byte = defaultTimeStamp;
@@ -290,22 +290,22 @@ void TrafficPolicingAccurate::updateAllocation(Connection *con,u_int32_t wantedM
  *   Summe = 300
  *   defaultTimeStamp = -10-10 = -20;
  *
- *        ----------------Deque-----------
+ *        |---------------Deque----------|
  *        |                 |100|100 |100|
- *        |-------------------------------
+ *        |------------------------------|
  *        |                 |-15|-10 |-5 |
- *        |-------------------------------
+ *        |------------------------------|
  *    füge ein neuer Deque-Eintrag in Deque hinzu
  * ausser while schliefe
  *    mrtrSize = 100 Byte
  *   TimeStamp = 0
  *   Summe = 400
  *
- *        -----------------Deque---------------
+ *        |----------------Deque--------------|
  *        |                 |100|100 |100|100 |
  *        |-----------------------------------|
  *        |                 |-15|-10 |-5 | 0  |
- *        -------------------------------------
+ *        |-----------------------------------|
 2.iteration
 2.getDataSize()
 2. mrtrSize = 160 Kbps * 25-e3 - Summe
@@ -319,12 +319,12 @@ void TrafficPolicingAccurate::updateAllocation(Connection *con,u_int32_t wantedM
 
  *
  *
- *        ----------------Deque--------------------
+ *        |---------------Deque-------------------|
  *        |                 |100|100 |100|100 |100|
- *        |----------------------------------------
- *        |                 |-15|-10 |-5 | 0  | 5 |
  *        |---------------------------------------|
- *                            ^------------------------------------------------
+ *        |                 |-15|-10 |-5 | 0  | 5 |
+ *        |-------------------^-------------------|
+ *                            ^-----------------------------------------------^
  * // update summe +                                                          ^
        mapIterator->second.sumMrtrSize += wantedMrtrSize = 500;               |
         AllocationElement begin_deque ;                                       |
@@ -339,10 +339,10 @@ void TrafficPolicingAccurate::updateAllocation(Connection *con,u_int32_t wantedM
             //------update summe - ,ich subtrahiere begin_deque von meine Summe
             mapIterator->second.sumMrtrSize -= begin_deque.mrtrSize;
             Summe = 400;
-          ----------------Deque--------------------
- *        |                   |x|100 |100|100 |100|
- *        |----------------------------------------
- *        |                   |x|-10 |-5 | 0  | 5 |
+          |---------------Deque-------------------|
+ *        |                   x |100 |100|100 |100|
+ *        |---------------------------------------|
+ *        |                   x |-10 |-5 | 0  | 5 |
  *        |---------------------------------------|
             //------und das begin element löschen
             mapIterator->second.ptrDequeAllocationElement->pop_front();
