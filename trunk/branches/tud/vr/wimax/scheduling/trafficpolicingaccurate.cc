@@ -167,8 +167,11 @@ void TrafficPolicingAccurate::updateAllocation(Connection *con,u_int32_t wantedM
         	// default value of the deque elements
           currentAllocationElement.mrtrSize =  defaultMrtrSize;
           currentAllocationElement.mstrSize =  defaultMstrSize;
-          currentAllocationElement.timeStamp -= frameDuration_;
+          currentAllocationElement.timeStamp -= defaulttimeStamp;
+
+          //defaulttimeStamp -= currentAllocationElement.timeStamp;
           defaulttimeStamp -= frameDuration_;
+
     	  // now i push the value into the front of the Deque
           currentAllocationList.ptrDequeAllocationElement->push_back( currentAllocationElement);
 
