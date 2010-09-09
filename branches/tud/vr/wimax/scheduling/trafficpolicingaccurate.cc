@@ -308,8 +308,8 @@ void TrafficPolicingAccurate::updateAllocation(Connection *con,u_int32_t wantedM
  *        -------------------------------------
 2.iteration
 2.getDataSize()
-2. mrtrSize = 160 Kbps * 25-e3 - 100
-            = 500 Byte - 100 Byte = 400 Byte
+2. mrtrSize = 160 Kbps * 25-e3 - Summe
+            = 500 Byte - 400 Byte = 100 Byte
 2. UpdateAllocation(wantedMrtrSize)
  AllocationElement currentAllocationElement;
         currentAllocationElement.mrtrSize = wantedMrtrSize =100;
