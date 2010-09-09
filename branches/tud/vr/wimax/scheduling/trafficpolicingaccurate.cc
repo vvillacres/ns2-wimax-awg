@@ -141,16 +141,6 @@ void TrafficPolicingAccurate::updateAllocation(Connection *con,u_int32_t wantedM
         // Neuer deque eintrag
 
         AllocationElement currentAllocationElement;
-        // now i fill the current element in the Deque
-
-                currentAllocationElement.mrtrSize = wantedMrtrSize;
-                currentAllocationElement.mstrSize = wantedMstrSize;
-                currentAllocationElement.timeStamp = NOW;
-
-                // Neuen Eintrag in deque spreichern
-                currentAllocationList.ptrDequeAllocationElement->push_back( currentAllocationElement);
-
-
 
     	// mrtrSize wieder berechnen  = 64Kbps VOIP -> 70Kbps
         u_int32_t defaultMrtrSize = u_int32_t( ceil( double(sfQosSet->getMinReservedTrafficRate()) * frameDuration_ / 8.0 ) );
@@ -167,7 +157,7 @@ void TrafficPolicingAccurate::updateAllocation(Connection *con,u_int32_t wantedM
         	// default value of the deque elements
           currentAllocationElement.mrtrSize =  defaultMrtrSize;
           currentAllocationElement.mstrSize =  defaultMstrSize;
-          currentAllocationElement.timeStamp -= defaulttimeStamp;
+          currentAllocationElement.timeStamp =   -timeBase + frameDuration_ - defaulttimeStamp;
 
           //defaulttimeStamp -= currentAllocationElement.timeStamp;
           defaulttimeStamp -= frameDuration_;
@@ -180,6 +170,16 @@ void TrafficPolicingAccurate::updateAllocation(Connection *con,u_int32_t wantedM
     	 }
 
 
+        // now i fill the current element in the Deque
+
+                        currentAllocationElement.mrtrSize = wantedMrtrSize;
+                        currentAllocationElement.mstrSize = wantedMstrSize;
+                        currentAllocationElement.timeStamp = NOW;
+                        // update summe +
+                               mapIterator->second.sumMrtrSize += defaultMrtrSize;
+                               mapIterator->second.sumMstrSize += defaultMstrSize;
+                        // Neuen Eintrag in deque spreichern
+                        currentAllocationList.ptrDequeAllocationElement->push_back( currentAllocationElement);
 
 
         // aktuelle AllocationList in der Map speichern
@@ -242,12 +242,16 @@ void TrafficPolicingAccurate::updateAllocation(Connection *con,u_int32_t wantedM
         wantedMrtrSize = MIN( wantedMrtrSize,u_int32_t(con->queueByteLength()));
  *
  * 1.Iteration
- * 1.getDataSize(Connection *con,u_int32_t &mstrSize,u_int32_t &mrtrSize ) wurde aufgerufen.
+ * 1.getDataSize(Connection *con,u_int32_t & wantedmstrSize,u_int32_t & wantedmrtrSize ) wurde aufgerufen.
  * Kein Verbindung existiert
- * 1.mrtrSize = 160 Kbps * 5-e3 / 8 = 100 Byte ;
+ * 1. wantedmrtrSize = 160 Kbps * 5-e3 / 8 = 100 Byte ;
  *
  *
- * 1.updateAllocation(Connection *con,u_int32_t mstrSize ,u_int32_t mrtrSize = 100 Byte)
+ * 1.updateAllocation(Connection *con,u_int32_t wantedmstrSize ,u_int32_t wantedmrtrSize = 100 Byte)
+ * bei 1.Iteration wurde die mrtrSize in die Summegröße Variable hinzugefügt .
+ *
+ * MAP: Size:		100
+ *      TempStamp:	0
  *
  * // Neuer deque eintrag
 		AllocationElement currentAllocationElement;
@@ -255,13 +259,73 @@ void TrafficPolicingAccurate::updateAllocation(Connection *con,u_int32_t wantedM
  * currentAllocationList.sumMrtrSize = mrtrSize;
  *                       sumMrtrSize = 100 Byte
  * currentAllcoationElement.timeStamp = 0;
- * bei 1.Iteration wurde die mrtrSize in die Summegröße Variable hinzugefügt .
+ * defaultTimeStamp = 0 - 5
  *
- * MAP: Size:		100
- *      TempStamp:	0
+ * 1.Iteration der While schleife ((NOW(0)-(-5) < 17.5 )
+ *   mrtrSize = 100 Byte;
+ *   TimeStamp = - 25 + 5 +5 = -15
+ *   Summe = 100
+ *   defaultTimeStamp = -5 -5 = -10;
+ *  füge ein neuer Deque-Eintrag in Deque hinzu
+ *        ----------------Deque----------
+ *        |                          100|
+ *        |------------------------------
+ *        |                          -15|
+ *        |------------------------------
  *
+ * 2.Iteration der While schleife ((NOW(0)-(-10) < 17.5 )
+ *   mrtrSize = 100 Byte = defaultTimeStamp;
+ *   TimeStamp = - 25 + 5 + 10 = -10;
+ *   Summe = 200
+ *   defaultTimeStamp = -5-10 = -15;
+ *        ----------------Deque----------
+ *        |                    |100 |100|
+ *        |------------------------------
+ *        |                    |-15 |-10|
+ *        |------------------------------
+ *         füge ein neuer Deque-Eintrag in Deque hinzu
+ * 3.Iteration der While schleife ((NOW(0)-(-15) < 17.5 )
+ *   mrtrSize = 100 Byte = defaultTimeStamp;
+ *   TimeStamp = - 15 = defaulttimeStamp;
+ *   Summe = 300
+ *   defaultTimeStamp = -10-10 = -20;
+ *
+ *        ----------------Deque-----------
+ *        |                 |100|100 |100|
+ *        |-------------------------------
+ *        |                 |-15|-10 |-5 |
+ *        |-------------------------------
+ *    füge ein neuer Deque-Eintrag in Deque hinzu
+ * ausser while schliefe
+ *    mrtrSize = 100 Byte
+ *   TimeStamp = 0
+ *   Summe = 400
+ *
+ *        -----------------Deque---------------
+ *        |                 |100|100 |100|100 |
+ *        |-----------------------------------|
+ *        |                 |-15|-10 |-5 | 0  |
+ *        -------------------------------------
 2.iteration
 2.getDataSize()
 2. mrtrSize = 160 Kbps * 25-e3 - 100
-            = 100 Byte -
+            = 500 Byte - 100 Byte = 400 Byte
+2. UpdateAllocation(wantedMrtrSize)
+ AllocationElement currentAllocationElement;
+        currentAllocationElement.mrtrSize = wantedMrtrSize =100;
+          currentAllocationElement.timeStamp = NOW = 5 ms;
+ // Neuen Eintrag in deque spreichern
+                currentAllocationList.ptrDequeAllocationElement->push_back( currentAllocationElement);
+
+ *
+ *
+ *
+ *       ----------------Deque--------------------
+ *        |                 |100|100 |100|100 |100|
+ *        |----------------------------------------
+ *        |                 |-15|-10 |-5 | 0  | 5 |
+ *        |---------------------------------------|
+ *
+ *
+ *
 */
