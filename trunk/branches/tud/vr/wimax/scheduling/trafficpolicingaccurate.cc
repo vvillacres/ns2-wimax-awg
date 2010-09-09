@@ -325,10 +325,10 @@ void TrafficPolicingAccurate::updateAllocation(Connection *con,u_int32_t wantedM
  *        |                 |-15|-10 |-5 | 0  | 5 |
  *        |---------------------------------------|
  *                            ^------------------------------------------------
- * // update summe +                                                          |
+ * // update summe +                                                          ^
        mapIterator->second.sumMrtrSize += wantedMrtrSize = 500;               |
         AllocationElement begin_deque ;                                       |
-        begin_deque = mapIterator->second.ptrDequeAllocationElement->front();-|
+       begin_deque = mapIterator->second.ptrDequeAllocationElement->front();->|
 
         double time_begin = begin_deque.timeStamp;
         // solange (time_end - time_begin) > timeBase noch wahr ist ,lösche ich letzte Element mit pop_front()
