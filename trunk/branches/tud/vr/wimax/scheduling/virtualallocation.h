@@ -29,21 +29,21 @@ public:
     /*
      * Get number of Slots for Broadcast Burst
      */
-    inline int getNbOfBroadcastSlots() {
+    int getNbOfBroadcastSlots() const {
         return nbOfBroadcastSlots_;
     }
 
     /*
      * Set number of Slots for Broadcast Burst
      */
-    inline void setNbOfBroadcastSlots( int nbOfBroadcastSlots) {
+    void setNbOfBroadcastSlots( int nbOfBroadcastSlots) {
         nbOfBroadcastSlots_ = nbOfBroadcastSlots;
     }
 
     /*
      * Get number of Byte for Broadcast Burst
      */
-    inline int getNbOfBroadcastBytes() {
+    int getNbOfBroadcastBytes() const {
         return nbOfBroadcastBytes_;
     }
 
@@ -75,6 +75,21 @@ public:
      * If the end is reached the Iterator is set to the next Element
      */
     bool nextConnectionEntry();
+
+    /*
+     * Return the current connection
+     */
+    Connection* getConnection();
+
+    /*
+     * Returns wantedMrtrSize of the current connection
+     */
+    u_int32_t getWantedMrtrSize();
+
+    /*
+     * Returns wantedMstrSize of the current connection
+     */
+    u_int32_t getWantedMstrSize();
 
     /*
      * Returns the slot capacity in byte of the connection
@@ -128,9 +143,6 @@ private:
      * Iterator to the current element
      */
     VirtualAllocationMapIt_t mapIterator_;
-
-
-
 
 };
 

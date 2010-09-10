@@ -12,12 +12,13 @@
 VirtualAllocation::VirtualAllocation()
 {
 
-    // INitializes Broadcast Burst
+    // Initializes Broadcast Burst
     nbOfBroadcastSlots_ = 0;
     nbOfBroadcastBytes_ = 0;
 
     // Initializes Iterator with end of map
     mapIterator_ = virtualAllocationMap_.end();
+
 }
 
 VirtualAllocation::~VirtualAllocation()
@@ -74,6 +75,46 @@ bool VirtualAllocation::nextConnectionEntry()
 	}
 }
 
+/*
+ * Return the current connection
+ */
+Connection* VirtualAllocation::getConnection()
+{
+	if ( virtualAllocationMap_.end() != mapIterator_ ) {
+		return mapIterator_->second.getConnectionPtr();
+	} else {
+	    fprintf(stderr,"ERROR: Iterator not valid use findCidEntry() before");
+	    exit(5);
+	}
+}
+
+/*
+ * Returns wantedMrtrSize of the current connection
+ */
+u_int32_t VirtualAllocation::getWantedMrtrSize()
+{
+	if ( virtualAllocationMap_.end() != mapIterator_ ) {
+			return mapIterator_->second.getWantedMrtrSize();
+	} else {
+		fprintf(stderr,"ERROR: Iterator not valid use findCidEntry() before");
+		exit(5);
+	}
+}
+
+/*
+ * Returns wantedMstrSize of the current connection
+ */
+u_int32_t VirtualAllocation::getWantedMstrSize()
+{
+
+	if ( virtualAllocationMap_.end() != mapIterator_ ) {
+		return mapIterator_->second.getWantedMstrSize();
+	} else {
+		fprintf(stderr,"ERROR: Iterator not valid use findCidEntry() before");
+		exit(5);
+
+	}
+}
 
 /*
  * Returns the slot capacity in byte of the connection
