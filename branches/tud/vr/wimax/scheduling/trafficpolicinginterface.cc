@@ -19,3 +19,14 @@ TrafficPolicingInterface::~TrafficPolicingInterface()
 {
     // Nothing to do
 }
+
+MrtrMstrPair_t TrafficPolicingInterface::getDataSizes(Connection* connection)
+{
+	// overwritten by subclass
+}
+
+
+void TrafficPolicingInterface::updateAllocation(Connection* connection,u_int32_t realMstrSize,u_int32_t realMrtSize)
+{
+	// overwritten by subclass
+}

@@ -25,19 +25,21 @@ TrafficPolicingTswTcm::~TrafficPolicingTswTcm()
  * Returns wantedMstrSize and wantedMrtrSize as guideline for the scheduling algorithm
  * through call by reference
  */
-void TrafficPolicingTswTcm::getDataSizes(Connection *con, u_int32_t &wantedMstrSize, u_int32_t &wantedMrtrSize)
+MrtrMstrPair_t TrafficPolicingTswTcm::getDataSizes(Connection *connection)
 {
     //-----------------------Initialization of the Map---------------------------------
     LastAllocationSizeIt_t mapIterator;
-    int currentCid = con->get_cid();
+    int currentCid = connection->get_cid();
 
     // QoS Parameter auslesen
-    ServiceFlowQosSet* sfQosSet = con->getServiceFlow()->getQosSet();
+    ServiceFlowQosSet* sfQosSet = connection->getServiceFlow()->getQosSet();
 
     //ist die CID in Map ?
     // Suchen der CID in der Map - Eintrag vorhanden ?
     mapIterator = mapLastAllocationSize_.find(currentCid);
 
+    u_int32_t wantedMrtrSize;
+    u_int32_t wantedMstrSize;
 
     if ( mapIterator == mapLastAllocationSize_.end()) {
 
@@ -48,14 +50,14 @@ void TrafficPolicingTswTcm::getDataSizes(Connection *con, u_int32_t &wantedMstrS
         /*------------nimm minimalen Wert der Datengröße-----------------------------------------------------------------------//
                 //------------die angekommende Datengröße an MAC SAP Trasmitter ,die gerechneten Datengröße für mrtr und die maximale Rahmengröße--------*/
         wantedMrtrSize = MIN(wantedMrtrSize,maxTrafficBurst);
-                wantedMrtrSize = MIN(wantedMrtrSize, u_int32_t(con->queueByteLength()) );
+        wantedMrtrSize = MIN(wantedMrtrSize, u_int32_t(connection->queueByteLength()) );
 
         // mstrsize berechnen  = 25 Mbps MPEG4 AVC/H.264 -> 20 Mbps
         wantedMstrSize = u_int32_t( floor( double(sfQosSet->getMaxSustainedTrafficRate()) * frameDuration_/ 8.0 ) );
         /*------------nimm minimalen Wert der Datengröße----------------------------------------------------------------------//
                 //------------die angekommende Datengröße an MAC SAP Trasmitter,die gerechneten Datengröße für mstr und die maximale Rahmengröße--------*/
         wantedMstrSize = MIN( wantedMstrSize, maxTrafficBurst);
-                wantedMstrSize = MIN( wantedMstrSize, u_int32_t(con->queueByteLength()) );
+        wantedMstrSize = MIN( wantedMstrSize, u_int32_t(connection->queueByteLength()) );
 
     } else {
 
@@ -85,15 +87,20 @@ void TrafficPolicingTswTcm::getDataSizes(Connection *con, u_int32_t &wantedMstrS
         /*------------nimm minimalen Wert der Datengröße----------------------------------------------------------------------//
         //------------die angekommende Datengröße an MAC SAP Trasmitter,die gerechneten Datengröße für mstr und die maximale Rahmengröße--------*/
         com_mstrSize = MIN( com_mstrSize, maxTrafficBurst);
-        wantedMstrSize = MIN( com_mstrSize, u_int32_t(con->queueByteLength()) );
+        wantedMstrSize = MIN( com_mstrSize, u_int32_t(connection->queueByteLength()) );
 
         /*------------nimm minimalen Wert der Datengröße-----------------------------------------------------------------------//
         //------------die angekommende Datengröße an MAC SAP Trasmitter ,die gerechneten Datengröße für mrtr und die maximale Rahmengröße--------*/
         com_mrtrSize = MIN(com_mrtrSize,maxTrafficBurst);
-        wantedMrtrSize = MIN(com_mrtrSize, u_int32_t(con->queueByteLength()) );
-
+        wantedMrtrSize = MIN(com_mrtrSize, u_int32_t(connection->queueByteLength()) );
 
     }
+
+    MrtrMstrPair_t mrtrMstrPair;
+    mrtrMstrPair.first = wantedMrtrSize;
+    mrtrMstrPair.second = wantedMstrSize;
+
+    return mrtrMstrPair;
 }
 
 /*

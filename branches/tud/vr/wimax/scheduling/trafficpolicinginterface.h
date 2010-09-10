@@ -16,6 +16,9 @@
 #define TRAFFICPOLICINGINTERFACE_H_
 
 #include <sys/types.h>
+#include <utility>
+
+typedef std::pair< u_int32_t, u_int32_t> MrtrMstrPair_t;
 
 class Connection;
 
@@ -27,17 +30,21 @@ public:
      * Returns wantedMstrSize and wantedMrtrSize as guideline for the scheduling algorithm
      * through call by reference
      */
-    virtual void getDataSizes(Connection *con, u_int32_t &wantedMstrSize, u_int32_t &wantedMrtrSize) = 0;
+    virtual MrtrMstrPair_t getDataSizes(Connection * connection);
 
     /*
      * Occurred allocation is send back to the traffic policing algorithm to use this
      * values in the next call
      */
-    virtual void updateAllocation(Connection *con,u_int32_t realMstrSize,u_int32_t realMrtSize) = 0;
+    virtual void updateAllocation(Connection *connection,u_int32_t realMstrSize,u_int32_t realMrtSize);
+
+    virtual ~TrafficPolicingInterface();
+
 
 protected:
+
     TrafficPolicingInterface(double frameDuration);
-    virtual ~TrafficPolicingInterface();
+
 
     /*
      * Saves the frame duration for usage in the child classes

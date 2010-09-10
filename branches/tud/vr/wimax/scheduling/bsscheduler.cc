@@ -15,6 +15,7 @@
  * </PRE></P>
  * @author  Richard Rouil
  * @modified by  Chakchai So-In
+ * @modified vy Volker Richter TUD
  */
 
 #include "bsscheduler.h"
@@ -26,6 +27,15 @@
 #include "mac802_16BS.h"
 #include "mac802_16.h"
 #include <stdlib.h>
+
+// algorithm implementations
+// traffic policing
+#include "trafficpolicingaccurate.h"
+#include "trafficpolicingtswtcm.h"
+
+// scheduling algorithm
+#include "schedulingalgodualequalfill.h"
+
 
 #define FRAME_SIZE 0.005
 #define CODE_SIZE 256
@@ -89,6 +99,29 @@ BSScheduler::BSScheduler () : WimaxScheduler ()
 
     nextDL_ = -1;
     nextUL_ = -1;
+
+    // create default algorithm objects
+
+    // traffic policing
+    trafficPolicingAlgorithm_ =  new TrafficPolicingAccurate( mac_->getFrameDuration());
+
+    // Scheduling Algorithm for Downlink Direction
+    dlSchedulingAlgorithm_ = new SchedulingAlgoDualEqualFill();
+
+    // Scheduling Alorithm for Uplink Direction
+    ulSchedulingAlgorithm_ = new SchedulingAlgoDualEqualFill();
+
+}
+
+/*
+ * Delete a scheduler
+ */
+BSScheduler::~BSScheduler ()
+{
+	// delate algorithm objects
+	delete trafficPolicingAlgorithm_;
+	delete dlSchedulingAlgorithm_;
+	delete ulSchedulingAlgorithm_;
 }
 
 /**
@@ -132,7 +165,50 @@ int BSScheduler::command(int argc, const char*const* argv)
             assert (contention_size_>=0);
 #endif
             return TCL_OK;
+        } else if (strcmp(argv[1], "set-traffic-policing") == 0) {
+        	if (strcmp(argv[2], "accurate") == 0) {
+        		// delete previous algorithm
+        		delete trafficPolicingAlgorithm_;
+        		// create new alogrithm object
+        		trafficPolicingAlgorithm_ =  new TrafficPolicingAccurate( mac_->getFrameDuration());
+        		printf("New Traffic Policing Algorithm: Traffic Policing Accurate");
+        	} else if (strcmp(argv[2], "tswtcm") == 0) {
+        		// delete previous algorithm
+        		delete trafficPolicingAlgorithm_;
+        		// create new alogrithm object
+        		trafficPolicingAlgorithm_ =  new TrafficPolicingTswTcm( mac_->getFrameDuration());
+        		printf("New Traffic Policing Algorithm: Time Sliding Window Three Color Marker");
+        	} else {
+        		fprintf(stderr, "Specified Traffic Policing Algorithm NOT found !");
+        		return TCL_ERROR;
+        	}
+        } else if (strcmp(argv[1], "set-downlink-scheduling") == 0) {
+        	if (strcmp(argv[2], "dual-equal-fill") == 0) {
+        		// delete previous algorithm
+        		delete dlSchedulingAlgorithm_;
+        		// create new alogrithm object
+        		dlSchedulingAlgorithm_ =  new SchedulingAlgoDualEqualFill();
+        		printf("New Downlink Scheduling Algorithm: Dual Equal Fill");
+        	} else {
+        		fprintf(stderr, "Specified Downlink Scheduling Policing Algorithm NOT found !");
+        		return TCL_ERROR;
+        	}
+        } else if (strcmp(argv[1], "set-uplink-scheduling") == 0) {
+			if (strcmp(argv[2], "dual-equal-fill") == 0) {
+				// delete previous algorithm
+				delete ulSchedulingAlgorithm_;
+				// create new alogrithm object
+				ulSchedulingAlgorithm_ =  new SchedulingAlgoDualEqualFill();
+				printf("New Uplink Scheduling Algorithm: Dual Equal Fill");
+			} else {
+				fprintf(stderr, "Specified Uplink Scheduling Policing Algorithm NOT found !");
+				return TCL_ERROR;
+			}
         }
+
+
+
+
         /*
             else if (strcmp(argv[1], "set-init-contention-size") == 0) {
               init_contention_size_ = atoi (argv[2]);

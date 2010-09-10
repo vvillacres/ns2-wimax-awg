@@ -8,7 +8,7 @@
 #ifndef TRAFFICPOLICINGTSWTCM_H_
 #define TRAFFICPOLICINGTSWTCM_H_
 
-#include "trafficpolicinginterface.h",
+#include "trafficpolicinginterface.h"
 #include "wimaxscheduler.h"
 #include "connection.h"
 #include <map>
@@ -42,13 +42,13 @@ public:
      * Returns wantedMstrSize and wantedMrtrSize as guideline for the scheduling algorithm
      * through call by reference
      */
-    virtual void getDataSizes(Connection *con, u_int32_t &wantedMstrSize, u_int32_t &wantedMrtrSize);
+    virtual MrtrMstrPair_t getDataSizes(Connection *connection);
 
     /*
      * Occurred allocation is send back to the traffic policing algorithm to use this
      * values in the next call
      */
-    virtual void updateAllocation(Connection *con,u_int32_t realMstrSize,u_int32_t realMrtSize);
+    virtual void updateAllocation(Connection *connection,u_int32_t realMstrSize,u_int32_t realMrtSize);
 
 private :
     /*

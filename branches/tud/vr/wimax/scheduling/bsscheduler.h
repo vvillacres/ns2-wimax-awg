@@ -21,8 +21,9 @@
 
 #include "wimaxscheduler.h"
 #include "scanningstation.h"
-#include "trafficpolicinginterface.h"
+//#include "trafficpolicinginterface.h"
 //#include "virtualallocation.h"
+//#include "schedulingalgointerface.h"
 
 #define INIT_DL_DURATION 20 //enough for DL_MAP, UL_MAP, DCD, UCD and some RNG-RSP
 #define MIN_CONTENTION_SIZE 5 //minimum number of opportunity for allocation
@@ -55,6 +56,8 @@ struct con_drr {
 
 class Mac802_16BS;
 class WimaxCtrlAgent;
+class TrafficPolicingInterface;
+class SchedulingAlgoInterface;
 /**
  * Class BSScheduler
  * Implement the packet scheduler on the BS side
@@ -70,6 +73,11 @@ public:
      * Create a scheduler
      */
     BSScheduler ();
+
+    /*
+     * Deleate a scheduler
+     */
+    ~BSScheduler ();
 
     /*
      * Interface with the TCL script
@@ -265,6 +273,20 @@ private:
 
     //sam
 
+    /**
+     * pointer to the current traffic policing algorithm
+     */
+    TrafficPolicingInterface* trafficPolicingAlgorithm_;
+
+    /**
+     * pointer to the current scheduling algorithm for the downlink direction
+     */
+    SchedulingAlgoInterface* dlSchedulingAlgorithm_;
+
+    /**
+     * pinter to the current scheduling algorithm for the uplink direction
+     */
+    SchedulingAlgoInterface* ulSchedulingAlgorithm_;
 
 
 

@@ -44,12 +44,12 @@ public:
     /*
      * Calculate predicted mrtr and msrt sizes
      */
-    virtual void getDataSize(Connection *con, u_int32_t &wantedMstrSize, u_int32_t &wantedMrtrSize);
+    virtual MrtrMstrPair_t getDataSize(Connection* connection);
 
     /*
      * Sends occurred allocation back to traffic policing
      */
-    virtual void updateAllocation(Connection *con,u_int32_t mstrSize,u_int32_t mrtSize);
+    virtual void updateAllocation(Connection* connection,u_int32_t mstrSize,u_int32_t mrtSize);
 private :
     /*
      * Saves the last occurred allocations
