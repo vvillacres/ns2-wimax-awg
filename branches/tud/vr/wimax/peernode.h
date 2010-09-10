@@ -21,6 +21,10 @@
 
 #include "connection.h"
 #include "mac-stats.h"
+#include <vector>
+
+
+typedef std::vector<Connection *> ConnectionList_t;
 
 class PeerNode;
 LIST_HEAD (peerNode, PeerNode);
@@ -93,27 +97,60 @@ public:
      * Set the channel used for data messages
      * @param connection
      */
-    void  setInData (Connection * connection);
+    //void  setInData (Connection * connection);
+
+    /**
+     * Add one channel for incoming data messages
+     */
+    void addInDataCon (Connection * connection);
+
 
     /**
      * Set the channel used for data messages
      * @param connection
      */
-    void  setOutData (Connection * connection);
+    //void  setOutData (Connection * connection);
+
+    /**
+     * Add one channel for outgoing data messages
+     *
+     */
+    void addOutDataCon (Connection * connection);
+
 
     /**
      * Return the connection used for data messages
      */
-    Connection*  getOutData () {
-        return outdata_;
-    }
+   // Connection*  getOutData () {
+   //     return outdata_;
+   // }
+
+    /**
+     * Return the n'th connection used for incoming data messages
+     */
+    Connection * getInDataCon (int connectionIndex );
 
     /**
      * Return the connection used for data messages
      */
-    Connection*  getInData () {
-        return indata_;
-    }
+    //Connection*  getInData () {
+    //    return indata_;
+    //}
+
+    /**
+     * Return the n'th connection used for data messages
+     */
+    Connection * getOutDataCon (int connectionIndex );
+
+    /**
+     * Return the number of incoming connections
+     */
+    int getNbOfInDataCon ();
+
+    /**
+     * Return the number of outgoing connections
+     */
+    int getNbOfOutDataCon ();
 
     /**
      * Set the time the last packet was received
@@ -281,12 +318,12 @@ private:
     /**
      * Incoming data connection to this client
      */
-    Connection* indata_;
+    ConnectionList_t listInData_;
 
     /**
      * Outgoing data connection to this client
      */
-    Connection* outdata_;
+    ConnectionList_t listOutData_;
 
     /**
      * Time last packet was received for this peer

@@ -26,8 +26,7 @@
 PeerNode::PeerNode (int index): basic_in_(0), basic_out_(0),
         primary_in_(0), primary_out_(0),
         secondary_in_(0), secondary_out_(0),
-        indata_(0),
-        outdata_(0), rxtime_ (0.0), rxp_watch_()
+        rxtime_ (0.0), rxp_watch_()
 {
     peerIndex_ = index;
     going_down_ = false;
@@ -81,9 +80,76 @@ void PeerNode::setSecondary (Connection* i_con, Connection* o_con)
 }
 
 /**
+ * Add one channel for incoming data messages
+ */
+void PeerNode::addInDataCon (Connection * connection)
+{
+    assert (connection != NULL);
+
+    // add connection to vector
+    connection->setPeerNode( this);
+    listInData_.push_back( connection);
+}
+
+
+/**
+ * Add one channel for outgoing data messages
+ */
+void PeerNode::addOutDataCon (Connection * connection)
+{
+	assert (connection != NULL);
+
+	// add connection to vector
+	connection->setPeerNode( this);
+	listOutData_.push_back( connection);
+}
+
+/**
+ * Return the n'th connection used for incoming data messages
+ */
+Connection * PeerNode::getInDataCon (int connectionIndex )
+{
+	if ( listInData_.size() < connectionIndex  ) {
+		return listInData_.at( connectionIndex);
+	} else {
+		return NULL;
+	}
+}
+
+/**
+ * Return the n'th connection used for data messages
+ */
+Connection * PeerNode::getOutDataCon (int connectionIndex )
+{
+	if ( listOutData_.size() < connectionIndex ) {
+		return listOutData_.at( connectionIndex);
+	} else {
+		return NULL;
+	}
+}
+
+/**
+ * Return the number of incoming connections
+ */
+int PeerNode::getNbOfInDataCon ()
+{
+	return listInData_.size();
+}
+
+/**
+ * Return the number of outgoing connections
+ */
+int PeerNode::getNbOfOutDataCon ()
+{
+	return listOutData_.size();
+}
+
+
+/**
  * Set the incoming data connection
  * @param connection The connection
  */
+/*
 void PeerNode::setInData (Connection* connection )
 {
     assert (connection != NULL);
@@ -91,11 +157,13 @@ void PeerNode::setInData (Connection* connection )
     indata_ = connection;
     connection->setPeerNode (this);
 }
+*/
 
 /**
  * Set the outgoing data connection
  * @param connection The connection
  */
+/*
 void PeerNode::setOutData (Connection* connection )
 {
     assert (connection != NULL);
@@ -103,6 +171,8 @@ void PeerNode::setOutData (Connection* connection )
     outdata_ = connection;
     connection->setPeerNode (this);
 }
+*/
+
 
 /**
  * Set the time the last packet was received
@@ -152,10 +222,15 @@ int PeerNode::getReqBw ()
         bw += getSecondary(IN_CONNECTION)->getBw();
         //printf ("\tSecondary %d %d\n", getSecondary(IN_CONNECTION)->get_cid(), getSecondary(IN_CONNECTION)->getBw());
     }
-    if (getInData()!=NULL) {
-        bw += getInData()->getBw();
-        //printf ("\tData %d %d\n", getOutData()->get_cid(), getInData()->getBw());
+    int i = 0;
+    while ( getInDataCon( i) != NULL) {
+    	bw += getInDataCon( i)->getBw();
+    	i++;
     }
+    //if (getInData()!=NULL) {
+     //   bw += getInData()->getBw();
+        //printf ("\tData %d %d\n", getOutData()->get_cid(), getInData()->getBw());
+   // }
     return bw;
 }
 
@@ -166,14 +241,24 @@ int PeerNode::getReqBw ()
 int PeerNode::getQueueLength ()
 {
     int bw=0;
-    if (getBasic(OUT_CONNECTION)!= NULL)
+    if (getBasic(OUT_CONNECTION)!= NULL) {
         bw += getBasic(OUT_CONNECTION)->queueByteLength();
-    if (getPrimary(OUT_CONNECTION)!= NULL)
+    }
+    if (getPrimary(OUT_CONNECTION)!= NULL) {
         bw += getPrimary(OUT_CONNECTION)->queueByteLength();
-    if (getSecondary(OUT_CONNECTION)!= NULL)
+    }
+    if (getSecondary(OUT_CONNECTION)!= NULL) {
         bw += getSecondary(OUT_CONNECTION)->queueByteLength();
-    if (getOutData()!=NULL)
-        bw += getOutData()->queueByteLength();
+    }
+    int i = 0;
+    while ( getOutDataCon( i) != NULL) {
+    	bw += getInDataCon( i)->getBw();
+    	i++;
+    }
+
+    //
+    //if (getOutData()!=NULL)
+    //    bw += getOutData()->queueByteLength();
     return bw;
 }
 

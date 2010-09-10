@@ -86,9 +86,11 @@ int DestClassifier::classify (Packet * p)
                 break;
 
             default:
-                if (n->getOutData()) {
+
+            	// TODO: How to classify packets to same destination ???
+                if (n->getOutDataCon( 0)) {
                     debug2("find the outcoming data connection.\n");
-                    return n->getOutData()->get_cid();
+                    return n->getOutDataCon( 0)->get_cid();
                 } else { //this node is not ready to send data
                     debug2("cannt find the outcoming data connection.\n");
                     break;

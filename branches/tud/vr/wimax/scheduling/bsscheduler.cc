@@ -142,29 +142,32 @@ int BSScheduler::command(int argc, const char*const* argv)
 {
     if (argc == 3) {
         if (strcmp(argv[1], "set-default-modulation") == 0) {
-            if (strcmp(argv[2], "OFDM_BPSK_1_2") == 0)
+            if (strcmp(argv[2], "OFDM_BPSK_1_2") == 0) {
                 default_mod_ = OFDM_BPSK_1_2;
-            else if (strcmp(argv[2], "OFDM_QPSK_1_2") == 0)
+            } else if (strcmp(argv[2], "OFDM_QPSK_1_2") == 0) {
                 default_mod_ = OFDM_QPSK_1_2;
-            else if (strcmp(argv[2], "OFDM_QPSK_3_4") == 0)
+            } else if (strcmp(argv[2], "OFDM_QPSK_3_4") == 0) {
                 default_mod_ = OFDM_QPSK_3_4;
-            else if (strcmp(argv[2], "OFDM_16QAM_1_2") == 0)
+            } else if (strcmp(argv[2], "OFDM_16QAM_1_2") == 0) {
                 default_mod_ = OFDM_16QAM_1_2;
-            else if (strcmp(argv[2], "OFDM_16QAM_3_4") == 0)
+            } else if (strcmp(argv[2], "OFDM_16QAM_3_4") == 0) {
                 default_mod_ = OFDM_16QAM_3_4;
-            else if (strcmp(argv[2], "OFDM_64QAM_2_3") == 0)
+            } else if (strcmp(argv[2], "OFDM_64QAM_2_3") == 0) {
                 default_mod_ = OFDM_64QAM_2_3;
-            else if (strcmp(argv[2], "OFDM_64QAM_3_4") == 0)
+            } else if (strcmp(argv[2], "OFDM_64QAM_3_4") == 0) {
                 default_mod_ = OFDM_64QAM_3_4;
-            else
+            } else {
                 return TCL_ERROR;
+            }
             return TCL_OK;
+
         } else if (strcmp(argv[1], "set-contention-size") == 0) {
             contention_size_ = atoi (argv[2]);
 #ifdef DEBUG_WIMAX
             assert (contention_size_>=0);
 #endif
             return TCL_OK;
+
         } else if (strcmp(argv[1], "set-traffic-policing") == 0) {
         	if (strcmp(argv[2], "accurate") == 0) {
         		// delete previous algorithm
@@ -182,6 +185,7 @@ int BSScheduler::command(int argc, const char*const* argv)
         		fprintf(stderr, "Specified Traffic Policing Algorithm NOT found !");
         		return TCL_ERROR;
         	}
+        	return TCL_OK;
         } else if (strcmp(argv[1], "set-downlink-scheduling") == 0) {
         	if (strcmp(argv[2], "dual-equal-fill") == 0) {
         		// delete previous algorithm
@@ -193,6 +197,7 @@ int BSScheduler::command(int argc, const char*const* argv)
         		fprintf(stderr, "Specified Downlink Scheduling Policing Algorithm NOT found !");
         		return TCL_ERROR;
         	}
+        	return TCL_OK;
         } else if (strcmp(argv[1], "set-uplink-scheduling") == 0) {
 			if (strcmp(argv[2], "dual-equal-fill") == 0) {
 				// delete previous algorithm
@@ -204,6 +209,7 @@ int BSScheduler::command(int argc, const char*const* argv)
 				fprintf(stderr, "Specified Uplink Scheduling Policing Algorithm NOT found !");
 				return TCL_ERROR;
 			}
+			return TCL_OK;
         }
 
 
@@ -335,6 +341,7 @@ int BSScheduler::getInitRangingopportunity ()
     return nbPS;
 }
 
+
 // This function is used to increase #DL_MAP_IEs (DL_MAP size)
 int BSScheduler::increase_dl_map_ie(int num_of_entries, int totalslots, int num_ie)
 {
@@ -367,6 +374,7 @@ int BSScheduler::increase_dl_map_ie(int num_of_entries, int totalslots, int num_
     }
 
 }
+
 
 
 // This function is used to check if the allocation is feasible (enough slots for both DL_MAP_IE and its own data allocation
@@ -409,6 +417,7 @@ int BSScheduler::overallocation_withdlmap(int num_of_entries, int totalslots, in
 }
 
 
+
 // This function is used to calculate maximum number of connection with the increase of DL_MAP_IE
 int BSScheduler::max_conn_withdlmap(int num_of_entries, int totalslots)
 {
@@ -445,6 +454,7 @@ int BSScheduler::max_conn_withdlmap(int num_of_entries, int totalslots)
 }
 
 
+
 // This function is used to calculate number of available slots after #DL_MAP_IEs are taken into account.
 int BSScheduler::freeslots_withdlmap_given_conn(int num_of_entries, int totalslots, int newconn)
 {
@@ -477,6 +487,7 @@ int BSScheduler::freeslots_withdlmap_given_conn(int num_of_entries, int totalslo
 }
 
 
+
 // This function is used check #available slots excluing DL_MAP_IE
 // return #request slots if feasible else return #available slots
 int BSScheduler::overallocation_withoutdlmap(int num_of_entries, int totalslots, int ownslots)
@@ -496,6 +507,7 @@ int BSScheduler::overallocation_withoutdlmap(int num_of_entries, int totalslots,
         return (totalslots-slots_temp);
     }
 }
+
 
 
 // This function is a traditional bubble sort.
@@ -597,6 +609,7 @@ int BSScheduler::doesvirtual_allocexist(int num_of_entries, int cid)
 }
 
 
+
 // This function is used to add the virtual burst regardless of DL_MAP_IE
 int BSScheduler::addslots_withoutdlmap(int num_of_entries, int byte, int slots, int cid)
 {
@@ -609,6 +622,7 @@ int BSScheduler::addslots_withoutdlmap(int num_of_entries, int byte, int slots, 
     }
     return -1;
 }
+
 
 
 // This function is used caculate #slots used so far
@@ -665,7 +679,8 @@ void BSScheduler::schedule ()
                 continue;
             } else {
                 peernode = n->getPeerNode ();
-                if (peernode->getOutData () != NULL && peernode->getOutData ()->queueLength () != 0 && getMac()->isArqFbinDlData()) {
+                // TODO: Change for multiple data connection
+                if (peernode->getOutDataCon ( 0) != NULL && peernode->getOutDataCon ( 0)->queueLength () != 0 && getMac()->isArqFbinDlData()) {
                     out_datacnx_exists = true;
                 }
 
@@ -678,7 +693,7 @@ void BSScheduler::schedule ()
                     wimaxHdrMap->num_of_acks = 0;
                 } else {
                     debug2("ARQ BS : Feedback in data Cid \n");
-                    OutData = peernode->getOutData ();
+                    OutData = peernode->getOutDataCon ( 0);
                     pfb = OutData->dequeue ();
                     wimaxHdrMap= HDR_MAC802_16(pfb);
                     if (wimaxHdrMap->header.type_arqfb == 1) {
