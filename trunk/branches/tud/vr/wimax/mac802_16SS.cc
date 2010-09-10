@@ -2450,17 +2450,40 @@ void Mac802_16SS::process_ranging_rsp (mac802_16_rng_rsp_frame *frame)
             assert (primary->get_cid () == frame->primary_cid);
         } else {
             if (basic !=NULL) {
-                //we have been allocated new cids..clear old ones
+
+            	// for debug delete added to avoid memory leaks vr@tud
+            	fprintf(stderr,"Delete Connection in Mac802_16SS::process_ranging_rsp");
+
+            	//we have been allocated new cids..clear old ones
                 getCManager ()->remove_connection (basic->get_cid());
+                delete (peer->getBasic(IN_CONNECTION));
+                delete (peer->getBasic(OUT_CONNECTION));
                 getCManager ()->remove_connection (primary->get_cid());
+                delete (peer->getPrimary(IN_CONNECTION));
+                delete (peer->getPrimary(OUT_CONNECTION));
                 if (peer->getSecondary(IN_CONNECTION)!=NULL) {
                     getCManager ()->remove_connection (peer->getSecondary(IN_CONNECTION));
                     getCManager ()->remove_connection (peer->getSecondary(OUT_CONNECTION));
+                    delete (peer->getSecondary(IN_CONNECTION));
+                    delete (peer->getSecondary(OUT_CONNECTION));
                 }
-                if (peer->getOutData()!=NULL)
+                int i = 0;
+                while ( peer->getInDataCon( i)) {
+                	getCManager()->remove_connection( peer->getInDataCon( i));
+                	delete (peer->getInDataCon( i));
+                	i++;
+                }
+                i = 0;
+                while ( peer->getOutDataCon( i)) {
+                	getCManager()->remove_connection( peer->getOutDataCon( i));
+                	delete (peer->getOutDataCon( i));
+                	i++;
+                }
+               /* if (peer->getOutData()!=NULL)
                     getCManager ()->remove_connection (peer->getOutData());
                 if (peer->getInData()!=NULL)
                     getCManager ()->remove_connection (peer->getInData());
+            	*/
             }
 
             basic = new Connection (CONN_BASIC, frame->basic_cid);

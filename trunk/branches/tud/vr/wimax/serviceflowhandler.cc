@@ -131,10 +131,10 @@ void ServiceFlowHandler::sendFlowRequest (int index, bool out)
 
         mac_->getCManager()->add_connection (data, out);
         if (out) {
-            peer->setOutData (data);
+            peer->addOutDataCon (data);
             debug2("set outcoming data connection for mac %d\n", mac_->addr());
         } else {
-            peer->setInData (data);
+            peer->addInDataCon (data);
             debug2("set incoming data connection for mac %d\n", mac_->addr());
         }
         dsa_frame->cid = data->get_cid();
@@ -208,12 +208,12 @@ void ServiceFlowHandler::processDSA_req (Packet *p)
         if (dsa_req_frame->uplink) {
             mac_->getCManager()->add_connection (data, OUT_CONNECTION);
             debug2(" dsa-req-frame being processed and connection being added for uplink node = MN\n");
-            peer->setOutData (data);
+            peer->addOutDataCon (data);
 
         } else {
             mac_->getCManager()->add_connection (data, IN_CONNECTION);
             debug2(" dsa-req-frame being processed and connection being added for downlink node =MN\n");
-            peer->setInData (data);
+            peer->addInDataCon (data);
         }
         ch->size() += GET_DSA_RSP_SIZE (0);
     } else {
@@ -244,11 +244,11 @@ void ServiceFlowHandler::processDSA_req (Packet *p)
         if (dsa_req_frame->uplink) {
             mac_->getCManager()->add_connection (data, IN_CONNECTION);
             debug2(" dsa-req-frame being processed and connection being added for uplink node = not MN\n");
-            peer->setInData (data);
+            peer->addInDataCon (data);
         } else {
             mac_->getCManager()->add_connection (data, OUT_CONNECTION);
             debug2(" dsa-req-frame being processed and connection being added for downlink node = not MN\n");
-            peer->setOutData (data);
+            peer->addOutDataCon (data);
             debug2("set outcoming data connection for mac %d\n", mac_->addr());
 //Begin RPI
             if (data->get_serviceflow ()->getQosSet ()->isArqEnabled () == true ) {
@@ -318,7 +318,7 @@ void ServiceFlowHandler::processDSA_rsp (Packet *p)
         }
         if (dsa_rsp_frame->uplink) {
             mac_->getCManager()->add_connection (data, OUT_CONNECTION);
-            peer->setOutData (data);
+            peer->addOutDataCon (data);
             debug2("set outcoming data connection for mac %d\n", mac_->addr());
 //Begin RPI
             if (data->get_serviceflow ()->getQosSet ()->isArqEnabled () == true ) {
@@ -330,7 +330,7 @@ void ServiceFlowHandler::processDSA_rsp (Packet *p)
 //End RPI
         } else {
             mac_->getCManager()->add_connection (data, IN_CONNECTION);
-            peer->setInData (data);
+            peer->addInDataCon (data);
             debug2("set incoming data connection for mac %d\n", mac_->addr());
         }
     }
@@ -736,11 +736,11 @@ void ServiceFlowHandler::init_static_flows (int index)
                 debug2("ARQ DL connection.\n");
             }
             if (n->getDirection() == UL) {
-                peer->setInData (data);
-                debug2("set incoming data connection for mac %d\n", mac_->addr());
+                peer->addInDataCon (data);
+                debug2("Add incoming data connection for mac %d\n", mac_->addr());
             } else {
-                peer->setOutData (data);
-                debug2("set outcoming data connection for mac %d\n", mac_->addr());
+                peer->addOutDataCon (data);
+                debug2("Add outcoming data connection for mac %d\n", mac_->addr());
             }
             dsa_frame->cid = data->get_cid();
             ch->size() += GET_DSA_REQ_SIZE (1);

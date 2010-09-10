@@ -428,6 +428,19 @@ void Mac802_16::removePeerNode (PeerNode *peer)
         delete (peer->getSecondary(IN_CONNECTION));
         delete (peer->getSecondary(OUT_CONNECTION));
     }
+    int i = 0;
+    while ( peer->getInDataCon( i)) {
+    	getCManager()->remove_connection( peer->getInDataCon( i)->get_cid());
+    	delete (peer->getInDataCon( i));
+    	i++;
+    }
+    i = 0;
+    while ( peer->getOutDataCon( i)) {
+    	getCManager()->remove_connection( peer->getOutDataCon( i)->get_cid());
+    	delete (peer->getOutDataCon( i));
+    	i++;
+    }
+    /*
     if (peer->getInData()) {
         getCManager()->remove_connection (peer->getInData()->get_cid());
         delete (peer->getInData());
@@ -436,6 +449,7 @@ void Mac802_16::removePeerNode (PeerNode *peer)
         getCManager()->remove_connection (peer->getOutData()->get_cid());
         delete (peer->getOutData());
     }
+    */
     peer->remove_entry ();
     nb_peer_--;
     delete (peer);

@@ -166,7 +166,8 @@ void SSscheduler::schedule ()
                 continue;
             } else {
                 peernode = n->getPeerNode ();
-                if (peernode->getOutData () != NULL && peernode->getOutData ()->queueLength () != 0 && getMac()->isArqFbinUlData()) {
+                // TODO: Allow multiple Data Connections
+                if (peernode->getOutDataCon ( 0) != NULL && peernode->getOutDataCon ( 0)->queueLength () != 0 && getMac()->isArqFbinUlData()) {
                     out_datacnx_exists = true;
                 }
 
@@ -179,7 +180,7 @@ void SSscheduler::schedule ()
                     wimaxHdrMap->num_of_acks = 0;
                 } else {
                     debug2("ARQ SS : Feedback in data Cid \n");
-                    OutData = peernode->getOutData ();
+                    OutData = peernode->getOutDataCon ( 0);
                     pfb = OutData->dequeue ();
                     wimaxHdrMap= HDR_MAC802_16(pfb);
                     if (wimaxHdrMap->header.type_arqfb == 1) {

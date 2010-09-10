@@ -589,7 +589,7 @@ void BSScheduler26::schedule ()
                 continue;
             } else {
                 peernode = n->getPeerNode ();
-                if (peernode->getOutData () != NULL && peernode->getOutData ()->queueLength () != 0 && getMac()->isArqFbinDlData()) {
+                if (peernode->getOutDataCon ( 0) != NULL && peernode->getOutDataCon (0)->queueLength () != 0 && getMac()->isArqFbinDlData()) {
                     out_datacnx_exists = true;
                 }
 
@@ -602,7 +602,7 @@ void BSScheduler26::schedule ()
                     wimaxHdrMap->num_of_acks = 0;
                 } else {
                     debug2("ARQ BS : Feedback in data Cid \n");
-                    OutData = peernode->getOutData ();
+                    OutData = peernode->getOutDataCon ( 0);
                     pfb = OutData->dequeue ();
                     wimaxHdrMap= HDR_MAC802_16(pfb);
                     if (wimaxHdrMap->header.type_arqfb == 1) {
@@ -648,8 +648,9 @@ void BSScheduler26::schedule ()
         }
     }
 
-    if (Channel_num>999)
+    if (Channel_num>999) {
         Channel_num = 2;//GetInitialChannel();
+    }
 
     /// rpi random channel allocation
 
