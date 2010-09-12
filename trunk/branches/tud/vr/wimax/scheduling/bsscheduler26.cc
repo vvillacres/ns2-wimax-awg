@@ -2563,8 +2563,11 @@ struct mac802_16_ul_map_frame * BSScheduler26::ul_stage2(Connection *head, int t
 
                 return_cid_tmp = 0;
                 temp_index = doesMapExist(con->getPeerNode()->getBasic(OUT_CONNECTION)->get_cid(), cid_list, ie_index);
-                if (temp_index < 0) return_cid_tmp = -1;
-                else return_cid_tmp = con->getPeerNode()->getBasic(OUT_CONNECTION)->get_cid();
+                if (temp_index < 0) {
+                	return_cid_tmp = -1;
+                } else {
+                	return_cid_tmp = con->getPeerNode()->getBasic(OUT_CONNECTION)->get_cid();
+                }
 
                 if (ulGrantSchedulingType==UL_UGS) {
                     ServiceFlowQosSet *sfQosSet = con->get_serviceflow()->getQosSet();

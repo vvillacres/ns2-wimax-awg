@@ -15,7 +15,7 @@ class Connection;
 class VirtualAllocationElement
 {
 public:
-    VirtualAllocationElement( Connection* connectionPtr, u_int32_t wantedMstrSize, u_int32_t wantedMrtrSize, int slotCapacity, int nbOfSlots = 0, int nbOfBytes = 0);
+    VirtualAllocationElement( Connection* connectionPtr, u_int32_t wantedMstrSize, u_int32_t wantedMrtrSize, int slotCapacity, int nbOfBytes, int nbOfSlots, int nbOfCdmaSlots );
     virtual ~VirtualAllocationElement();
 
 
@@ -76,12 +76,6 @@ public:
     	slotCapacity_ = slotCapacity;
     }
 
-    /*
-     * Returns the number of allocated slots for the corresponding connection
-     */
-    inline int getNbOfAllocatedSlots() {
-        return nbOfSlots_;
-    }
 
     /*
      * Returns the number of allocated bytes for the corresponding connection
@@ -90,7 +84,20 @@ public:
         return nbOfBytes_;
     }
 
+    /*
+     * Set the number of allocated bytes for the corresponding connection
+     */
+    inline void setNbOfAllocatedBytes( int nbOfBytes) {
+        nbOfBytes_ = nbOfBytes;
+    }
 
+
+    /*
+     * Returns the number of allocated slots for the corresponding connection
+     */
+    inline int getNbOfAllocatedSlots() {
+        return nbOfSlots_;
+    }
 
     /*
      * Set the number of allocated slots for the corresponding connection
@@ -100,11 +107,19 @@ public:
     }
 
     /*
-     * Set the number of allocated bytes for the corresponding connection
+     * Returns the number of allocated slots for the corresponding connection
      */
-    inline void setNbOfAllocatedBytes( int nbOfBytes) {
-        nbOfBytes_ = nbOfBytes;
+    inline int getNbOfAllocatedCdmaSlots() {
+        return nbOfCdmaSlots_;
     }
+
+    /*
+     * Set the number of allocated slots for the corresponding connection
+     */
+    inline void setNbOfAllocatedCdmaSlots( int nbOfCdmaSlots) {
+        nbOfCdmaSlots_ = nbOfCdmaSlots;
+    }
+
 
 
 private:
@@ -138,6 +153,11 @@ private:
      * Number of allocated Bytes
      */
     int nbOfBytes_;
+
+    /*
+     * Number of allocated Slots for CDMA request
+     */
+    int nbOfCdmaSlots_;
 
 
 };
