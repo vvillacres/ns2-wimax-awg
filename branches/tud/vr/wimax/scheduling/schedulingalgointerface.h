@@ -12,7 +12,8 @@
 #ifndef SCHEDULINGALGOINTERFACE_H_
 #define SCHEDULINGALGOINTERFACE_H_
 
-class VirtualAllocation;
+#include "virtualallocation.h"
+//class VirtualAllocation;
 
 class SchedulingAlgoInterface {
 public:

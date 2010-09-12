@@ -6,6 +6,7 @@
  */
 
 #include "schedulingalgointerface.h"
+#include "virtualallocation.h"
 
 SchedulingAlgoInterface::SchedulingAlgoInterface()
 {

@@ -54,11 +54,35 @@ public:
         nbOfBroadcastBytes_ = nbOfBroadcastBytes;
     }
 
+    /*
+     * Get the slot capacity of the broadcast burst
+     */
+    int getBroadcastSlotCapacity() const {
+        return slotCapacityBroadcast_;
+    }
+
+    /*
+     * Set number of Byte for Broadcast Burst
+     */
+    inline void setBroadcastSlotCapacity( int slotCapacityBroadcast) {
+    	slotCapacityBroadcast_ = slotCapacityBroadcast;
+    }
+
+    /**
+     *  Increases the BroadcastBurst by added Bytes return the delta of used slots
+     */
+    int increaseBroadcastBurst( int addedBytes);
 
     /*
      * Adds a new Virtual Allocation in the Map
      */
-    void addAllocation( Connection* connectionPtr, u_int32_t wantedMstrSize, u_int32_t wantedMrtrSize, int slotCapacity, int nbOfSlots = 0, int nbOfBytes = 0);
+    void addAllocation( Connection* connectionPtr, u_int32_t wantedMstrSize, u_int32_t wantedMrtrSize, int slotCapacity, int nbOfBytes = 0, int nbOfSlots = 0, int nbOfCdmaSlots = 0);
+
+
+    /*
+     * Adds a new Virtrual Allocation for Cdma request in the Map
+     */
+    void addCdmaAllocation( Connection* connectionPtr, int slotCapacity, int nbOfCdmaSlots);
 
     /*
      * Returns true if an Entry of this connection exits and set the current Iterator
@@ -92,19 +116,14 @@ public:
     u_int32_t getWantedMstrSize();
 
     /*
+     * Set Mrtr and Mstr Size
+     */
+    void updateWantedMrtrMstr( u_int32_t wantedMrtrSize, u_int32_t wantedMstrSize);
+
+    /*
      * Returns the slot capacity in byte of the connection
      */
     int getSlotCapacity();
-
-    /*
-     * Returns the number of allocated slots for the current connection
-     */
-    int getCurrentNbOfSlots();
-
-    /*
-     * Set the number of allocated slots for the current connection
-     */
-    void setCurrentNbOfSlots( int nbOfSlots);
 
     /*
      * Returns the number of allocated bytes for the current connection
@@ -121,8 +140,33 @@ public:
      */
     void updateAllocation( int nbOfslots, int nbOfBytes);
 
+    /*
+     * Returns the number of allocated slots for the current connection
+     */
+    int getCurrentNbOfSlots();
+
+    /*
+     * Set the number of allocated slots for the current connection
+     */
+    void setCurrentNbOfSlots( int nbOfSlots);
+
+    /*
+     * Returns the number of allocated slots for the current connection
+     */
+    int getCurrentNbOfCdmaSlots();
+
+    /*
+     * Set the number of allocated slots for the current connection
+     */
+    void setCurrentNbOfCdmaSlots( int nbOfCdmaSlots);
+
 
 private:
+
+    /*
+     * Capacity in Byte of a broadcast slot
+     */
+    int slotCapacityBroadcast_;
 
     /*
      * Number of Slots for Broadcast Burst

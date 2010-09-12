@@ -58,6 +58,7 @@ class Mac802_16BS;
 class WimaxCtrlAgent;
 class TrafficPolicingInterface;
 class SchedulingAlgoInterface;
+class VirtualAllocation;
 /**
  * Class BSScheduler
  * Implement the packet scheduler on the BS side
@@ -212,9 +213,12 @@ protected:
 
 //mac802_16_dl_map_frame * dl_stage2(Connection *head, int total_subchannels, int total_symbols, int symbol_start, int stripping);
     mac802_16_dl_map_frame * dl_stage2(Connection *head, int input_subchannel_offset,  int total_subchannels, int total_symbols, int symbol_start, int  stripping, int total_dl_slots_pusc);
-// mac802_16_dl_map_frame * dl_stage2(Connection *head, int input_subchannel_offset,  int total_subchannels, int total_symbols, int symbol_start, int  stripping);
+
+    mac802_16_dl_map_frame * buildDownlinkMap( VirtualAllocation * virtualAlloc, Connection *head, int totalDlSubchannels, int totalDlSymbols, int dlSymbolOffset, int dlSubchannelOffset, int freeDlSlots);
+    // mac802_16_dl_map_frame * dl_stage2(Connection *head, int input_subchannel_offset,  int total_subchannels, int total_symbols, int symbol_start, int  stripping);
 
     mac802_16_ul_map_frame * ul_stage2(Connection *head, int total_subchannels, int total_symbols, int symbol_start, int stripping);
+    mac802_16_ul_map_frame * buildUplinkMap( Connection *head, int totalUlSubchannels, int totalUlSymbols, int ulSymbolOffset, int ulSubchannelOffset, int freeUlSlots);
 
     int doesMapExist(int, int*, int);
 
