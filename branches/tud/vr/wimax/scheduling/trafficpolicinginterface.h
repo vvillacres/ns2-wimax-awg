@@ -28,7 +28,6 @@ public:
 
     /*
      * Returns wantedMstrSize and wantedMrtrSize as guideline for the scheduling algorithm
-     * through call by reference
      */
     virtual MrtrMstrPair_t getDataSizes(Connection * connection);
 

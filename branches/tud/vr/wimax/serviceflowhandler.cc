@@ -562,7 +562,39 @@ int ServiceFlowHandler::addStaticFlow (int argc, const char*const* argv)
     return TCL_OK;
 }
 
+/*
+ * Remove a static flow
+ * @param argc The number of parameter
+ * @param argv The list of parameters
+ */
+int ServiceFlowHandler::removeStaticFlow (int argc, const char*const* argv)
+{
 
+	// see serviceflowqosset.h for explanations of the parameters
+
+
+	int sfid = atoi( argv[2]);
+
+	// TODO: Ugly find better solution
+
+	ServiceFlow * currentFlow =  reinterpret_cast<ServiceFlow*>( &static_flow_head_) ;
+
+	while ( currentFlow != NULL) {
+		if ( currentFlow->getSFID() == sfid) {
+			if ( currentFlow->getQosSet() != NULL ) {
+				delete currentFlow->getQosSet();
+			}
+			currentFlow->remove_entry();
+			delete currentFlow;
+			currentFlow = NULL;
+			printf("Service Flow d% removed \n", sfid);
+		} else {
+			currentFlow = currentFlow->next_entry();
+		}
+	}
+	printf("Service Flow not found");
+    return TCL_OK;
+}
 
 
 /*

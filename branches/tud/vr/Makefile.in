@@ -335,9 +335,19 @@ OBJ_CC = \
 	wpan/p802_15_4trace.o wpan/p802_15_4transac.o \
 	wimax/ofdmphy.o wimax/mac802_16pkt.o \
     wimax/scheduling/wimaxscheduler.o \
-    wimax/scheduling/bsscheduler.o \
-    wimax/scheduling/bsscheduler.o \
     wimax/scheduling/bsscheduler26.o \
+    wimax/scheduling/bsscheduler.o \
+    wimax/scheduling/virtualallocationelement.o \
+    wimax/scheduling/virtualallocation.o \
+    wimax/scheduling/trafficpolicinginterface.o \
+    wimax/scheduling/trafficpolicingaccurate.o \
+    wimax/scheduling/trafficpolicingtswtcm.o \
+    wimax/scheduling/trafficpolicingnone.o \
+    wimax/scheduling/schedulingalgointerface.o \
+    wimax/scheduling/schedulingalgodualequalfill.o \
+    wimax/scheduling/schedulingalgoproportionalfair.o \
+    wimax/scheduling/edfqueueelement.o \
+    wimax/scheduling/schedulingalgodualedf.o \
     wimax/scheduling/ssscheduler.o \
     wimax/scheduling/ulsubframetimer.o \
     wimax/scheduling/dlsubframetimer.o \
@@ -358,10 +368,6 @@ OBJ_CC = \
     wimax/wimaxneighborentry.o wimax/neighbordb.o \
     wimax/scheduling/wimaxctrlagent.o \
     wimax/globalparams_wimax.o \
-    wimax/scheduling/virtualallocationelement.o \
-    wimax/scheduling/virtualallocation.o \
-    wimax/scheduling/trafficpolicinginterface.o \
-    wimax/scheduling/trafficpolicingtswtcm.o \
 	apps/pbc.o \
 	@V_STLOBJ@
 
@@ -373,13 +379,6 @@ OBJ_CC = \
 #	sensor-nets/tags.o sensor-nets/sensor-query.o \
 #	sensor-nets/flood-agent.o \
 
-#     wimax/scheduling/virtualallocationelement.o \
-#    wimax/scheduling/virtualallocation.o \
-#    wimax/scheduling/trafficpolicinginterface.o \
-#    wimax/scheduling/trafficpolicingaccurate.o \
-#    wimax/scheduling/trafficpolicingtswtcm.o \
-#
-#
 
 # what was here before is now in emulate/
 OBJ_C =
