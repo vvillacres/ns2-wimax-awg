@@ -280,6 +280,10 @@ int Mac802_16::command(int argc, const char*const* argv)
             if (logtarget_ == 0)
                 return TCL_ERROR;
             return TCL_OK;
+        } else if (strcmp(argv[1], "removeflow") == 0) {
+        	result = serviceFlowHandler_->removeStaticFlow( argc, argv);
+        	debug(" Command removeflow is executed \n");
+        	return result;
         }
     } else if (argc == 22) {
         if (strcmp(argv[1], "setflow") == 0) {

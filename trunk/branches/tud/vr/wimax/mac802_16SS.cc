@@ -1988,13 +1988,13 @@ void Mac802_16SS::process_dl_map (mac802_16_dl_map_frame *frame)
         //printf ("update dlmap timer\n");
         lostDLMAPtimer_->start (macmib_.lost_dlmap_interval);
 
-        if (getMacState()!= MAC802_16_WAIT_DL_SYNCH_DCD
-                && getMacState()!=MAC802_16_UL_PARAM) {
+        if ((getMacState()!= MAC802_16_WAIT_DL_SYNCH_DCD) && (getMacState()!=MAC802_16_UL_PARAM)) {
 
             //since the map may have changed, we need to adjust the timer
             //for the DLSubframe
             double stime = getMap()->getStarttime();
-            stime += getMap()->getDlSubframe()->getPdu()->getBurst(1)->getStarttime()*getPhy()->getSymbolTime();
+            //stime += getMap()->getDlSubframe()->getPdu()->getBurst(0)->getStarttime()*getPhy()->getSymbolTime();
+            stime += (getMap()->getDlSubframe()->getPdu()->getBurst(0)->getStarttime() + getMaxDlduration())*getPhy()->getSymbolTime();
             //printf ("received dl..needs to update expiration to %f, %f,%f\n", stime, NOW,getMap()->getStarttime());
             getMap()->getDlSubframe()->getTimer()->resched (stime-NOW);
             dl_timer_->resched (getMap()->getStarttime()+getFrameDuration()-NOW);

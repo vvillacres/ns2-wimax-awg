@@ -91,12 +91,18 @@ bool VirtualAllocation::firstConnectionEntry()
  */
 bool VirtualAllocation::nextConnectionEntry()
 {
-	++mapIterator_;
-	if ( virtualAllocationMap_.end() != mapIterator_ ) {
-		return true;
+	printf("NextConnectionEntry - Size of Map: %d \n", virtualAllocationMap_.size());
+
+	if ( ! virtualAllocationMap_.empty() ) {
+		mapIterator_++;
+		if ( virtualAllocationMap_.end() != mapIterator_ ) {
+			return true;
+		} else {
+			// TODO: May cause problems if no Map Entry exists
+			mapIterator_ = virtualAllocationMap_.end();
+			return false;
+		}
 	} else {
-		// TODO: May cause problems if no Map Entry exists
-		mapIterator_ = virtualAllocationMap_.end();
 		return false;
 	}
 }

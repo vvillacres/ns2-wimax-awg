@@ -62,6 +62,11 @@ MrtrMstrPair_t TrafficPolicingAccurate::getDataSize(Connection *connection)
         // mstrsize berechnen  = 25 Mbps MPEG4 AVC/H.264 -> 20 Mbps
         wantedMstrSize = u_int32_t( floor( double(sfQosSet->getMaxSustainedTrafficRate()) * frameDuration_/ 8.0 ) );
 
+        // rounding error
+        if ( wantedMstrSize < wantedMrtrSize) {
+        	wantedMstrSize = wantedMrtrSize;
+        }
+
 
     } else {
 

@@ -75,6 +75,13 @@ public:
      */
     int addStaticFlow (int argc, const char*const* argv);
 
+    /*
+     * Remove a static flow
+     * @param argc The number of parameter
+     * @param argv The list of parameters
+     */
+    int removeStaticFlow (int argc, const char*const* argv);
+
     /**
      * Initialize the Static Flows
      */
