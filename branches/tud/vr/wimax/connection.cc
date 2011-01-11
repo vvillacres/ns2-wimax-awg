@@ -79,7 +79,7 @@ Connection::Connection (ConnectionType_t type) : peer_(0),
     type_ = type;
     queue_ = new PacketQueue();
     arqstatus_ = NULL;
-    initCDMA_SSID();
+    initCdmaSsid();
 }
 
 /**
@@ -104,7 +104,7 @@ Connection::Connection (ConnectionType_t type, int cid) : peer_(0),
     type_ = type;
     queue_ = new PacketQueue();
     arqstatus_ = NULL;
-    initCDMA_SSID();
+    initCdmaSsid();
 }
 
 /**
@@ -265,7 +265,7 @@ int Connection::getPOLL_interval ()
 /**
  * Inital values for all cdma-initial-ranging variables
  */
-void Connection::initCDMA_SSID()
+void Connection::initCdmaSsid()
 {
     for (int i = 0; i < MAX_SSID; i++) {
         cdma_per_conn[i].cdma_flag = 0;
