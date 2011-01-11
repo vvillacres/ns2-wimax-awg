@@ -347,60 +347,60 @@ public:
     /**
      * Get and Set the cdma bandwidth requested parameters
      */
-    inline int getCDMA ()		{
+    inline int getCdma ()		{
         return requested_cdma_;
     }
-    inline u_char getCDMA_code () {
+    inline u_char getCdmaCode () {
         return requested_cdma_code_;
     }
-    inline u_char getCDMA_top ()  {
+    inline u_char getCdmaTop ()  {
         return requested_cdma_top_;
     }
-    inline void setCDMA (int cdma_flag) 			     {
+    inline void setCdma (int cdma_flag) 			     {
         requested_cdma_ = cdma_flag;
     }
-    inline void setCDMA_code (u_char cdma_code) 		     {
+    inline void setCdmaCode (u_char cdma_code) 		     {
         requested_cdma_code_ = cdma_code;
     }
-    inline void setCDMA_top (u_char cdma_top) 		     {
+    inline void setCdmaTop (u_char cdma_top) 		     {
         requested_cdma_top_ = cdma_top;
     }
 
     /**
      * Get and Set the cdma initial ranging requested parameters; uses only cid 0 so need array of subscribers
      */
-    inline int getCDMA_SSID_FLAG (int ssid)    {
+    inline int getCdmaSsidFlag (int ssid)    {
         return cdma_per_conn[ssid].cdma_flag;
     }
-    inline u_char getCDMA_SSID_TOP (int ssid)  {
+    inline u_char getCdmaSsidTop (int ssid)  {
         return cdma_per_conn[ssid].cdma_top;
     }
-    inline u_char getCDMA_SSID_CODE (int ssid) {
+    inline u_char getCdmaSsidCode (int ssid) {
         return cdma_per_conn[ssid].cdma_code;
     }
-    inline int getCDMA_SSID_CID (int ssid)     {
+    inline int getCdmaSsidCid (int ssid)     {
         return cdma_per_conn[ssid].cdma_cid;
     }
-    inline int getCDMA_SSID_SSID (int ssid)    {
+    inline int getCdmaSsidSsid (int ssid)    {
         return cdma_per_conn[ssid].cdma_ssid;
     }
 
-    inline void setCDMA_SSID_FLAG (int ssid, int flag_ssid)    {
+    inline void setCdmaSsidFlag (int ssid, int flag_ssid)    {
         cdma_per_conn[ssid].cdma_flag = flag_ssid;
     }
-    inline void setCDMA_SSID_TOP (int ssid, u_char top_ssid)   {
+    inline void setCdmaSsidTop (int ssid, u_char top_ssid)   {
         cdma_per_conn[ssid].cdma_top = top_ssid;
     }
-    inline void setCDMA_SSID_CODE (int ssid, u_char code_ssid) {
+    inline void setCdmaSsidCode (int ssid, u_char code_ssid) {
         cdma_per_conn[ssid].cdma_code = code_ssid;
     }
-    inline void setCDMA_SSID_CID (int ssid, int cid_ssid)      {
+    inline void setCdmaSsidCid (int ssid, int cid_ssid)      {
         cdma_per_conn[ssid].cdma_cid = cid_ssid;
     }
-    inline void setCDMA_SSID_SSID (int ssid, int ssid_ssid)    {
+    inline void setCdmaSsidSsid (int ssid, int ssid_ssid)    {
         cdma_per_conn[ssid].cdma_ssid = ssid_ssid;
     }
-    inline void initCDMA () 				     {
+    inline void initCdma () 				     {
         requested_cdma_ = 0;
         requested_cdma_code_ = 0;
         requested_cdma_top_ = 0;
@@ -409,7 +409,7 @@ public:
     /**
      * Clear cdma parameter value
      */
-    void initCDMA_SSID ();
+    void initCdmaSsid ();
 
 
 protected:
