@@ -180,9 +180,13 @@ double Nakagami::Pr(PacketStamp *t, PacketStamp *r, WirelessPhy *ifp)
  		double resultPower;
  		
         if (int_m == m) {
- 			resultPower = ErlangRandomVariable::ErlangRandomVariable(Pr/m, int_m).value();
+ 			// vr@tud gcc-4.5
+        	// resultPower = ErlangRandomVariable::ErlangRandomVariable(Pr/m, int_m).value();
+ 			resultPower = ErlangRandomVariable(Pr/m, int_m).value();
  		} else {
- 			resultPower = GammaRandomVariable::GammaRandomVariable(m, Pr/m).value();
+ 			// vr@tud gcc-4.5
+ 			// resultPower = GammaRandomVariable::GammaRandomVariable(m, Pr/m).value();
+ 			resultPower = GammaRandomVariable(m, Pr/m).value();
  		}
  		return resultPower;
 	}
