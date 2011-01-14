@@ -820,7 +820,7 @@ void BSScheduler26::schedule ()
     con1 = mac_->getCManager()->get_in_connection();
     while (con1!=NULL) {
         if (con1->get_category() == CONN_INIT_RANGING) {
-            if (con1->getCDMA()>0) {
+            if (con1->getCdma()>0) {
                 cdma_flag = 2;
             }
         }
@@ -2165,27 +2165,27 @@ struct mac802_16_ul_map_frame * BSScheduler26::ul_stage2(Connection *head, int t
     con = head;
     while (con!=NULL) {
         if (con->get_category() == CONN_INIT_RANGING) {
-            if (con->getCDMA() == 2) {
+            if (con->getCdma() == 2) {
                 int begin_code = 0;
                 int begin_top = 0;
                 int begin_flag = 0;
                 for (int i = 0; i<MAX_SSID; i++) {
-                    begin_flag = con->getCDMA_SSID_FLAG(i);
-                    begin_code = con->getCDMA_SSID_CODE(i);
-                    begin_top = con->getCDMA_SSID_TOP(i);
+                    begin_flag = con->getCdmaSsidFlag(i);
+                    begin_code = con->getCdmaSsidCode(i);
+                    begin_top = con->getCdmaSsidTop(i);
                     if (begin_flag == 0) continue;
                     for (int j = i+1; j<MAX_SSID; j++) {
-                        if (con->getCDMA_SSID_FLAG(j) == 0) continue;
-                        if ( (begin_code == con->getCDMA_SSID_CODE(j)) && (begin_top == con->getCDMA_SSID_TOP(j)) ) {
-                            debug10 ("=Collission CDMA_INIT_RNG_REQ (ssid i :%d and ssid j :%d), CDMA_flag i :%d and CDMA_flag j:%d, CDMA_code i :%d, CDMA_top i :%d\n", con->getCDMA_SSID_SSID(i), con->getCDMA_SSID_SSID(j), con->getCDMA_SSID_FLAG(i), con->getCDMA_SSID_FLAG(j), con->getCDMA_SSID_CODE(i), con->getCDMA_SSID_TOP(i));
-                            con->setCDMA_SSID_FLAG(j, 0);
-                            con->setCDMA_SSID_FLAG(i, 0);
+                        if (con->getCdmaSsidFlag(j) == 0) continue;
+                        if ( (begin_code == con->getCdmaSsidCode(j)) && (begin_top == con->getCdmaSsidTop(j)) ) {
+                            debug10 ("=Collission CDMA_INIT_RNG_REQ (ssid i :%d and ssid j :%d), CDMA_flag i :%d and CDMA_flag j:%d, CDMA_code i :%d, CDMA_top i :%d\n", con->getCdmaSsidSsid(i), con->getCdmaSsidSsid(j), con->getCdmaSsidFlag(i), con->getCdmaSsidFlag(j), con->getCdmaSsidCode(i), con->getCdmaSsidTop(i));
+                            con->setCdmaSsidFlag(j, 0);
+                            con->setCdmaSsidFlag(i, 0);
                         }
                     }
                 }
             }
 
-            con->setCDMA(0);
+            con->setCdma(0);
             break;
         }
         con = con->next_entry();
@@ -2195,7 +2195,7 @@ struct mac802_16_ul_map_frame * BSScheduler26::ul_stage2(Connection *head, int t
     while (con!=NULL) {
         if (con->get_category() == CONN_INIT_RANGING) {
             for (int i = 0; i<MAX_SSID; i++) {
-                int cdma_flag = con->getCDMA_SSID_FLAG(i);
+                int cdma_flag = con->getCdmaSsidFlag(i);
                 if (cdma_flag > 0) {
 
                     mod_rate = (Ofdm_mod_rate)1;
@@ -2203,8 +2203,8 @@ struct mac802_16_ul_map_frame * BSScheduler26::ul_stage2(Connection *head, int t
 //            allocationsize =  RNG_REQ_SIZE+GENERIC_HEADER_SIZE;
                     allocationsize =  RNG_REQ_SIZE;
                     int num_of_slots = (int) ceil(allocationsize/mac_->getPhy()->getSlotCapacity(mod_rate, UL_));
-                    con->setCDMA_SSID_FLAG(i,0);
-                    debug10("=> Allocate init_ranging_msg opportunity for ssid :%d, code :%d, top :%d, size :%f\n", con->getCDMA_SSID_SSID(i), con->getCDMA_SSID_CODE(i), con->getCDMA_SSID_TOP(i), allocationsize);
+                    con->setCdmaSsidFlag(i,0);
+                    debug10("=> Allocate init_ranging_msg opportunity for ssid :%d, code :%d, top :%d, size :%f\n", con->getCdmaSsidSsid(i), con->getCdmaSsidCode(i), con->getCdmaSsidTop(i), allocationsize);
 
 
                     if (freeslots < num_of_slots) num_of_slots = freeslots;
@@ -2216,13 +2216,13 @@ struct mac802_16_ul_map_frame * BSScheduler26::ul_stage2(Connection *head, int t
                         cid_list[temp_index] = con->get_cid();
                         slots_per_con[temp_index] = num_of_slots;
                         uiuc_list[temp_index] = getUIUCProfile(mod_rate);
-                        cdma_code_list[temp_index] = con->getCDMA_SSID_CODE(i);
-                        cdma_top_list[temp_index] = con->getCDMA_SSID_TOP(i);
+                        cdma_code_list[temp_index] = con->getCdmaSsidCode(i);
+                        cdma_top_list[temp_index] = con->getCdmaSsidTop(i);
                         cdma_flag_list[temp_index] = 1;
                     }
-                    con->setCDMA_SSID_FLAG(i, 0);
-                    con->setCDMA_SSID_CODE(i, 0);
-                    con->setCDMA_SSID_TOP(i, 0);
+                    con->setCdmaSsidFlag(i, 0);
+                    con->setCdmaSsidCode(i, 0);
+                    con->setCdmaSsidTop(i, 0);
                 }
             }
         }
@@ -2312,11 +2312,11 @@ struct mac802_16_ul_map_frame * BSScheduler26::ul_stage2(Connection *head, int t
 
         while (con!=NULL) {
             if (con->get_category() == contype) {
-                if (con->getCDMA() == 1) {
-                    tmp_cdma_code_top[(int)con->getCDMA_code()][(int)con->getCDMA_top()]++;
+                if (con->getCdma() == 1) {
+                    tmp_cdma_code_top[(int)con->getCdmaCode()][(int)con->getCdmaTop()]++;
                 }
-                if (con->getCDMA()>0) {
-                    debug10 ("=Contype :%d, CDMA_flag :%d, CDMA_code :%d, CDMA_top :%d, CDMA_code_top++ :%d\n", contype, con->getCDMA(), con->getCDMA_code(), con->getCDMA_top(), tmp_cdma_code_top[(int)con->getCDMA_code()][(int)con->getCDMA_top()]);
+                if (con->getCdma()>0) {
+                    debug10 ("=Contype :%d, CDMA_flag :%d, CDMA_code :%d, CDMA_top :%d, CDMA_code_top++ :%d\n", contype, con->getCdma(), con->getCdmaCode(), con->getCdmaTop(), tmp_cdma_code_top[(int)con->getCdmaCode()][(int)con->getCdmaTop()]);
                 }
             }
             con = con->next_entry();
@@ -2333,11 +2333,11 @@ struct mac802_16_ul_map_frame * BSScheduler26::ul_stage2(Connection *head, int t
 
         while (con!=NULL) {
             if (con->get_category() == contype) {
-//      	debug10 ("=Contype :%d, CDMA_flag :%d, CDMA_code :%d, CDMA_top :%d\n", contype, con->getCDMA(), con->getCDMA_code(), con->getCDMA_top());
-                if (con->getCDMA() == 1) {
-                    if ( tmp_cdma_code_top[(int)con->getCDMA_code()][(int)con->getCDMA_top()] >1 ) {
-                        con->setCDMA(0);
-                        debug10 ("=Collission CDMA_BW_REQ, Contype :%d, CDMA_flag :%d, CDMA_code :%d, CDMA_top :%d, CDMA_code_top :%d\n", contype, con->getCDMA(), con->getCDMA_code(), con->getCDMA_top(), tmp_cdma_code_top[(int)con->getCDMA_code()][(int)con->getCDMA_top()]);
+//      	debug10 ("=Contype :%d, CDMA_flag :%d, CDMA_code :%d, CDMA_top :%d\n", contype, con->getCdma(), con->getCdmaCode(), con->getCdmaTop());
+                if (con->getCdma() == 1) {
+                    if ( tmp_cdma_code_top[(int)con->getCdmaCode()][(int)con->getCdmaTop()] >1 ) {
+                        con->setCdma(0);
+                        debug10 ("=Collission CDMA_BW_REQ, Contype :%d, CDMA_flag :%d, CDMA_code :%d, CDMA_top :%d, CDMA_code_top :%d\n", contype, con->getCdma(), con->getCdmaCode(), con->getCdmaTop(), tmp_cdma_code_top[(int)con->getCdmaCode()][(int)con->getCdmaTop()]);
                     }
                 }
             }
@@ -2361,13 +2361,13 @@ struct mac802_16_ul_map_frame * BSScheduler26::ul_stage2(Connection *head, int t
                 num_of_slots = 0;
                 allocationsize = 0;
 
-                if (con->getCDMA() == 1) {
+                if (con->getCdma() == 1) {
                     allocationsize = GENERIC_HEADER_SIZE; 					//for explicit polling
                     int tmp_num_poll = (int) ceil(allocationsize/mac_->getPhy()->getSlotCapacity(mod_rate, UL_));
                     num_of_slots = (int) ceil(allocationsize/mac_->getPhy()->getSlotCapacity(mod_rate, UL_));
                     debug10 ("\tUL.Check1.1.contype(%d), Polling CDMA :%f, numslots :%d, freeslot :%d, CID :%d\n", contype, allocationsize, num_of_slots, freeslots, con->get_cid());
-                    con->setCDMA(0);
-                }//end getCDMA
+                    con->setCdma(0);
+                }//end getCdma
 
                 if (freeslots < num_of_slots) num_of_slots = freeslots;
 
@@ -2380,8 +2380,8 @@ struct mac802_16_ul_map_frame * BSScheduler26::ul_stage2(Connection *head, int t
                         cid_list[temp_index] = con->get_cid();
                         slots_per_con[temp_index] = num_of_slots;
                         uiuc_list[temp_index] = getUIUCProfile(mod_rate);
-                        cdma_code_list[temp_index] = con->getCDMA_code();
-                        cdma_top_list[temp_index] = con->getCDMA_top();
+                        cdma_code_list[temp_index] = con->getCdmaCode();
+                        cdma_top_list[temp_index] = con->getCdmaTop();
                         cdma_flag_list[temp_index] = 1;
                         ++ie_index;
                     } else if (temp_index < MAX_MAP_IE)	 slots_per_con[temp_index] += num_of_slots;
@@ -2424,7 +2424,7 @@ struct mac802_16_ul_map_frame * BSScheduler26::ul_stage2(Connection *head, int t
 
                     debug10 ("\tBwreq Still>0 :%f, numslots :%d, freeslot :%d\n", allocationsize, num_of_slots, freeslots);
                 } else {
-                    if (con->getCDMA() == 1) {
+                    if (con->getCdma() == 1) {
                         allocationsize = GENERIC_HEADER_SIZE; 					//for explicit polling
                         int tmp_num_poll = (int) ceil(allocationsize/mac_->getPhy()->getSlotCapacity(mod_rate, UL_));
                         int still_setbw = (int) ceil(con->getBw()/mac_->getPhy()->getSlotCapacity(mod_rate, UL_));
@@ -2435,8 +2435,8 @@ struct mac802_16_ul_map_frame * BSScheduler26::ul_stage2(Connection *head, int t
                         } else {
                             debug10 ("\tStill set BW Not Polling\n");
                         }
-                    }//end getCDMA
-                    con->setCDMA(0);
+                    }//end getCdma
+                    con->setCdma(0);
                 }
 
                 if (num_of_slots>0) {
@@ -2771,12 +2771,12 @@ struct mac802_16_ul_map_frame * BSScheduler26::ul_stage2(Connection *head, int t
                     if (req_slots_tmp1>0) {
                         allocationsize = (int) ceil( double(sfQosSet->getMinReservedTrafficRate()) * mac_->getFrameDuration() / 8 );
                     } else  {
-                        if (con->getCDMA() == 1) {
+                        if (con->getCdma() == 1) {
                             if (GENERIC_HEADER_SIZE > con->getBw()) {
                                 allocationsize = GENERIC_HEADER_SIZE; 					//for explicit polling
                                 issue_pol = 1;
                             }
-                            con->setCDMA(0);
+                            con->setCdma(0);
                         } else {
                             allocationsize = 0;
                         }
@@ -2828,13 +2828,13 @@ struct mac802_16_ul_map_frame * BSScheduler26::ul_stage2(Connection *head, int t
                     if (req_slots_tmp1>0) needmore_con[2]++;
 
                     //may effect QoS for other classes => may need more sophicicate scheduler
-                    if (con!=NULL && con->getCDMA() == 1) {
+                    if (con!=NULL && con->getCdma() == 1) {
                         if (GENERIC_HEADER_SIZE > con->getBw()) {
                             allocationsize = GENERIC_HEADER_SIZE; 					//for explicit polling
                             grant_slots = (int) ceil(allocationsize/mac_->getPhy()->getSlotCapacity(mod_rate, UL_));
                             num_of_slots = grant_slots;
                         }
-                        con->setCDMA(0);
+                        con->setCdma(0);
 
                         if (leftOTHER_slots<=num_of_slots) {
                             debug10 ("Fatal Error: There is not enough resource for BE polling\n");
@@ -2842,7 +2842,7 @@ struct mac802_16_ul_map_frame * BSScheduler26::ul_stage2(Connection *head, int t
                             num_of_slots = leftOTHER_slots;
                         } else leftOTHER_slots=leftOTHER_slots-num_of_slots;
 
-                        debug10 ("UL.Check1.3.BE polling, PRE-GRANT-SLOTS :%d, Peer-CID :%d, returnCID :%d, DIUC :%d, bw_req_header :%d, setCDMA :%d\n", grant_slots, con->getPeerNode()->getBasic(OUT_CONNECTION)->get_cid(), return_cid_tmp, con->getPeerNode()->getDIUC(), GENERIC_HEADER_SIZE, con->getCDMA());
+                        debug10 ("UL.Check1.3.BE polling, PRE-GRANT-SLOTS :%d, Peer-CID :%d, returnCID :%d, DIUC :%d, bw_req_header :%d, setCdma :%d\n", grant_slots, con->getPeerNode()->getBasic(OUT_CONNECTION)->get_cid(), return_cid_tmp, con->getPeerNode()->getDIUC(), GENERIC_HEADER_SIZE, con->getCdma());
                         debug10 ("\tAllocatedSLots :%d, BeforeFree :%d, LeftforOTHER :%d, NumofBE :%d\n", num_of_slots, freeslots, leftOTHER_slots, conn_per_schetype[4]);
 
                     }

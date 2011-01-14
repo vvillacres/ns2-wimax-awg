@@ -95,29 +95,29 @@ void Mac802_16BS::init_default_connections ()
     //create initial ranging and padding connection
     con = new Connection (CONN_INIT_RANGING);
     //  con->initCDMA();
-    //  con->setCDMA(0);
+    //  con->setCdma(0);
     connectionManager_->add_connection (con, IN_CONNECTION); //uplink
     con = new Connection (CONN_INIT_RANGING);
     //  con->initCDMA();
-    //  con->setCDMA(0);
+    //  con->setCdma(0);
     connectionManager_->add_connection (con, OUT_CONNECTION); //downlink
     con = new Connection (CONN_PADDING);
     //  con->initCDMA();
-    //  con->setCDMA(0);
+    //  con->setCdma(0);
     connectionManager_->add_connection (con, IN_CONNECTION);
     con = new Connection (CONN_PADDING);
     //  con->initCDMA();
-    //  con->setCDMA(0);
+    //  con->setCdma(0);
     connectionManager_->add_connection (con, OUT_CONNECTION);
 
     //we need to create a Broadcast connection and AAS init ranging CIDs
     con = new Connection (CONN_BROADCAST);
     //  con->initCDMA();
-    //  con->setCDMA(0);
+    //  con->setCdma(0);
     connectionManager_->add_connection (con, OUT_CONNECTION);
     con = new Connection (CONN_AAS_INIT_RANGING);
     //  con->initCDMA();
-    //  con->setCDMA(0);
+    //  con->setCdma(0);
     connectionManager_->add_connection (con, IN_CONNECTION);
 }
 
@@ -567,27 +567,27 @@ void Mac802_16BS::receive (Packet *pktRx_)
             if (req_tmp->type == 0x3 && con_tmp!=NULL) {
                 debug2 (" cdma_bw_req code :%d, top :%d, ssid :%d\n", req_tmp->code, req_tmp->top, req_tmp->br);
                 cdma_flag = 1;
-                debug10 ("At %f Connection %d, old :%d, set to 1\n", NOW, con_tmp->get_cid(), con_tmp->getCDMA());
+                debug10 ("At %f Connection %d, old :%d, set to 1\n", NOW, con_tmp->get_cid(), con_tmp->getCdma());
 
-                con_tmp->setCDMA(1);
-                con_tmp->setCDMA_code(req_tmp->code);
-                con_tmp->setCDMA_top(req_tmp->top);
+                con_tmp->setCdma(1);
+                con_tmp->setCdmaCode(req_tmp->code);
+                con_tmp->setCdmaTop(req_tmp->top);
                 Packet::free(pktRx_);
                 debug2("==============================BS receive End ===========================================\n");
                 return;
             } else if (req_tmp->type == 0x2 && con_tmp!=NULL) {
                 debug2 (" cdma_init_req code :%d, top :%d, ssid :%d\n", req_tmp->code, req_tmp->top, req_tmp->br);
                 cdma_flag = 2;
-                debug10 ("At %f Connection %d, old :%d, set to 2\n", NOW, con_tmp->get_cid(), con_tmp->getCDMA());
+                debug10 ("At %f Connection %d, old :%d, set to 2\n", NOW, con_tmp->get_cid(), con_tmp->getCdma());
 
-                con_tmp->setCDMA(2);
-                con_tmp->setCDMA_SSID_FLAG(req_tmp->br, 2);
-                con_tmp->setCDMA_SSID_SSID(req_tmp->br, req_tmp->br);
-                con_tmp->setCDMA_SSID_CODE(req_tmp->br, req_tmp->code);
-                con_tmp->setCDMA_SSID_TOP(req_tmp->br, req_tmp->top);
-                con_tmp->setCDMA_SSID_CID(req_tmp->br, con_tmp->get_cid());
-                con_tmp->setCDMA_code(0);
-                con_tmp->setCDMA_top(0);
+                con_tmp->setCdma(2);
+                con_tmp->setCdmaSsidFlag(req_tmp->br, 2);
+                con_tmp->setCdmaSsidSsid(req_tmp->br, req_tmp->br);
+                con_tmp->setCdmaSsidCode(req_tmp->br, req_tmp->code);
+                con_tmp->setCdmaSsidTop(req_tmp->br, req_tmp->top);
+                con_tmp->setCdmaSsidCid(req_tmp->br, con_tmp->get_cid());
+                con_tmp->setCdmaCode(0);
+                con_tmp->setCdmaTop(0);
                 reg_SS_number++;
                 Packet::free(pktRx_);
                 debug2("==============================BS receive End ===========================================\n");
@@ -2269,20 +2269,20 @@ void Mac802_16BS::process_cdma_req (Packet *p)
     //retrieve the CID and update bandwidth request information
     Connection *c =  getCManager()->get_connection (req->cid, IN_CONNECTION);
     assert (c);
-    debug10 ("BS (setCDMA), code :%d, top :%d, ssid :%d\n", req->code, req->top, req->br);
+    debug10 ("BS (setCdma), code :%d, top :%d, ssid :%d\n", req->code, req->top, req->br);
 
     if (req->type == 0x3) {
-        c->setCDMA (1);
-        c->setCDMA_code (req->code);
-        c->setCDMA_top (req->top);
+        c->setCdma (1);
+        c->setCdmaCode (req->code);
+        c->setCdmaTop (req->top);
     } else {
-        c->setCDMA(2);
-        c->setCDMA_SSID_FLAG(req->br, 2);
-        c->setCDMA_SSID_CODE(req->br, req->code);
-        c->setCDMA_SSID_TOP(req->br, req->top);
-        c->setCDMA_SSID_CID(req->br, c->get_cid());
-        c->setCDMA_code(0);
-        c->setCDMA_top(0);
+        c->setCdma(2);
+        c->setCdmaSsidFlag(req->br, 2);
+        c->setCdmaSsidCode(req->br, req->code);
+        c->setCdmaSsidTop(req->br, req->top);
+        c->setCdmaSsidCid(req->br, c->get_cid());
+        c->setCdmaCode(0);
+        c->setCdmaTop(0);
     }
 
 }
