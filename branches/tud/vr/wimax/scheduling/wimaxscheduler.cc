@@ -51,7 +51,9 @@ void WimaxScheduler::setMac (Mac802_16 *mac)
 void WimaxScheduler::init()
 {
     // initializing dl and ul duration  --rpi
-    OFDMAPhy *phy = mac_->getPhy();
+
+	/*
+	OFDMAPhy *phy = mac_->getPhy();
 
     int nbPS = (int) floor((mac_->getFrameDuration()/phy->getPS()));
 #ifdef DEBUG_WIMAX
@@ -67,6 +69,33 @@ void WimaxScheduler::init()
     mac_->setMaxUlduration (maxulduration);
 
     debug2(" in wimax scheduler maxdlduration = %d maxulduration =%d mac =%d \n", maxdlduration, maxulduration, mac_->addr());
+
+    */
+    OFDMAPhy *phy = mac_->getPhy();
+
+    // number of physical slots shall be 14000 for 5 ms frame duration
+    int nbPS = int( floor((mac_->getFrameDuration()/phy->getPS())));
+    // number of physical slots after rtg and ttg ( rtg=ttg=231 according to wimax forum system evaluation methodology p. 23)
+    int nbPSLeft = nbPS - mac_->phymib_.rtg - mac_->phymib_.ttg;
+    // maximum number of OFDMA symbols available per frame ( 47 according to system evalutation methodology p. 23)
+    int maxNbOFDMASymbols = int( floor(( phy->getPS() * nbPSLeft) / phy->getSymbolTime()));
+
+    // maximum number of OFDMA symbols available per downlink frame ( dl 47 - n, n  for 12 <= n <= 21 )
+    int maxNbDlSymbols = int( floor(maxNbOFDMASymbols * dlratio_));
+    // maximum number of OFDMA symbols available per uplink frame
+    int maxNbUlSymbols = maxNbOFDMASymbols - maxNbDlSymbols;
+
+    // Useful number of OFDMA symbols per downlink frame for PUSC ofdm = 2 * slots + preamble
+    int useNbDlSymbols = int( floor ( (maxNbDlSymbols - DL_PREAMBLE) / phy->getSlotLength(DL_))) * phy->getSlotLength(DL_) + DL_PREAMBLE;
+    printf("Maximum Number of OFDM Symbols in DL Frame : %d Useful Number of Symbols in DL Frame : %d \n", maxNbDlSymbols, useNbDlSymbols);
+
+    // Useful number of OFDMA symbols per uplink frame for PUSC  ofdm = 3 * slots
+    int useNbUlSymbols = int( floor (maxNbUlSymbols / phy->getSlotLength(UL_)) * phy->getSlotLength(UL_));
+    printf("Maximum Number of OFDM Symbols in UL Frame : %d Useful Number of Symbols in UL Frame : %d \n", maxNbUlSymbols, useNbUlSymbols);
+
+    mac_->setMaxDlduration (useNbDlSymbols - DL_PREAMBLE); // dl duration left after preamble for dl timer
+    mac_->setMaxUlduration (useNbUlSymbols);
+
 }
 
 /**

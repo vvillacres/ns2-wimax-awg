@@ -23,8 +23,12 @@ TrafficPolicingNone::~TrafficPolicingNone() {
 MrtrMstrPair_t TrafficPolicingNone::getDataSizes(Connection * connection)
 {
     MrtrMstrPair_t mrtrMstrPair;
-    mrtrMstrPair.first = u_int32_t ( connection->queueByteLength());
-    mrtrMstrPair.second = u_int32_t ( connection->queueByteLength());
+    int wantedSize = connection->queuePayloadLength();
+    if ( connection->getFragmentBytes() > 0 ) {
+    	wantedSize = wantedSize - connection->getFragmentBytes() - HDR_MAC802_16_FRAGSUB_SIZE;
+    }
+    mrtrMstrPair.first = u_int32_t ( wantedSize);
+    mrtrMstrPair.second = u_int32_t ( wantedSize);
 
     return mrtrMstrPair;
 

@@ -21,9 +21,9 @@
 
 #include "wimaxscheduler.h"
 #include "scanningstation.h"
-//#include "trafficpolicinginterface.h"
-//#include "virtualallocation.h"
-//#include "schedulingalgointerface.h"
+#include "trafficpolicinginterface.h"
+#include "virtualallocation.h"
+#include "schedulingalgointerface.h"
 
 #define INIT_DL_DURATION 20 //enough for DL_MAP, UL_MAP, DCD, UCD and some RNG-RSP
 #define MIN_CONTENTION_SIZE 5 //minimum number of opportunity for allocation

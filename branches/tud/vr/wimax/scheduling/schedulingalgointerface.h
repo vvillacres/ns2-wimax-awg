@@ -18,6 +18,7 @@
 class SchedulingAlgoInterface {
 public:
 
+	SchedulingAlgoInterface();
 	/*
 	 * Calls the scheduling algorithm to schedule all data connection
 	 * Results are
@@ -29,7 +30,7 @@ public:
 
 protected:
 
-	SchedulingAlgoInterface();
+
 
 
 };
