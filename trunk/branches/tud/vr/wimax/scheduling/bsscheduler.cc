@@ -57,6 +57,7 @@
 
 //vr@tud dedug for bsscheduler
 #define debug10 printf
+#define debug2 printf
 
 //Scheduler allocates CBR every frame
 #define UGS_AVG
@@ -292,7 +293,7 @@ void BSScheduler::init ()
     // Create default alogrithm objects
 
     // traffic policing
-    trafficPolicingAlgorithm_ =  new TrafficPolicingAccurate( mac_->getFrameDuration());
+    trafficPolicingAlgorithm_ =  new TrafficPolicingNone( mac_->getFrameDuration());
 
     // Scheduling Algorithm for Downlink Direction
     dlSchedulingAlgorithm_ = new SchedulingAlgoDualEqualFill();
@@ -741,7 +742,7 @@ void BSScheduler::schedule ()
             } else {
                 peerNode = n->getPeerNode ();
                 // TODO: Change for multiple data connection
-                if (peerNode->getOutDataCon ( 0) != NULL && peerNode->getOutDataCon ( 0)->queueLength () != 0 && getMac()->isArqFbinDlData()) {
+                if (peerNode->getOutDataCon() != NULL && peerNode->getOutDataCon()->queueLength() != 0 && getMac()->isArqFbinDlData()) {
                     out_datacnx_exists = true;
                 }
 
@@ -754,7 +755,7 @@ void BSScheduler::schedule ()
                     wimaxHdrMap->num_of_acks = 0;
                 } else {
                     debug2("ARQ BS : Feedback in data Cid \n");
-                    OutData = peerNode->getOutDataCon ( 0);
+                    OutData = peerNode->getOutDataCon();
                     pfb = OutData->dequeue ();
                     wimaxHdrMap= HDR_MAC802_16(pfb);
                     if (wimaxHdrMap->header.type_arqfb == 1) {
@@ -867,35 +868,35 @@ void BSScheduler::schedule ()
     }
 
     //Set contention slots for cdma initial ranging
-    int nbulpdus = 0;
-    UlBurst *ub = (UlBurst*)mac_->getMap()->getUlSubframe()->addPhyPdu ( nbulpdus++ , 0)->addBurst ( 0);
+    int nbUlPdus = 0;
+    UlBurst *ub = (UlBurst*)mac_->getMap()->getUlSubframe()->addPhyPdu ( nbUlPdus++ , 0)->addBurst ( 0);
     ub->setIUC (UIUC_INITIAL_RANGING);
     int int_rng_num_sub = int(init_contention_size_*CDMA_6SUB);		//init_contention_size is set to 5 in this version
     int int_rng_num_sym = 2;
     ub->setDuration (int_rng_num_sym);
     ub->setStarttime ( ulSymbolOffset); // vr@tud
-    ub->setSubchannelOffset ( ulSubchannelOffset);//vr@tud
+    ub->setSubchannelOffset ( 0); //ulSubchannelOffset //vr@tud
     ub->setnumSubchannels(int_rng_num_sub);
-    debug10 ("UL.Initial Ranging, contention_size :%d, 1opportunity = 6sub*2symbols, ulduration :%d, initial_rng_duration :%d, updated ulduration :%d\n", init_contention_size_, ulSymbolOffset, int_rng_num_sym, ulSymbolOffset + int_rng_num_sym);
+    debug_ext ("UL.Initial Ranging, contention_size :%d, 1opportunity = 6sub*2symbols, ulduration :%d, initial_rng_duration :%d, updated ulduration :%d\n", init_contention_size_, ulSymbolOffset, int_rng_num_sym, ulSymbolOffset + int_rng_num_sym);
 
     ulSymbolOffset += int_rng_num_sym;
     ulSubchannelOffset += 0; // vr@tud ???
-    //freeUlSlots -= 35; // vr@tud ???
+    freeUlSlots -= 35; // vr@tud ??? 30x2 slots
 
     //Set contention slots for cdma bandwidth request
-    ub = (UlBurst*)mac_->getMap()->getUlSubframe()->addPhyPdu (nbulpdus++,0)->addBurst (0);
+    ub = (UlBurst*)mac_->getMap()->getUlSubframe()->addPhyPdu (nbUlPdus++,0)->addBurst (0);
     ub->setIUC (UIUC_REQ_REGION_FULL);
     int bw_rng_num_sub = int(bw_req_contention_size_*CDMA_6SUB);	//bw_req_contention_size is set to 5 in this version
     int bw_rng_num_sym = 1;
     ub->setDuration ( bw_rng_num_sym);
     ub->setStarttime ( ulSymbolOffset);
-    ub->setSubchannelOffset ( ulSubchannelOffset);
+    ub->setSubchannelOffset ( 0); //ulSubchannelOffset
     ub->setnumSubchannels( bw_rng_num_sub);
     debug10 ("UL.Bw-req, contention_size :%d, 1opportunity = 6sub*1symbols, ulduration :%d, bw-req_duration :%d, updated ulduration :%d\n", bw_req_contention_size_, ulSymbolOffset, bw_rng_num_sym, ulSymbolOffset + bw_rng_num_sym);
 
     ulSymbolOffset += bw_rng_num_sym;
     ulSubchannelOffset += 0; // vr@tud ???
-    //freeUlSlots -= 35; // vr@tud ???
+    freeUlSlots -= 35; // vr@tud ??? 30 * 1 slots
 
 
     //Set CQICH slot for feedback from SS.
@@ -925,7 +926,7 @@ void BSScheduler::schedule ()
                 if ((mac_->cqich_alloc_info_buffer[i].need_cqich_slot == 1)
                         &&  (sync_cqich_slot_allocated < MAX_SYNC_CQICH_SLOT)) { // has sent, so start allocating CQICH slot
                     debug2("generate a UL Burst for CQICH slot.\n");
-                    ub = (UlBurst*) mac_->getMap()->getUlSubframe()->addPhyPdu (nbulpdus++,0)->addBurst (0);
+                    ub = (UlBurst*) mac_->getMap()->getUlSubframe()->addPhyPdu (nbUlPdus++,0)->addBurst (0);
                     ub->setIUC (UIUC_PROFILE_2);  // Enhanced CQICH profile.
                     ub->setDuration(1);
                     ub->setStarttime ( ulSymbolOffset);
@@ -949,7 +950,6 @@ void BSScheduler::schedule ()
             //freeUlSlots -= 35; // vr@tud ???
         }
     }
-    freeUlSlots -= 35;
 
     mac_->setStartUlduration (ulSymbolOffset);
 
@@ -983,8 +983,8 @@ void BSScheduler::schedule ()
             //debug2 ("\tmaxdlduration :%d, maxulduration :%d, numsubchannels :%d, ulduration :%d\n", maxdlduration, (maxulduration), phy->getNumsubchannels(/*phy->getPermutationscheme (),*/ UL_), ulduration);
 
             /*UL_stage2()*/
-            //mac802_16_ul_map_frame * ulmap = ul_stage2 (mac_->getCManager()->get_in_connection (),phy->getNumsubchannels( UL_), (maxulduration-ulduration), ulduration, VERTICAL_STRIPPING );
-            mac802_16_ul_map_frame * ulMap = buildUplinkMap( mac_->getCManager()->get_in_connection (), useNbUlSymbols, phy->getNumsubchannels( UL_), ulSymbolOffset, ulSubchannelOffset, freeUlSlots);
+            mac802_16_ul_map_frame * ulMap = ul_stage2 (mac_->getCManager()->get_in_connection (),phy->getNumsubchannels( UL_), (useNbUlSymbols-ulSymbolOffset), useNbUlSymbols, VERTICAL_STRIPPING );
+            //mac802_16_ul_map_frame * ulMap = buildUplinkMap( mac_->getCManager()->get_in_connection (), useNbUlSymbols, phy->getNumsubchannels( UL_), ulSymbolOffset, ulSubchannelOffset, freeUlSlots);
 
 
             // From UL_MAP_IE, we map the allocation into UL_BURST
@@ -992,7 +992,7 @@ void BSScheduler::schedule ()
             nbOfUlMapIes = int( ulMap->nb_ies);
             for (int numie = 0 ; numie < nbOfUlMapIes ; numie++) {
                 mac802_16_ulmap_ie ulmap_ie = ulMap->ies[numie];
-                ub = (UlBurst*) mac_->getMap()->getUlSubframe()->addPhyPdu (nbulpdus++,0)->addBurst (0);
+                ub = (UlBurst*) mac_->getMap()->getUlSubframe()->addPhyPdu (nbUlPdus++,0)->addBurst (0);
 
 
                 debug2 ("In side ulmap adding to burst,  UL_MAP_IE.UIUC = %d, num_UL_MAP_IE = %d\n", ulmap_ie.uiuc, ulMap->nb_ies);
@@ -1076,13 +1076,15 @@ void BSScheduler::schedule ()
     }
 
     //End of map
+    // does not exist in IEEE 802.16Rev2, but necessary for synchronization
+
     //Note that in OFDMA, there is no end of UL map, it'll be removed in next version; however, this is a virtual end of map say there is no transmitted packet/message
-    ub = (UlBurst*)mac_->getMap()->getUlSubframe()->addPhyPdu (nbulpdus,0)->addBurst (0);
+    ub = (UlBurst*)mac_->getMap()->getUlSubframe()->addPhyPdu (nbUlPdus,0)->addBurst (0);
     ub->setIUC (UIUC_END_OF_MAP);
     ub->setStarttime (useNbUlSymbols);
     ub->setSubchannelOffset (0); //Richard: changed 1->0
     ub->setnumSubchannels (phy->getNumsubchannels(UL_));
-    //debug10 ("UL.EndofMAP: (addBurst_%d) maxuluration :%d, lastbursts :%d, nbulpdus :%d\n", nbdlbursts, maxulduration, nbdlbursts, nbulpdus);
+    debug_ext ("UL.EndofMAP: (addBurst_%d) maxuluration :%d, lastbursts :%d, nbulpdus :%d\n", nbOfUlMapIes, useNbUlSymbols, nbOfUlMapIes, nbUlPdus);
 
 
 
@@ -1187,7 +1189,9 @@ void BSScheduler::schedule ()
             //debug10 ("\tStartdld :%d, Enddld :%d, Dldsize :%d, Uldsize :%d, Numsubchannels (35 or 30) :%d \n", useNbDlSymbols,  phy->getNumsubchannels(/*phy->getPermutationscheme (), */DL_));
 
             dlMap = buildDownlinkMap( virtualAlloc, mac_->getCManager()->get_out_connection (), phy->getNumsubchannels(DL_), useNbDlSymbols, dlSymbolOffset, dlSubchannelOffset, freeDlSlots);
-
+            if (dlMap->type == MAC_DL_MAP) {
+            	printf("ok \n");
+            }
 
             // create physical DL burst
             // TODO: Note that #subchannels = #slots in this version
@@ -1214,7 +1218,6 @@ void BSScheduler::schedule ()
     } else {
         // Allocate Broadcast Burst if Downlink Map was not created
         DlBurst *db;
-        int nbOfDlBursts = 0;
         db = (DlBurst*) map->getDlSubframe()->getPdu ()->addBurst (nbOfDlBursts++);
         db->setCid ( BROADCAST_CID);
         db->setIUC ( map->getDlSubframe()->getProfile (DIUC_PROFILE_2)->getIUC());
@@ -1222,11 +1225,12 @@ void BSScheduler::schedule ()
         db->setStarttime( dlSymbolOffset);
         db->setSubchannelOffset( dlSymbolOffset);
         db->setnumSubchannels( virtualAlloc->getNbOfBroadcastSlots());
-        db->setDuration( int( ceil( double( dlSubchannelOffset + virtualAlloc->getNbOfBroadcastSlots()) /  phy->getNumsubchannels(UL_)) * phy->getSlotLength(DL_)));
+        db->setDuration( int( ceil( double( dlSubchannelOffset + virtualAlloc->getNbOfBroadcastSlots()) /  phy->getNumsubchannels(DL_)) * phy->getSlotLength(DL_)));
 
     }
 
 
+    debug_ext("Number of Downlink Bursts %d !!!!!!!!!!!!!!!!!!!!! \n",nbOfDlBursts++);
 
     // delete virtual allocation container
     delete virtualAlloc;
@@ -1235,21 +1239,10 @@ void BSScheduler::schedule ()
         delete dlMap;
     }
 
-    // does not exist in IEEE 802.16Rev2, but necessary for synchronization
-
-    /*
-    //3-Add the End of map element
-    db = (DlBurst*) map->getDlSubframe()->getPdu ()->addBurst (nbOfDlBursts);
-    db->setIUC (DIUC_END_OF_MAP);
-    //debug2("\t maxdlduration is [%d] #_of_burst is [%d]\n",maxdlduration, map->getDlSubframe()->getPdu ()->getNbBurst());
-    db->setStarttime (useNbDlSymbols);  // richard - question - what is the duration of this and why this is used.
-    db->setSubchannelOffset (29); //Richard: changed 1->0 // vr@tud 0->29 last slot
-    db->setnumSubchannels (0); // vr@tud 1->0 it doesn't exist therefore we assume a size of zero
-
-    debug2("The DL burst number is [%d]\n",nbOfDlBursts);
 
 
-    */
+
+
 
 
 
@@ -2202,7 +2195,7 @@ mac802_16_dl_map_frame * BSScheduler::buildDownlinkMap( VirtualAllocation * virt
             allocationSize = currentCon->queueByteLength();
             if ( allocationSize > 0 ) {
                 // allocate resources for management data
-                Ofdm_mod_rate burstProfile = mac_->getMap()->getUlSubframe()->getProfile(currentCon->getPeerNode()->getUIUC())->getEncoding();
+                Ofdm_mod_rate burstProfile = mac_->getMap()->getDlSubframe()->getProfile(currentCon->getPeerNode()->getDIUC())->getEncoding();
                 int slotCapacity = mac_->getPhy()->getSlotCapacity( burstProfile, DL_);
 
                 // increase Downlink Map
@@ -2265,9 +2258,9 @@ mac802_16_dl_map_frame * BSScheduler::buildDownlinkMap( VirtualAllocation * virt
             // Add to virtual allocation if data to send
             if (( mrtrMstrPair.first > 0 ) || (mrtrMstrPair.second > 0 )) {
                 // this connection should not have an entry
-                assert( virtualAlloc->findConnectionEntry( currentCon));
+                assert( !virtualAlloc->findConnectionEntry( currentCon));
                 // add new virtual alloction
-                Ofdm_mod_rate burstProfile = mac_->getMap()->getUlSubframe()->getProfile(currentCon->getPeerNode()->getUIUC())->getEncoding();
+                Ofdm_mod_rate burstProfile = mac_->getMap()->getDlSubframe()->getProfile(currentCon->getPeerNode()->getDIUC())->getEncoding();
                 int slotCapacity = mac_->getPhy()->getSlotCapacity( burstProfile, DL_);
                 virtualAlloc->addAllocation( currentCon, mrtrMstrPair.first , mrtrMstrPair.second, slotCapacity);
 
@@ -2281,6 +2274,8 @@ mac802_16_dl_map_frame * BSScheduler::buildDownlinkMap( VirtualAllocation * virt
             // do nothing
             break;
         }
+        // goto next connection
+        currentCon = currentCon->next_entry();
     }
 
     // Call Scheduling Algorithm to allocate data connections
@@ -2299,19 +2294,20 @@ mac802_16_dl_map_frame * BSScheduler::buildDownlinkMap( VirtualAllocation * virt
 
     // add broadcast burst
     int dlMapIeIndex = 0;
-    mac802_16_dlmap_ie dlMapIe = dlMap->ies[dlMapIeIndex];
+    mac802_16_dlmap_ie * dlMapIe = NULL;
+    dlMapIe = &(dlMap->ies[dlMapIeIndex]);
 
-    dlMapIe.cid = BROADCAST_CID;
-    dlMapIe.n_cid = 1;
-    dlMapIe.diuc = map->getDlSubframe()->getProfile (DIUC_PROFILE_2)->getIUC();
-    dlMapIe.preamble = true;
-    dlMapIe.start_time = dlSymbolOffset;
-    dlMapIe.symbol_offset = dlSymbolOffset;
-    dlMapIe.subchannel_offset = dlSubchannelOffset;
-    dlMapIe.boosting = 0;
-    dlMapIe.num_of_subchannels = virtualAlloc->getNbOfBroadcastSlots();
-    dlMapIe.num_of_symbols = int( ceil( double( dlSubchannelOffset + virtualAlloc->getNbOfBroadcastSlots()) / totalDlSubchannels) * phy->getSlotLength(DL_));
-    dlMapIe.repition_coding_indicator = 0;
+    dlMapIe->cid = BROADCAST_CID;
+    dlMapIe->n_cid = 1;
+    dlMapIe->diuc = map->getDlSubframe()->getProfile (DIUC_PROFILE_2)->getIUC();
+    dlMapIe->preamble = true;
+    dlMapIe->start_time = dlSymbolOffset;
+    dlMapIe->symbol_offset = dlSymbolOffset;
+    dlMapIe->subchannel_offset = dlSubchannelOffset;
+    dlMapIe->boosting = 0;
+    dlMapIe->num_of_subchannels = virtualAlloc->getNbOfBroadcastSlots();
+    dlMapIe->num_of_symbols = int( ceil( double( dlSubchannelOffset + virtualAlloc->getNbOfBroadcastSlots()) / totalDlSubchannels) * phy->getSlotLength(DL_));
+    dlMapIe->repition_coding_indicator = 0;
 
     // update Symbol and Subchannel Offset
     dlSymbolOffset += int( floor( double( dlSubchannelOffset + virtualAlloc->getNbOfBroadcastSlots()) / totalDlSubchannels) * phy->getSlotLength(DL_));
@@ -2330,19 +2326,19 @@ mac802_16_dl_map_frame * BSScheduler::buildDownlinkMap( VirtualAllocation * virt
             Connection * currentCon = virtualAlloc->getConnection();
             int nbOfUsedSlots = virtualAlloc->getCurrentNbOfSlots();
 
-            dlMapIe = dlMap->ies[dlMapIeIndex];
+            dlMapIe = &(dlMap->ies[dlMapIeIndex]);
 
-            dlMapIe.cid = currentCon->get_cid();
-            dlMapIe.n_cid = 1;
-            dlMapIe.diuc = getUIUCProfile(mac_->getMap()->getUlSubframe()->getProfile(currentCon->getPeerNode()->getUIUC())->getEncoding());
-            dlMapIe.preamble = false;
-            dlMapIe.start_time = dlSymbolOffset;
-            dlMapIe.symbol_offset = dlSymbolOffset;
-            dlMapIe.subchannel_offset = dlSubchannelOffset;
-            dlMapIe.boosting = 0;
-            dlMapIe.num_of_subchannels = nbOfUsedSlots;
-            dlMapIe.num_of_symbols = int( ceil( double( dlSubchannelOffset + nbOfUsedSlots) / totalDlSubchannels) * phy->getSlotLength(DL_));
-            dlMapIe.repition_coding_indicator = 0;
+            dlMapIe->cid = currentCon->get_cid();
+            dlMapIe->n_cid = 1;
+            dlMapIe->diuc = getDIUCProfile(mac_->getMap()->getDlSubframe()->getProfile(currentCon->getPeerNode()->getDIUC())->getEncoding());
+            dlMapIe->preamble = false;
+            dlMapIe->start_time = dlSymbolOffset;
+            dlMapIe->symbol_offset = dlSymbolOffset;
+            dlMapIe->subchannel_offset = dlSubchannelOffset;
+            dlMapIe->boosting = 0;
+            dlMapIe->num_of_subchannels = nbOfUsedSlots;
+            dlMapIe->num_of_symbols = int( ceil( double( dlSubchannelOffset + nbOfUsedSlots) / totalDlSubchannels) * phy->getSlotLength(DL_));
+            dlMapIe->repition_coding_indicator = 0;
 
             // update Symbol and Subchannel Offset
             dlSymbolOffset += int( floor( double( dlSubchannelOffset + nbOfUsedSlots) / totalDlSubchannels) * phy->getSlotLength(DL_));

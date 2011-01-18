@@ -280,10 +280,6 @@ int Mac802_16::command(int argc, const char*const* argv)
             if (logtarget_ == 0)
                 return TCL_ERROR;
             return TCL_OK;
-        } else if (strcmp(argv[1], "removeflow") == 0) {
-        	result = serviceFlowHandler_->removeStaticFlow( argc, argv);
-        	debug(" Command removeflow is executed \n");
-        	return result;
         }
     } else if (argc == 22) {
         if (strcmp(argv[1], "setflow") == 0) {
@@ -432,28 +428,14 @@ void Mac802_16::removePeerNode (PeerNode *peer)
         delete (peer->getSecondary(IN_CONNECTION));
         delete (peer->getSecondary(OUT_CONNECTION));
     }
-    int i = 0;
-    while ( peer->getInDataCon( i)) {
-    	getCManager()->remove_connection( peer->getInDataCon( i)->get_cid());
-    	delete (peer->getInDataCon( i));
-    	i++;
+    if (peer->getInDataCon()) {
+        getCManager()->remove_connection (peer->getInDataCon()->get_cid());
+        delete (peer->getInDataCon());
     }
-    i = 0;
-    while ( peer->getOutDataCon( i)) {
-    	getCManager()->remove_connection( peer->getOutDataCon( i)->get_cid());
-    	delete (peer->getOutDataCon( i));
-    	i++;
+    if (peer->getOutDataCon()) {
+        getCManager()->remove_connection (peer->getOutDataCon()->get_cid());
+        delete (peer->getOutDataCon());
     }
-    /*
-    if (peer->getInData()) {
-        getCManager()->remove_connection (peer->getInData()->get_cid());
-        delete (peer->getInData());
-    }
-    if (peer->getOutData()) {
-        getCManager()->remove_connection (peer->getOutData()->get_cid());
-        delete (peer->getOutData());
-    }
-    */
     peer->remove_entry ();
     nb_peer_--;
     delete (peer);

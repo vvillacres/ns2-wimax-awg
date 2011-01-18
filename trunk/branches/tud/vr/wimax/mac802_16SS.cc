@@ -1993,11 +1993,25 @@ void Mac802_16SS::process_dl_map (mac802_16_dl_map_frame *frame)
             //since the map may have changed, we need to adjust the timer
             //for the DLSubframe
             double stime = getMap()->getStarttime();
-            //stime += getMap()->getDlSubframe()->getPdu()->getBurst(0)->getStarttime()*getPhy()->getSymbolTime();
+            // vr@tud test
             stime += (getMap()->getDlSubframe()->getPdu()->getBurst(0)->getStarttime() + getMaxDlduration())*getPhy()->getSymbolTime();
+            //stime += getMap()->getDlSubframe()->getPdu()->getBurst(0)->getStarttime()*getPhy()->getSymbolTime();
+            //stime += getMap()->getDlSubframe()->getPdu()->getBurst(1)->getStarttime()*getPhy()->getSymbolTime();
             //printf ("received dl..needs to update expiration to %f, %f,%f\n", stime, NOW,getMap()->getStarttime());
             getMap()->getDlSubframe()->getTimer()->resched (stime-NOW);
             dl_timer_->resched (getMap()->getStarttime()+getFrameDuration()-NOW);
+
+
+        	// TODO: Compare Code
+
+        	//since the map may have changed, we need to adjust the timer
+            //for the DLSubframe
+            //double stime = getMap()->getStarttime();
+            //stime += getMap()->getDlSubframe()->getPdu()->getBurst(0)->getStarttime()*getPhy()->getSymbolTime();
+            //stime += (getMap()->getDlSubframe()->getPdu()->getBurst(0)->getStarttime() + getMaxDlduration())*getPhy()->getSymbolTime();
+            //printf ("received dl..needs to update expiration to %f, %f,%f\n", stime, NOW,getMap()->getStarttime());
+            //getMap()->getDlSubframe()->getTimer()->resched (stime-NOW);
+            //dl_timer_->resched (getMap()->getStarttime()+getFrameDuration()-NOW);
         }
     }
 }
@@ -2467,6 +2481,9 @@ void Mac802_16SS::process_ranging_rsp (mac802_16_rng_rsp_frame *frame)
                     delete (peer->getSecondary(IN_CONNECTION));
                     delete (peer->getSecondary(OUT_CONNECTION));
                 }
+
+
+                /*
                 int i = 0;
                 while ( peer->getInDataCon( i)) {
                 	getCManager()->remove_connection( peer->getInDataCon( i));
@@ -2479,11 +2496,15 @@ void Mac802_16SS::process_ranging_rsp (mac802_16_rng_rsp_frame *frame)
                 	delete (peer->getOutDataCon( i));
                 	i++;
                 }
-               /* if (peer->getOutData()!=NULL)
-                    getCManager ()->remove_connection (peer->getOutData());
-                if (peer->getInData()!=NULL)
-                    getCManager ()->remove_connection (peer->getInData());
-            	*/
+
+                */
+                if (peer->getOutDataCon()!=NULL)
+                    getCManager ()->remove_connection (peer->getOutDataCon());
+                	delete (peer->getOutDataCon());
+                if (peer->getInDataCon()!=NULL)
+                    getCManager ()->remove_connection (peer->getInDataCon());
+                	delete (peer->getInDataCon());
+
             }
 
             basic = new Connection (CONN_BASIC, frame->basic_cid);

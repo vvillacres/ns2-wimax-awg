@@ -59,16 +59,17 @@ void SchedulingAlgoDualEqualFill::scheduleConnections( VirtualAllocation* virtua
 		/*
 		 * Allocation of Slots for fulfilling the MRTR demands
 		 */
+		bool test;
 
 		// get first data connection
 		if ( lastConnectionPtr_ != NULL ) {
 			// find last connection
-			virtualAllocation->findConnectionEntry( lastConnectionPtr_);
+			test = virtualAllocation->findConnectionEntry( lastConnectionPtr_);
 			// get next connection
-			virtualAllocation->nextConnectionEntry();
+			test = virtualAllocation->nextConnectionEntry();
 		} else {
 			// get first connection
-			virtualAllocation->firstConnectionEntry();
+			test = virtualAllocation->firstConnectionEntry();
 		}
 
 		while ( ( nbOfMrtrConnections > 0 ) && ( freeSlots > 0 ) ) {
@@ -91,6 +92,8 @@ void SchedulingAlgoDualEqualFill::scheduleConnections( VirtualAllocation* virtua
 				while ( ( virtualAllocation->getConnection()->getType() != CONN_DATA ) ||
 						( virtualAllocation->getWantedMrtrSize() <= u_int32_t( virtualAllocation->getCurrentNbOfBytes() ) ) )  {
 					// next connection
+
+					// TODO: may cause problems ugly
 					virtualAllocation->nextConnectionEntry();
 				}
 
@@ -134,7 +137,7 @@ void SchedulingAlgoDualEqualFill::scheduleConnections( VirtualAllocation* virtua
 				// calculate fragmentation of the last scheduled packet
 				if ( allocatedBytes > maximumBytes) {
 					// one additional fragmentation subheader has to be considered
-					allocatedPayload -= ( (maximumBytes - allocatedBytes) + HDR_MAC802_16_FRAGSUB_SIZE);
+					allocatedPayload -= ( (allocatedBytes - maximumBytes) + HDR_MAC802_16_FRAGSUB_SIZE);
 					allocatedBytes = maximumBytes;
 					// is demand fulfilled ?
 					if ( allocatedPayload >= wantedMrtrSize) {
@@ -287,8 +290,10 @@ void SchedulingAlgoDualEqualFill::scheduleConnections( VirtualAllocation* virtua
 
 		}
 
-		// save last served connection for the next round
-		lastConnectionPtr_ = virtualAllocation->getConnection();
+		if ( nbOfMstrConnections > 0 ) {
+			// save last served connection for the next round
+			lastConnectionPtr_ = virtualAllocation->getConnection();
+		}
 	}
 
 }

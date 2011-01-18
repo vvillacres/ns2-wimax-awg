@@ -14,9 +14,11 @@ VirtualAllocationElement::VirtualAllocationElement(Connection* connectionPtr, u_
     connectionPtr_ = connectionPtr;
     wantedMstrSize_ = wantedMstrSize;
     wantedMrtrSize_ = wantedMrtrSize;
+    slotCapacity_ = slotCapacity;
     nbOfBytes_ = nbOfBytes;
     nbOfSlots_ = nbOfSlots;
     nbOfCdmaSlots_ = nbOfCdmaSlots;
+
 }
 
 VirtualAllocationElement::~VirtualAllocationElement()

@@ -18,6 +18,7 @@
 #include <sys/types.h>
 #include <utility>
 
+
 typedef std::pair< u_int32_t, u_int32_t> MrtrMstrPair_t;
 
 class Connection;
@@ -25,6 +26,10 @@ class Connection;
 class TrafficPolicingInterface
 {
 public:
+
+    TrafficPolicingInterface(double frameDuration);
+
+    virtual ~TrafficPolicingInterface();
 
     /*
      * Returns wantedMstrSize and wantedMrtrSize as guideline for the scheduling algorithm
@@ -37,12 +42,9 @@ public:
      */
     virtual void updateAllocation(Connection *connection,u_int32_t realMstrSize,u_int32_t realMrtSize);
 
-    virtual ~TrafficPolicingInterface();
-
 
 protected:
 
-    TrafficPolicingInterface(double frameDuration);
 
 
     /*

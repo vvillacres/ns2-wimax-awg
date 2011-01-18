@@ -99,7 +99,7 @@ bool VirtualAllocation::nextConnectionEntry()
 			return true;
 		} else {
 			// TODO: May cause problems if no Map Entry exists
-			mapIterator_ = virtualAllocationMap_.end();
+			mapIterator_ = virtualAllocationMap_.begin();
 			return false;
 		}
 	} else {
@@ -270,7 +270,7 @@ void VirtualAllocation::updateAllocation( int nbOfSlots, int nbOfBytes)
 
     if ( virtualAllocationMap_.end() != mapIterator_ ) {
         mapIterator_->second.setNbOfAllocatedSlots( nbOfSlots);
-        mapIterator_->second.setNbOfAllocatedBytes( nbOfSlots);
+        mapIterator_->second.setNbOfAllocatedBytes( nbOfBytes);
     } else {
         fprintf(stderr,"ERROR: Iterator not valid use findCidEntry() before");
         exit(5);

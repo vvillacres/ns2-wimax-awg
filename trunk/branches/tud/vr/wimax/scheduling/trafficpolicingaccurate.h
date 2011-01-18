@@ -35,7 +35,7 @@ typedef MapLastAllocationList_t::iterator AllocationListIt_t;
 
 class Connection;
 
-class TrafficPolicingAccurate: public TrafficPolicingInterface
+class TrafficPolicingAccurate : public TrafficPolicingInterface
 {
 public:
     TrafficPolicingAccurate(double frameDuration_);

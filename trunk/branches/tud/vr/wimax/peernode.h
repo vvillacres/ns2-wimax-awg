@@ -21,10 +21,6 @@
 
 #include "connection.h"
 #include "mac-stats.h"
-#include <vector>
-
-
-typedef std::vector<Connection *> ConnectionList_t;
 
 class PeerNode;
 LIST_HEAD (peerNode, PeerNode);
@@ -94,63 +90,30 @@ public:
     }
 
     /**
-     * Set the channel used for data messages
+     *  Add the channel used for data messages
+     *  @param connection
+     */
+    void  addInDataCon (Connection * connection);
+
+    /**
+     * Add the channel used for data messages
      * @param connection
      */
-    //void  setInData (Connection * connection);
-
-    /**
-     * Add one channel for incoming data messages
-     */
-    void addInDataCon (Connection * connection);
-
-
-    /**
-     * Set the channel used for data messages
-     * @param connection
-     */
-    //void  setOutData (Connection * connection);
-
-    /**
-     * Add one channel for outgoing data messages
-     *
-     */
-    void addOutDataCon (Connection * connection);
-
+    void  addOutDataCon (Connection * connection);
 
     /**
      * Return the connection used for data messages
      */
-   // Connection*  getOutData () {
-   //     return outdata_;
-   // }
-
-    /**
-     * Return the n'th connection used for incoming data messages
-     */
-    Connection * getInDataCon (int connectionIndex );
+    Connection*  getOutDataCon () {
+        return outdata_;
+    }
 
     /**
      * Return the connection used for data messages
      */
-    //Connection*  getInData () {
-    //    return indata_;
-    //}
-
-    /**
-     * Return the n'th connection used for data messages
-     */
-    Connection * getOutDataCon (int connectionIndex );
-
-    /**
-     * Return the number of incoming connections
-     */
-    int getNbOfInDataCon ();
-
-    /**
-     * Return the number of outgoing connections
-     */
-    int getNbOfOutDataCon ();
+    Connection*  getInDataCon () {
+        return indata_;
+    }
 
     /**
      * Set the time the last packet was received
@@ -318,12 +281,12 @@ private:
     /**
      * Incoming data connection to this client
      */
-    ConnectionList_t listInData_;
+    Connection* indata_;
 
     /**
      * Outgoing data connection to this client
      */
-    ConnectionList_t listOutData_;
+    Connection* outdata_;
 
     /**
      * Time last packet was received for this peer

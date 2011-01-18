@@ -5,7 +5,9 @@
  *      Author: richter
  */
 
+
 #include "trafficpolicinginterface.h"
+#include <stdio.h>
 
 TrafficPolicingInterface::TrafficPolicingInterface(double frameDuration)
 {
@@ -22,6 +24,7 @@ TrafficPolicingInterface::~TrafficPolicingInterface()
 
 MrtrMstrPair_t TrafficPolicingInterface::getDataSizes(Connection* connection)
 {
+	printf("ERROR !!!!!!!!! \n");
 	// overwritten by subclass
 }
 
