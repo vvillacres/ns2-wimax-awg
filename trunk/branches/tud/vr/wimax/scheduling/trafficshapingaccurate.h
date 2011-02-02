@@ -5,10 +5,10 @@
  *      Author: richter
  */
 
-#ifndef TRAFFICPOLICINGACCURATE_H_
-#define TRAFFICPOLICINGACCURATE_H_
+#ifndef TRAFFICSHAPINGACCURATE_H_
+#define TRAFFICSHAPINGACCURATE_H_
 
-#include "trafficpolicinginterface.h"
+#include "trafficshapinginterface.h"
 #include <map>
 #include <deque>
 using namespace std;
@@ -35,11 +35,11 @@ typedef MapLastAllocationList_t::iterator AllocationListIt_t;
 
 class Connection;
 
-class TrafficPolicingAccurate : public TrafficPolicingInterface
+class TrafficShapingAccurate : public TrafficShapingInterface
 {
 public:
-    TrafficPolicingAccurate(double frameDuration_);
-    virtual ~TrafficPolicingAccurate();
+    TrafficShapingAccurate(double frameDuration_);
+    virtual ~TrafficShapingAccurate();
 
     /*
      * Calculate predicted mrtr and msrt sizes

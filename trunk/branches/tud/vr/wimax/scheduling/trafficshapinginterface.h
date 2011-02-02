@@ -1,7 +1,7 @@
 /*
- * trafficpolicinginterface.h
+ * trafficshapinginterface.h
  *
- * Defines a common Interface for different Traffic Policing Algorithms.
+ * Defines a common Interface for different Traffic Shaping Algorithms.
  *
  * These algorithms have to calculate the wantedMstrSize and the wantedMrtrSize
  * to fulfill the QoS Parameters Maximum Sustained Traffic Rate and Minimum Reserved Traffic Rate.
@@ -12,8 +12,8 @@
  *      Author: richter
  */
 
-#ifndef TRAFFICPOLICINGINTERFACE_H_
-#define TRAFFICPOLICINGINTERFACE_H_
+#ifndef TRAFFICSHAPINGINTERFACE_H_
+#define TRAFFICSHAPINGINTERFACE_H_
 
 #include <sys/types.h>
 #include <utility>
@@ -23,13 +23,13 @@ typedef std::pair< u_int32_t, u_int32_t> MrtrMstrPair_t;
 
 class Connection;
 
-class TrafficPolicingInterface
+class TrafficShapingInterface
 {
 public:
 
-    TrafficPolicingInterface(double frameDuration);
+    TrafficShapingInterface(double frameDuration);
 
-    virtual ~TrafficPolicingInterface();
+    virtual ~TrafficShapingInterface();
 
     /*
      * Returns wantedMstrSize and wantedMrtrSize as guideline for the scheduling algorithm
@@ -55,4 +55,4 @@ protected:
 
 };
 
-#endif /* TRAFFICPOLICINGINTERFACE_H_ */
+#endif /* TRAFFICSHAPINGINTERFACE_H_ */

@@ -39,6 +39,10 @@ void SchedulingAlgoDualEqualFill::scheduleConnections( VirtualAllocation* virtua
 		do {
 			if ( virtualAllocation->getConnection()->getType() == CONN_DATA ) {
 
+				// Debugging propose
+				// MRTR size is always less or equal to MSTR size
+				assert( virtualAllocation->getWantedMrtrSize() <= virtualAllocation->getWantedMstrSize());
+
 				// count the connection and the amount of data which has to be scheduled to fullfill the mrtr rates
 				if ( virtualAllocation->getWantedMrtrSize() > 0 ) {
 
@@ -52,6 +56,7 @@ void SchedulingAlgoDualEqualFill::scheduleConnections( VirtualAllocation* virtua
 					nbOfMstrConnections++;
 					sumOfWantedMstrBytes += ( virtualAllocation->getWantedMstrSize() - virtualAllocation->getWantedMrtrSize());
 				}
+				printf(" Demand MRTR %d MSTR %d \n", virtualAllocation->getWantedMrtrSize(), virtualAllocation->getWantedMstrSize());
 			}
 		} while ( virtualAllocation->nextConnectionEntry() );
 
@@ -59,6 +64,8 @@ void SchedulingAlgoDualEqualFill::scheduleConnections( VirtualAllocation* virtua
 		/*
 		 * Allocation of Slots for fulfilling the MRTR demands
 		 */
+
+		// for debugging purpose
 		bool test;
 
 		// get first data connection
@@ -145,8 +152,8 @@ void SchedulingAlgoDualEqualFill::scheduleConnections( VirtualAllocation* virtua
 						nbOfMrtrConnections--;
 					}
 				} else {
-					// is demand fulfilled
-					if ( allocatedPayload >= wantedMrtrSize) {
+					// is demand fulfilled due to allocated bytes or all packets
+					if (( allocatedPayload >= wantedMrtrSize) || ( currentPacket == NULL)) {
 						// reduce number of connection with mrtr demand
 						nbOfMrtrConnections--;
 						// consider fragmentation due to traffic policing
@@ -205,8 +212,9 @@ void SchedulingAlgoDualEqualFill::scheduleConnections( VirtualAllocation* virtua
 
 
 				// go to connection which has unfulfilled  Mrtr demands
-				while  ( ( virtualAllocation->getConnection()->getType() != CONN_DATA ) ||
+				while  ( ( virtualAllocation->getConnection()->getType() != CONN_DATA ) 	||
 						( virtualAllocation->getWantedMstrSize() <= u_int32_t( virtualAllocation->getCurrentNbOfBytes()) ) ) {
+
 					// next connection
 
 					virtualAllocation->nextConnectionEntry();
@@ -260,8 +268,8 @@ void SchedulingAlgoDualEqualFill::scheduleConnections( VirtualAllocation* virtua
 						nbOfMstrConnections--;
 					}
 				} else {
-					// has demand fulfilled
-					if ( allocatedPayload >= wantedMstrSize) {
+					// is demand fulfilled due to allocated bytes or all packets in the queue are scheduled
+					if (( allocatedPayload >= wantedMstrSize) || ( currentPacket == NULL)) {
 						// reduce number of connection with mrtr demand
 						nbOfMstrConnections--;
 						// consider fragmentation due to traffic policing

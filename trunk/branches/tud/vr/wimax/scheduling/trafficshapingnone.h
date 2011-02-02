@@ -1,19 +1,19 @@
 /*
- * trafficpolicingnone.h
+ * trafficshapingnone.h
  *
  *  Created on: 05.09.2010
  *      Author: richter
  */
 
-#ifndef TRAFFICPOLICINGNONE_H_
-#define TRAFFICPOLICINGNONE_H_
+#ifndef TRAFFICSHAPINGNONE_H_
+#define TRAFFICSHAPINGNONE_H_
 
-#include "trafficpolicinginterface.h"
+#include "trafficshapinginterface.h"
 
-class TrafficPolicingNone: public TrafficPolicingInterface {
+class TrafficShapingNone: public TrafficShapingInterface {
 public:
-	TrafficPolicingNone( double frameDuration);
-	virtual ~TrafficPolicingNone();
+	TrafficShapingNone( double frameDuration);
+	virtual ~TrafficShapingNone();
 
     /*
      * Returns wantedMstrSize and wantedMrtrSize as guideline for the scheduling algorithm
@@ -28,4 +28,4 @@ public:
 
 };
 
-#endif /* TRAFFICPOLICINGNONE_H_ */
+#endif /* TRAFFICSHAPINGNONE_H_ */

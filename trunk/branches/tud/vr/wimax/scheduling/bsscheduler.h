@@ -21,7 +21,7 @@
 
 #include "wimaxscheduler.h"
 #include "scanningstation.h"
-#include "trafficpolicinginterface.h"
+#include "trafficshapinginterface.h"
 #include "virtualallocation.h"
 #include "schedulingalgointerface.h"
 
@@ -137,58 +137,6 @@ protected:
      */
     int addDlBurst (int burstid, Connection * , int iuc, int dlduration, int maxdlduration);
 
-    /**
-     * Given number of bursts, calculate total number of occupied slots in downlink subframe
-     * @return total number of occupied slots
-     */
-    int check_overallocation (int num_of_entries);
-
-    /**
-     * Check if there is a existing ie_map for the particular connection
-     * @return connection id or -1 if not exist
-     */
-    int doesvirtual_allocexist(int num_of_entries, int cid);
-
-    /**
-     * Check number of available slots given additional slots for the particular allocation
-     * @return available slots (= requested slots if there is enough slots in downlink subframe)
-     */
-    int overallocation_withoutdlmap(int num_of_entries, int totalslots, int ownslots);
-
-    /**
-     * Check number of available slots given additional slots for the particular allocation with increase of dl_map_ie
-     * @return available slots (= requested slots if there is enough slots in downlink subframe)
-     */
-    int overallocation_withdlmap(int num_of_entries, int totalslots, int ownslots);
-
-    /**
-     * Add granted slots to downlink subframe given cid
-     * @return positive number if granted slots are added else 0
-     */
-    int addslots_withoutdlmap(int number_of_entries, int byte, int slots, int cid);
-
-    /**
-     * Find out the maximum burst the downlink subframe can support (the increase of dl_map_ie)
-     * @return total number of available dl_map_ie
-     */
-    int max_conn_withdlmap(int num_of_entries, int totalslots);
-
-    /**
-     * Bubble Sort (sort_field = 0 or 1 low to high or high to low)
-     */
-    void bubble_sort (int arrayLength, con_data_alloc array[], int sort_field);
-
-    /**
-     * Compute number of available slots with the increase of #conn*dl_map_ie size
-     * @return total number of availableo slots
-     */
-    int freeslots_withdlmap_given_conn(int num_of_entries, int totalslots, int newconn);
-
-    /**
-     * Add dl_map_ie size to dl_map
-     * @return total number of occupied slots including new dl_map_ie
-     */
-    int increase_dl_map_ie(int num_of_entries, int totalslots, int num_ie);
 
 
 //added rpi for OFDMA -------
@@ -209,41 +157,12 @@ protected:
 
     uiuc_t getUIUCProfile(Ofdm_mod_rate rate);
 
-//ritun
-
-//mac802_16_dl_map_frame * dl_stage2(Connection *head, int total_subchannels, int total_symbols, int symbol_start, int stripping);
-    mac802_16_dl_map_frame * dl_stage2(Connection *head, int input_subchannel_offset,  int total_subchannels, int total_symbols, int symbol_start, int  stripping, int total_dl_slots_pusc);
 
     mac802_16_dl_map_frame * buildDownlinkMap( VirtualAllocation * virtualAlloc, Connection *head, int totalDlSubchannels, int totalDlSymbols, int dlSymbolOffset, int dlSubchannelOffset, int freeDlSlots);
-    // mac802_16_dl_map_frame * dl_stage2(Connection *head, int input_subchannel_offset,  int total_subchannels, int total_symbols, int symbol_start, int  stripping);
 
-    mac802_16_ul_map_frame * ul_stage2(Connection *head, int total_subchannels, int total_symbols, int symbol_start, int stripping);
+
     mac802_16_ul_map_frame * buildUplinkMap( Connection *head, int totalUlSubchannels, int totalUlSymbols, int ulSymbolOffset, int ulSubchannelOffset, int freeUlSlots);
 
-    int doesMapExist(int, int*, int);
-
-//ritun
-
-//int  GetInitialChannel();
-
-// added rpi for ofdma - end
-
-
-    /**
-     * get the dlmap.
-     * @param out connection list , number of ofdm symbols tht can be allocated, permutation scheme, CQI , ofdm symbol offset
-     */
-
-//mac802_16_dl_map_frame GetDLMap(mac_->getCManager()->get_out_connection (), int numofdmsymbols,int numsubchannels,Permutationscheme_, int CQI, int symboloffset);
-
-    /**
-     * get the ulmap.
-     * @param in connection list , number of ofdm symbols tht can be allocated, permutation scheme, CQI , ofdm symbol offset
-     */
-
-//mac802_16_ul_map_frame GetULMap(mac_->getCManager()->get_in_connection (), int numofdmsymbols,int numsubchannels,Permutationscheme_, int CQI, int symboloffset);
-
-// added rpi for ofdma
 
 private:
 
@@ -280,7 +199,7 @@ private:
     /**
      * pointer to the current traffic policing algorithm
      */
-    TrafficPolicingInterface* trafficPolicingAlgorithm_;
+    TrafficShapingInterface* trafficShapingAlgorithm_;
 
     /**
      * pointer to the current scheduling algorithm for the downlink direction
