@@ -5,7 +5,7 @@
  *      Author: tung & richter
  */
 
-#include "trafficpolicingaccurate.h"
+#include "trafficshapingaccurate.h"
 #include "serviceflowqosset.h"
 #include "serviceflow.h"
 #include "connection.h"
@@ -16,12 +16,12 @@
  */
 #define TIMEBASEBOUNDARY 1.5
 
-TrafficPolicingAccurate::TrafficPolicingAccurate(double frameDuration) : TrafficPolicingInterface( frameDuration)
+TrafficShapingAccurate::TrafficShapingAccurate(double frameDuration) : TrafficShapingInterface( frameDuration)
 {
     // Nothing to do
 }
 
-TrafficPolicingAccurate::~TrafficPolicingAccurate()
+TrafficShapingAccurate::~TrafficShapingAccurate()
 {
     //deque mrtr und mstr delete ausführen
     AllocationListIt_t mapIterator;
@@ -37,7 +37,7 @@ TrafficPolicingAccurate::~TrafficPolicingAccurate()
 /*
  * Calculate predicted mrtr and msrt sizes
  */
-MrtrMstrPair_t TrafficPolicingAccurate::getDataSize(Connection *connection)
+MrtrMstrPair_t TrafficShapingAccurate::getDataSize(Connection *connection)
 {
     //-----------------------Initialization of the Map---------------------------------
     AllocationListIt_t mapIterator;
@@ -109,7 +109,7 @@ MrtrMstrPair_t TrafficPolicingAccurate::getDataSize(Connection *connection)
 /*
  * Sends occurred allocation back to traffic policing
  */
-void TrafficPolicingAccurate::updateAllocation(Connection *con,u_int32_t realMstrSize,u_int32_t realMrtrSize)
+void TrafficShapingAccurate::updateAllocation(Connection *con,u_int32_t realMstrSize,u_int32_t realMrtrSize)
 {
     //---------- Pointer erstellen---------//
     MapLastAllocationList_t::iterator mapIterator;

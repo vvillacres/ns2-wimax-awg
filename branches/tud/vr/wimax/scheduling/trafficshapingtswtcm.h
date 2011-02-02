@@ -1,14 +1,14 @@
 /*
- * trafficpolicingtswtcm.h
+ * trafficshapingtswtcm.h
  *
  *  Created on: 07.09.2010
  *      Author: tung & richter
  */
 
-#ifndef TRAFFICPOLICINGTSWTCM_H_
-#define TRAFFICPOLICINGTSWTCM_H_
+#ifndef TRAFFICSHAPINGTSWTCM_H_
+#define TRAFFICSHAPINGTSWTCM_H_
 
-#include "trafficpolicinginterface.h"
+#include "trafficshapinginterface.h"
 #include "wimaxscheduler.h"
 #include "connection.h"
 #include <map>
@@ -32,11 +32,11 @@ struct LastAllocationSize {
 typedef map< int, LastAllocationSize > MapLastAllocationSize_t;
 typedef MapLastAllocationSize_t::iterator LastAllocationSizeIt_t;
 
-class TrafficPolicingTswTcm: public TrafficPolicingInterface
+class TrafficShapingTswTcm: public TrafficShapingInterface
 {
 public:
-    TrafficPolicingTswTcm( double frameDuration);
-    virtual ~TrafficPolicingTswTcm();
+    TrafficShapingTswTcm( double frameDuration);
+    virtual ~TrafficShapingTswTcm();
 
     /*
      * Returns wantedMstrSize and wantedMrtrSize as guideline for the scheduling algorithm
@@ -59,4 +59,4 @@ private :
 
 };
 
-#endif /* TRAFFICPOLICINGTSWTCM_H_ */
+#endif /* TRAFFICSHAPINGTSWTCM_H_ */

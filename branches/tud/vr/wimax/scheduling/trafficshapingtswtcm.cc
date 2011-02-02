@@ -1,22 +1,22 @@
 /*
- * trafficpolicingtswtcm.cpp
+ * trafficshapingtswtcm.cpp
  *
  *  Created on: 07.09.2010
  *      Author: richter
  */
 
-#include "trafficpolicingtswtcm.h"
+#include "trafficshapingtswtcm.h"
 #include "serviceflowqosset.h"
 #include "serviceflow.h"
 #include "connection.h"
 
-TrafficPolicingTswTcm::TrafficPolicingTswTcm( double frameDuration )  : TrafficPolicingInterface( frameDuration)
+TrafficShapingTswTcm::TrafficShapingTswTcm( double frameDuration )  : TrafficShapingInterface( frameDuration)
 {
     // Nothing to do
 
 }
 
-TrafficPolicingTswTcm::~TrafficPolicingTswTcm()
+TrafficShapingTswTcm::~TrafficShapingTswTcm()
 {
     // Nothing to do
 }
@@ -25,7 +25,7 @@ TrafficPolicingTswTcm::~TrafficPolicingTswTcm()
  * Returns wantedMstrSize and wantedMrtrSize as guideline for the scheduling algorithm
  * through call by reference
  */
-MrtrMstrPair_t TrafficPolicingTswTcm::getDataSizes(Connection *connection)
+MrtrMstrPair_t TrafficShapingTswTcm::getDataSizes(Connection *connection)
 {
     //-----------------------Initialization of the Map---------------------------------
     LastAllocationSizeIt_t mapIterator;
@@ -107,7 +107,7 @@ MrtrMstrPair_t TrafficPolicingTswTcm::getDataSizes(Connection *connection)
  * Occurred allocation is send back to the traffic policing algorithm to use this
  * values in the next call
  */
-void TrafficPolicingTswTcm::updateAllocation(Connection *con,u_int32_t realMstrSize,u_int32_t realMrtrSize)
+void TrafficShapingTswTcm::updateAllocation(Connection *con,u_int32_t realMstrSize,u_int32_t realMrtrSize)
 {
 //---------- Pointer erstellen---------//
     LastAllocationSizeIt_t mapIterator;

@@ -1,26 +1,26 @@
 /*
- * trafficpolicingnone.cc
+ * trafficshapingnone.cc
  *
  *  Created on: 05.09.2010
  *      Author: richter
  */
 
-#include "trafficpolicingnone.h"
+#include "trafficshapingnone.h"
 #include "connection.h"
 
-TrafficPolicingNone::TrafficPolicingNone(double frameDuration) : TrafficPolicingInterface( frameDuration) {
+TrafficShapingNone::TrafficShapingNone(double frameDuration) : TrafficShapingInterface( frameDuration) {
 	// Nothing to do
 
 }
 
-TrafficPolicingNone::~TrafficPolicingNone() {
+TrafficShapingNone::~TrafficShapingNone() {
 	// Nothing to do
 }
 
 /*
  * Returns wantedMstrSize and wantedMrtrSize as guideline for the scheduling algorithm
  */
-MrtrMstrPair_t TrafficPolicingNone::getDataSizes(Connection * connection)
+MrtrMstrPair_t TrafficShapingNone::getDataSizes(Connection * connection)
 {
     MrtrMstrPair_t mrtrMstrPair;
     int wantedSize = connection->queuePayloadLength();
@@ -38,7 +38,7 @@ MrtrMstrPair_t TrafficPolicingNone::getDataSizes(Connection * connection)
  * Occurred allocation is send back to the traffic policing algorithm to use this
  * values in the next call
  */
-void TrafficPolicingNone::updateAllocation(Connection *connection,u_int32_t realMstrSize,u_int32_t realMrtSize)
+void TrafficShapingNone::updateAllocation(Connection *connection,u_int32_t realMstrSize,u_int32_t realMrtSize)
 {
 	// Nothing do to
 	// Feadback is not needed
