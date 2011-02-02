@@ -339,13 +339,14 @@ OBJ_CC = \
     wimax/scheduling/bsscheduler.o \
     wimax/scheduling/virtualallocationelement.o \
     wimax/scheduling/virtualallocation.o \
-    wimax/scheduling/trafficpolicinginterface.o \
-    wimax/scheduling/trafficpolicingaccurate.o \
-    wimax/scheduling/trafficpolicingtswtcm.o \
-    wimax/scheduling/trafficpolicingnone.o \
+    wimax/scheduling/trafficshapinginterface.o \
+    wimax/scheduling/trafficshapingaccurate.o \
+    wimax/scheduling/trafficshapingtswtcm.o \
+    wimax/scheduling/trafficshapingnone.o \
     wimax/scheduling/schedulingalgointerface.o \
     wimax/scheduling/schedulingalgodualequalfill.o \
     wimax/scheduling/schedulingalgoproportionalfair.o \
+    wimax/scheduling/schedulingproportionalfairul.o \
     wimax/scheduling/edfqueueelement.o \
     wimax/scheduling/schedulingalgodualedf.o \
     wimax/scheduling/ssscheduler.o \
