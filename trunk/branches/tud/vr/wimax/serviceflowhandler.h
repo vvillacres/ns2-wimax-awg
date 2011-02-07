@@ -23,6 +23,8 @@
 #include "serviceflow.h"
 #include "packet.h"
 
+#include "admissioncontrolinterface.h"
+
 class Mac802_16;
 
 /**
@@ -75,6 +77,12 @@ public:
      */
     int addStaticFlow (int argc, const char*const* argv);
 
+    /**
+     * Add Dynamic Flow
+     * includes Admission Control
+     */
+    int addDynamicFlow ( int argc, const char*const* argv);
+
     /*
      * Remove a static flow
      * @param argc The number of parameter
@@ -110,6 +118,11 @@ protected:
 private:
 
     /**
+     * Process input string to build ServiceFlowQosSet
+     */
+    ServiceFlowQosSet * createServiceFlowQosSet( int argc, const char*const* argv);
+
+    /**
      * The Mac where this handler is located
      */
     Mac802_16 * mac_;
@@ -128,6 +141,12 @@ private:
      * The list of current flows
      */
     struct serviceflow static_flow_head_;
+
+
+    /**
+     * Pointer to Admission Control Interface
+     */
+    AdmissionControlInterface admissionControl_;
 };
 
 #endif //SERVICEFLOWHANDLER_H

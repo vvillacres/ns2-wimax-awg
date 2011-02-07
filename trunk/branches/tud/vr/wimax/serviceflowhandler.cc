@@ -362,6 +362,34 @@ void ServiceFlowHandler::processDSA_ack (Packet *p)
     mac_->debug ("At %f in Mac %d received DSA ack\n", NOW, mac_->addr());
 }
 
+/**
+ * Add Dynamic Flow
+ * includes Admission Control
+ */
+int addDynamicFlow ( int argc, const char*const* argv){
+
+	ServiceFlowQosSet * serviceFlowQosSet = createServiceFlowQosSet( argc, argv);
+	if ( serviceFlowQosSet == NULL ) {
+		// an error occurred
+		return TCL_ERROR;
+	}
+
+	bool admitted = admissionControl_->checkAdmission( serviceFlowQosSet);
+
+	if ( admitted == true ) {
+	    /* Create the Static Service Flow */
+		ServiceFlow * dynamicServiceFlow = new ServiceFlow ( direction, staticflowqosset);
+
+		/* Add the Service Flow to the Static Flow List*/
+		dynamicServiceFlow->insert_entry_head (&static_flow_head_);
+		debug2(" dynamic flow static flow created after admission \n");
+	} else {
+		debug2(" Admission rejected");
+	}
+
+	return TCL_OK;
+}
+
 
 /*
  * Add a static flow
@@ -370,6 +398,29 @@ void ServiceFlowHandler::processDSA_ack (Packet *p)
  */
 int ServiceFlowHandler::addStaticFlow (int argc, const char*const* argv)
 {
+
+	ServiceFlowQosSet * serviceFlowQosSet = createServiceFlowQosSet( argc, argv);
+	if ( serviceFlowQosSet == NULL ) {
+		// an error occurred
+		return TCL_ERROR;
+	}
+
+    /* Create the Static Service Flow */
+    ServiceFlow * staticflow = new ServiceFlow ( direction, staticflowqosset);
+
+    /* Add the Service Flow to the Static Flow List*/
+    staticflow->insert_entry_head (&static_flow_head_);
+    debug2(" service flow static flow created ");
+    return TCL_OK;
+}
+
+/**
+ * Process input string to build ServiceFlowQosSet
+ */
+ServiceFlowQosSet * createServiceFlowQosSet( int argc, const char*const* argv)
+{
+
+	ServiceFlowQosSet * newServiceFlowQosSet = NULL;
 
 	// see serviceflowqosset.h for explanations of the parameters
 	Dir_t direction; // Direction of the service flow
@@ -414,7 +465,7 @@ int ServiceFlowHandler::addStaticFlow (int argc, const char*const* argv)
 		} else if ( strcmp(argv[3], "BE") == 0 ) {
 			dataDeliveryServiceType = DL_BE;
 		} else {
-			return TCL_ERROR;
+			return newServiceFlowQosSet;
 		}
 
 	} else if (strcmp(argv[2], "UL") == 0) {
@@ -432,7 +483,7 @@ int ServiceFlowHandler::addStaticFlow (int argc, const char*const* argv)
 		} else if ( strcmp(argv[3], "BE") == 0 ){
 				ulGrantSchedulingType = UL_BE;
 		} else {
-			return TCL_ERROR;
+			return newServiceFlowQosSet;
 		}
 	}
 
@@ -530,7 +581,7 @@ int ServiceFlowHandler::addStaticFlow (int argc, const char*const* argv)
 
 	/* Create new Service Flow QoS Set Object */
 
-	ServiceFlowQosSet * staticflowqosset = new ServiceFlowQosSet (
+	ServiceFlowQosSet * newServiceFlowQosSet = new ServiceFlowQosSet (
 			trafficPriority,
 			maxSustainedTrafficRate,
 			maxTrafficBurst,
@@ -553,13 +604,9 @@ int ServiceFlowHandler::addStaticFlow (int argc, const char*const* argv)
 			packetErrorRate
 			);
 
-    /* Create the Static Service Flow */
-    ServiceFlow * staticflow = new ServiceFlow ( direction, staticflowqosset);
 
-    /* Add the Service Flow to the Static Flow List*/
-    staticflow->insert_entry_head (&static_flow_head_);
-    debug2(" service flow static flow created ");
-    return TCL_OK;
+    return newServiceFlowQosSet;
+
 }
 
 /*
