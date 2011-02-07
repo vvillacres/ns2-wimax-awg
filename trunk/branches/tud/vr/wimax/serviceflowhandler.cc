@@ -20,6 +20,9 @@
 #include "mac802_16.h"
 #include "scheduling/wimaxscheduler.h"
 #include "arqstatus.h"
+#include "admissioncontrolinterface.h"
+// add new admission control algorithm header files here !!!
+
 
 #define DEFAULT_POLLING_INTERVAL 1000
 
@@ -33,7 +36,64 @@ ServiceFlowHandler::ServiceFlowHandler ()
     LIST_INIT (&flow_head_);
     LIST_INIT (&pendingflow_head_);
     LIST_INIT (&static_flow_head_);
+
+    admissionControl_ = NULL;
 }
+
+/*
+ * Destructor
+ */
+ServiceFlowHandler::~ServiceFlowHandler ()
+{
+	// delete admission control object
+	if ( admissionControl_) {
+		delete admissionControl_;
+		admissionControl_ = NULL;
+	}
+}
+
+/*
+ * Interface with the TCL script
+ * @param argc The number of parameter
+ * @param argv The list of parameters
+ */
+int ServiceFlowHandler::command(int argc, const char*const* argv)
+{
+    if (argc == 3) {
+        if (strcmp(argv[1], "set-admission-control") == 0) {
+            if (strcmp(argv[2], "schöner-name1") == 0) {
+            	// set new algorithm object
+            	printf("Text \n");
+            	// check for existing mac reference
+            	assert( mac_);
+            	if ( admissionControl_) {
+            		delete admissionControl_;
+            	}
+            	// establish new Admission Control Object
+            	admissionControl_ = new AdmissionControlInterface( mac_);
+            	return TCL_OK;
+            } else if (strcmp(argv[2], "schöner-name2") == 0) {
+            	// set new algorithm object
+            	printf("Text \n");
+            	// check for existing mac reference
+            	assert( mac_);
+            	if ( admissionControl_) {
+            		delete admissionControl_;
+            	}
+            	// establish new Admission Control Object
+            	admissionControl_ = new AdmissionControlInterface( mac_);
+            	return TCL_OK;
+            } else {
+                return TCL_ERROR;
+            }
+        } else {
+            return TCL_ERROR;
+        }
+    } else {
+    	return TCL_ERROR;
+    }
+}
+
 
 /*
  * Set the mac it is located in
@@ -45,6 +105,16 @@ void ServiceFlowHandler::setMac (Mac802_16 *mac)
 
     mac_ = mac;
 }
+
+void ServiceFlowHandler::setAdmissionControl()
+{
+	// check for existing mac reference
+	assert( mac_);
+
+	// establish new Admission Control Object
+	admissionControl_ = new AdmissionControlInterface( mac_);
+}
+
 
 /**
  * Process the given packet. Only service related packets must be sent here.
@@ -366,7 +436,7 @@ void ServiceFlowHandler::processDSA_ack (Packet *p)
  * Add Dynamic Flow
  * includes Admission Control
  */
-int addDynamicFlow ( int argc, const char*const* argv){
+int ServiceFlowHandler::addDynamicFlow ( int argc, const char*const* argv){
 
 	ServiceFlowQosSet * serviceFlowQosSet = createServiceFlowQosSet( argc, argv);
 	if ( serviceFlowQosSet == NULL ) {
@@ -374,11 +444,25 @@ int addDynamicFlow ( int argc, const char*const* argv){
 		return TCL_ERROR;
 	}
 
+	Dir_t direction;
+	// get direction of the service flow
+	if ( strcmp(argv[2], "DL") == 0 ) {
+		direction = DL;
+
+	} else if (strcmp(argv[2], "UL") == 0) {
+		direction = UL;
+	} else {
+		return TCL_ERROR;
+	}
+
+	// check for existens of a admission control object
+	assert( admissionControl_);
+
 	bool admitted = admissionControl_->checkAdmission( serviceFlowQosSet);
 
 	if ( admitted == true ) {
 	    /* Create the Static Service Flow */
-		ServiceFlow * dynamicServiceFlow = new ServiceFlow ( direction, staticflowqosset);
+		ServiceFlow * dynamicServiceFlow = new ServiceFlow ( direction, serviceFlowQosSet);
 
 		/* Add the Service Flow to the Static Flow List*/
 		dynamicServiceFlow->insert_entry_head (&static_flow_head_);
@@ -405,8 +489,19 @@ int ServiceFlowHandler::addStaticFlow (int argc, const char*const* argv)
 		return TCL_ERROR;
 	}
 
+	Dir_t direction;
+	// get direction of the service flow
+	if ( strcmp(argv[2], "DL") == 0 ) {
+		direction = DL;
+
+	} else if (strcmp(argv[2], "UL") == 0) {
+		direction = UL;
+	} else {
+		return TCL_ERROR;
+	}
+
     /* Create the Static Service Flow */
-    ServiceFlow * staticflow = new ServiceFlow ( direction, staticflowqosset);
+    ServiceFlow * staticflow = new ServiceFlow ( direction, serviceFlowQosSet);
 
     /* Add the Service Flow to the Static Flow List*/
     staticflow->insert_entry_head (&static_flow_head_);
@@ -417,7 +512,7 @@ int ServiceFlowHandler::addStaticFlow (int argc, const char*const* argv)
 /**
  * Process input string to build ServiceFlowQosSet
  */
-ServiceFlowQosSet * createServiceFlowQosSet( int argc, const char*const* argv)
+ServiceFlowQosSet * ServiceFlowHandler::createServiceFlowQosSet( int argc, const char*const* argv)
 {
 
 	ServiceFlowQosSet * newServiceFlowQosSet = NULL;
@@ -581,7 +676,7 @@ ServiceFlowQosSet * createServiceFlowQosSet( int argc, const char*const* argv)
 
 	/* Create new Service Flow QoS Set Object */
 
-	ServiceFlowQosSet * newServiceFlowQosSet = new ServiceFlowQosSet (
+	newServiceFlowQosSet = new ServiceFlowQosSet (
 			trafficPriority,
 			maxSustainedTrafficRate,
 			maxTrafficBurst,
