@@ -23,9 +23,9 @@
 #include "serviceflow.h"
 #include "packet.h"
 
-#include "admissioncontrolinterface.h"
 
 class Mac802_16;
+class AdmissionControlInterface;
 
 /**
  * Handler for service flows
@@ -41,11 +41,27 @@ public:
      */
     ServiceFlowHandler ();
 
+
+    /*
+     * Destructor
+     */
+    ~ServiceFlowHandler ();
+
+    /*
+     * Process tcl command string
+     */
+    int command(int argc, const char*const* argv);
+
     /*
      * Set the mac it is located in
      * @param mac The mac it is located in
      */
     void setMac (Mac802_16 *mac);
+
+    /*
+     * Set default admission Control
+     */
+    void setAdmissionControl();
 
     /**
      * Process the given packet. Only service related packets must be sent here.
@@ -146,7 +162,7 @@ private:
     /**
      * Pointer to Admission Control Interface
      */
-    AdmissionControlInterface admissionControl_;
+    AdmissionControlInterface * admissionControl_;
 };
 
 #endif //SERVICEFLOWHANDLER_H

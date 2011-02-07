@@ -159,6 +159,7 @@ Mac802_16::Mac802_16() : Mac (), macmib_(this), phymib_(this)//, rxTimer_(this)
     /* the following will be replaced by dynamic adding of service flow */
     serviceFlowHandler_ = new ServiceFlowHandler ();
     serviceFlowHandler_->setMac (this);
+    serviceFlowHandler_->setAdmissionControl();
     frame_number_ = 0;
     notify_upper_ = true;
 
@@ -280,11 +281,17 @@ int Mac802_16::command(int argc, const char*const* argv)
             if (logtarget_ == 0)
                 return TCL_ERROR;
             return TCL_OK;
+        } else if (strcmp(argv[1], "set-admission-control") == 0) {
+        	return serviceFlowHandler_->command( argc, argv);
         }
     } else if (argc == 22) {
         if (strcmp(argv[1], "setflow") == 0) {
             debug (" Command setflow with argc 22 is executed \n" );
             result = serviceFlowHandler_->addStaticFlow(argc, argv);
+            return result;
+        } else if (strcmp(argv[1], "setdynamicflow") == 0) {
+            debug (" Command setdynamicflow with argc 22 is executed \n" );
+            result = serviceFlowHandler_->addDynamicFlow(argc, argv);
             return result;
         } else {
             return TCL_ERROR;
