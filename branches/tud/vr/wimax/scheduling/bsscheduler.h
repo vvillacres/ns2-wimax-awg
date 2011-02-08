@@ -190,7 +190,7 @@ private:
     /**
      * Repetition code for dl-broadcast
      */
-    int Repetition_code_;
+    int repetition_code_;
 
 
     int channel_gain[NUM_REALIZATIONS1] ;
