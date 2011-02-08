@@ -15,7 +15,7 @@ class Connection;
 class VirtualAllocationElement
 {
 public:
-    VirtualAllocationElement( Connection* connectionPtr, u_int32_t wantedMstrSize, u_int32_t wantedMrtrSize, int slotCapacity, int nbOfBytes, int nbOfSlots, int nbOfCdmaSlots );
+    VirtualAllocationElement( Connection* connectionPtr, u_int32_t wantedMrtrSize, u_int32_t wantedMstrSize, int slotCapacity, int nbOfBytes, int nbOfSlots, int nbOfCdmaSlots );
     virtual ~VirtualAllocationElement();
 
 
@@ -33,6 +33,19 @@ public:
         connectionPtr_ = connectionPtr;
     }
 
+    /*
+     * Returns minimum Number of Bytes to fulfill the Minimum Reserved Traffic Rate value
+     */
+    inline u_int32_t getWantedMrtrSize() {
+        return wantedMrtrSize_;
+    }
+
+    /*
+     * Set minimum Number of Bytes to fulfill the Minimum Reserved Traffic Rate value
+     */
+    inline void setWantedMrtrSize( u_int32_t wantedMrtrSize) {
+        wantedMrtrSize_ = wantedMrtrSize;
+    }
 
     /*
      * Returns the maximum number of Bytes resulting of the Maximum Sustained Traffic Rate value
@@ -46,20 +59,6 @@ public:
      */
     inline void setWantedMstrSize( u_int32_t wantedMstrSize) {
         wantedMstrSize_ = wantedMstrSize;
-    }
-
-    /*
-     * Returns minimum Number of Bytes to fulfill the Minimum Reserved Traffic Rate value
-     */
-    inline u_int32_t getWantedMrtrSize() {
-        return wantedMrtrSize_;
-    }
-
-    /*
-     * Set minimum Number of Bytes to fulfill the Minimum Reserved Traffic Rate value
-     */
-    inline void setWantedMrtrSize( u_int32_t wantedMrtrSize) {
-        wantedMrtrSize_ = wantedMrtrSize;
     }
 
     /*

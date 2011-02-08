@@ -259,12 +259,14 @@ int Mac802_16::command(int argc, const char*const* argv)
             addClassifier (clas);
             return TCL_OK;
         } else if (strcmp(argv[1], "set-scheduler") == 0) {
+        	delete scheduler_;
             scheduler_ = (WimaxScheduler*) TclObject::lookup(argv[2]);
             if (scheduler_ == 0)
                 return TCL_ERROR;
             scheduler_->setMac (this); //register the mac
             return TCL_OK;
         } else if (strcmp(argv[1], "set-servicehandler") == 0) {
+        	delete serviceFlowHandler_;
             serviceFlowHandler_ = (ServiceFlowHandler*) TclObject::lookup(argv[2]);
             if (serviceFlowHandler_ == 0)
                 return TCL_ERROR;
@@ -277,6 +279,7 @@ int Mac802_16::command(int argc, const char*const* argv)
             getPhy ()->setFrequency (tmp);
             return TCL_OK;
         } else if (strcmp(argv[1], "log-target") == 0) {
+        	delete logtarget_;
             logtarget_ = (NsObject*) TclObject::lookup(argv[2]);
             if (logtarget_ == 0)
                 return TCL_ERROR;

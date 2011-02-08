@@ -1,5 +1,5 @@
 /*
- * trafficpolicingaccurate.cpp
+ * trafficshapingaccurate.cpp
  *
  *  Created on: 07.09.2010
  *      Author: tung & richter
@@ -24,11 +24,11 @@ TrafficShapingAccurate::TrafficShapingAccurate(double frameDuration) : TrafficSh
 TrafficShapingAccurate::~TrafficShapingAccurate()
 {
     //deque mrtr und mstr delete ausführen
-    AllocationListIt_t mapIterator;
+    TrafficShapingListIt_t mapIterator;
     // ich laufe von Anfang bis Ende des MAP
-    for(mapIterator=mapLastAllocationList_.begin(); mapIterator!=mapLastAllocationList_.end(); mapIterator++) {
+    for(mapIterator=mapLastTrafficShapingList_.begin(); mapIterator!=mapLastTrafficShapingList_.end(); mapIterator++) {
         // lösche komplete deque object
-        delete mapIterator->second.ptrDequeAllocationElement;
+        delete mapIterator->second.ptrDequeTrafficShapingElement;
 
     }
 }
@@ -37,10 +37,10 @@ TrafficShapingAccurate::~TrafficShapingAccurate()
 /*
  * Calculate predicted mrtr and msrt sizes
  */
-MrtrMstrPair_t TrafficShapingAccurate::getDataSize(Connection *connection)
+MrtrMstrPair_t TrafficShapingAccurate::getDataSizes(Connection *connection)
 {
     //-----------------------Initialization of the Map---------------------------------
-    AllocationListIt_t mapIterator;
+    TrafficShapingListIt_t mapIterator;
     int currentCid = connection->get_cid();
 
     // QoS Parameter auslesen
@@ -48,12 +48,12 @@ MrtrMstrPair_t TrafficShapingAccurate::getDataSize(Connection *connection)
 
     //ist die CID in Map ?
     // Suchen der CID in der Map - Eintrag vorhanden ?
-    mapIterator = mapLastAllocationList_.find(currentCid);
+    mapIterator = mapLastTrafficShapingList_.find(currentCid);
 
     u_int32_t wantedMrtrSize;
     u_int32_t wantedMstrSize;
 
-    if ( mapIterator == mapLastAllocationList_.end()) {
+    if ( mapIterator == mapLastTrafficShapingList_.end()) {
         // CID nicht vorhanden
 
         // mrtrsize berechnen  = 64Kbps VOIP -> 70Kbps
@@ -112,7 +112,7 @@ MrtrMstrPair_t TrafficShapingAccurate::getDataSize(Connection *connection)
 void TrafficShapingAccurate::updateAllocation(Connection *con,u_int32_t realMstrSize,u_int32_t realMrtrSize)
 {
     //---------- Pointer erstellen---------//
-    MapLastAllocationList_t::iterator mapIterator;
+    MapLastTrafficShapingList_t::iterator mapIterator;
 
     // QoS Parameter auslesen
     ServiceFlowQosSet* sfQosSet = con->getServiceFlow()->getQosSet();
@@ -124,35 +124,35 @@ void TrafficShapingAccurate::updateAllocation(Connection *con,u_int32_t realMstr
     double timeBase = double(sfQosSet->getTimeBase()) * 1e-3; // time base in second
 
     // die Position der Abbildung in der MAP mapLastAllocationSize_ entsprechende Cid  suchen-- verweist die  Position auf MAP Iterator//
-    mapIterator = mapLastAllocationList_.find(currentCid);
+    mapIterator = mapLastTrafficShapingList_.find(currentCid);
 
     //	MAP mapLastAllocationSize_ bis zu MAP_ENDE durchsuchen
 
-    if ( mapIterator == mapLastAllocationList_.end()) {
+    if ( mapIterator == mapLastTrafficShapingList_.end()) {
 
         // CID nicht vorhanden
         //--neues Map element erstellen-----bzw. neue Strukture erstellen, um aktuellen DatenSize und aktuellen Zeitpunkt ab zu legen----------//
 
-        AllocationList currentAllocationList;
+    	TrafficShapingList currentAllocationList;
 
         //----------Zuweisung auf Strukturelemente------------//
         currentAllocationList.sumMrtrSize = realMrtrSize;
         currentAllocationList.sumMstrSize = realMstrSize;
         //------------------Erstellen der genügenden Speicher für deque_mrtrSize  und deque_mstr <u_int_32_t>------------------------//
 
-        currentAllocationList.ptrDequeAllocationElement = new deque<AllocationElement>;
+        currentAllocationList.ptrDequeTrafficShapingElement = new deque<TrafficShapingElement>;
 
         // Neuer deque eintrag
 
-        AllocationElement currentAllocationElement;
+        TrafficShapingElement currentTrafficShapingElement;
         // now i fill the current element in the Deque
 
-        currentAllocationElement.mrtrSize = realMrtrSize;
-        currentAllocationElement.mstrSize = realMstrSize;
-        currentAllocationElement.timeStamp = NOW;
+        currentTrafficShapingElement.mrtrSize = realMrtrSize;
+        currentTrafficShapingElement.mstrSize = realMstrSize;
+        currentTrafficShapingElement.timeStamp = NOW;
 
         // Neuen Eintrag in deque spreichern
-        currentAllocationList.ptrDequeAllocationElement->push_front( currentAllocationElement);
+        currentAllocationList.ptrDequeTrafficShapingElement->push_front( currentTrafficShapingElement);
 
 
 
@@ -170,12 +170,12 @@ void TrafficShapingAccurate::updateAllocation(Connection *con,u_int32_t realMstr
         double defaultTimeStamp = NOW - frameDuration_;
         while((NOW - defaultTimeStamp) < (timeBase - TIMEBASEBOUNDARY * frameDuration_ ) ) {
             // default value of the deque elements
-            currentAllocationElement.mrtrSize =  defaultMrtrSize;
-            currentAllocationElement.mstrSize =  defaultMstrSize;
-            currentAllocationElement.timeStamp = defaultTimeStamp;
+            currentTrafficShapingElement.mrtrSize =  defaultMrtrSize;
+            currentTrafficShapingElement.mstrSize =  defaultMstrSize;
+            currentTrafficShapingElement.timeStamp = defaultTimeStamp;
 
             // now i push the value into the front of the Deque
-            currentAllocationList.ptrDequeAllocationElement->push_front( currentAllocationElement);
+            currentAllocationList.ptrDequeTrafficShapingElement->push_front( currentTrafficShapingElement);
 
             // update sum values +
             currentAllocationList.sumMrtrSize += defaultMrtrSize;
@@ -189,21 +189,21 @@ void TrafficShapingAccurate::updateAllocation(Connection *con,u_int32_t realMstr
 
         // aktuelle AllocationList in der Map speichern
         //------------neues Map element lastAllocationSize in MAP mapLastAllocationSize_ hinzufügen----------------------//
-        mapLastAllocationList_.insert( pair<int,AllocationList>( currentCid, currentAllocationList) );
+        mapLastTrafficShapingList_.insert( pair<int,TrafficShapingList>( currentCid, currentAllocationList) );
 
         //---Ab jetzt können wir Cid und die Strukture lastAllocationSize(mrtrSize,mstrSize und timeStamp) nutzen-aus MAP--//
 
     } else {
 
         // Wenn der Cid vorhanden ist,lege ich neues Allocation Element an
-        AllocationElement currentAllocationElement;
+        TrafficShapingElement currentTrafficShapingElement;
         // Neue Werte speichern
-        currentAllocationElement.mrtrSize = realMrtrSize;
-        currentAllocationElement.mstrSize = realMstrSize;
-        currentAllocationElement.timeStamp = NOW;
+        currentTrafficShapingElement.mrtrSize = realMrtrSize;
+        currentTrafficShapingElement.mstrSize = realMstrSize;
+        currentTrafficShapingElement.timeStamp = NOW;
 
         //-----in Deque speichern
-        mapIterator->second.ptrDequeAllocationElement->push_back(currentAllocationElement);
+        mapIterator->second.ptrDequeTrafficShapingElement->push_back(currentTrafficShapingElement);
 
         // update summe +
         mapIterator->second.sumMrtrSize += realMrtrSize;
@@ -211,8 +211,8 @@ void TrafficShapingAccurate::updateAllocation(Connection *con,u_int32_t realMstr
 
         //----Überprüfen ob Element entfernt werden muss ?
 
-        AllocationElement begin_deque ;
-        begin_deque = mapIterator->second.ptrDequeAllocationElement->front();
+        TrafficShapingElement begin_deque ;
+        begin_deque = mapIterator->second.ptrDequeTrafficShapingElement->front();
 
         double time_begin = begin_deque.timeStamp;
         // solange (time_end - time_begin) > timeBase noch wahr ist ,lösche ich letzte Element mit pop_front()
@@ -222,10 +222,10 @@ void TrafficShapingAccurate::updateAllocation(Connection *con,u_int32_t realMstr
             mapIterator->second.sumMstrSize -= begin_deque.mstrSize;
 
             //------und das begin element löschen
-            mapIterator->second.ptrDequeAllocationElement->pop_front();
+            mapIterator->second.ptrDequeTrafficShapingElement->pop_front();
 
             //------neues begin laden
-            begin_deque   = mapIterator->second.ptrDequeAllocationElement->front();
+            begin_deque   = mapIterator->second.ptrDequeTrafficShapingElement->front();
             time_begin   = begin_deque.timeStamp;
         }
     }

@@ -1,5 +1,5 @@
 /*
- * trafficpolicingaccurate.h
+ * trafficshapingaccurate.h
  *
  *  Created on: 07.09.2010
  *      Author: richter
@@ -17,23 +17,22 @@ using namespace std;
 #define MIN(a,b) ( (a) <= (b) ? (a) : (b) )
 
 //----------------Prediction Data-------------------------------
-struct AllocationElement {
+struct TrafficShapingElement {
     u_int32_t mrtrSize;
     u_int32_t mstrSize;
     double timeStamp;
 };
-struct AllocationList {
+struct TrafficShapingList {
     u_int32_t sumMrtrSize;
     u_int32_t sumMstrSize;
-    deque <AllocationElement> *ptrDequeAllocationElement;
+    deque <TrafficShapingElement> *ptrDequeTrafficShapingElement;
 };
 //-------------------------deque < TrafficRate > dequeTrafficRate-----------------------------------------;
 //----Abbildungen von cid auf Prediction Data heiß  LastAllocationSize(mrtrSize; mstrSize;timeStamp;)------------
 
-typedef map< int, AllocationList > MapLastAllocationList_t;
-typedef MapLastAllocationList_t::iterator AllocationListIt_t;
+typedef map< int, TrafficShapingList > MapLastTrafficShapingList_t;
+typedef MapLastTrafficShapingList_t::iterator TrafficShapingListIt_t;
 
-class Connection;
 
 class TrafficShapingAccurate : public TrafficShapingInterface
 {
@@ -44,7 +43,7 @@ public:
     /*
      * Calculate predicted mrtr and msrt sizes
      */
-    virtual MrtrMstrPair_t getDataSize(Connection* connection);
+    virtual MrtrMstrPair_t getDataSizes(Connection* connection);
 
     /*
      * Sends occurred allocation back to traffic policing
@@ -54,7 +53,7 @@ private :
     /*
      * Saves the last occurred allocations
      */
-    MapLastAllocationList_t mapLastAllocationList_ ;
+    MapLastTrafficShapingList_t mapLastTrafficShapingList_ ;
 };
 
 #endif /* TRAFFICPOLICINGACCURATE_H_ */
