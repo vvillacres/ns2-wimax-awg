@@ -25,10 +25,8 @@
 #include "virtualallocation.h"
 #include "schedulingalgointerface.h"
 
-#define INIT_DL_DURATION 20 //enough for DL_MAP, UL_MAP, DCD, UCD and some RNG-RSP
-#define MIN_CONTENTION_SIZE 5 //minimum number of opportunity for allocation
 
-//#define DEFAULT_DL_RATIO 0.3 //default ratio for downlink subframe
+
 
 #define NUM_REALIZATIONS1 2000
 #define OTHER_NUM_DL_BURST 2 //including 1st DL burst and END_OF_MAP burst.
@@ -103,18 +101,7 @@ public:
 
 protected:
 
-    /**
-     * Default modulation
-     */
-    Ofdm_mod_rate default_mod_;
 
-    /**
-     * Number of transmission opportunity for initial ranging
-     * and bw request (i.e contention slots)
-     */
-    int contention_size_;
-    int init_contention_size_;
-    int bw_req_contention_size_;
     /**
      * Compute and return the bandwidth request opportunity size
      * @return The bandwidth request opportunity size
@@ -187,8 +174,22 @@ private:
      */
     int nextUL_;
 
-    //sam
 
+    /**
+     * Default modulation
+     */
+    Ofdm_mod_rate default_mod_;
+
+    /**
+     * Number of transmission opportunity for initial ranging
+     * and bw request (i.e contention slots)
+     */
+    int init_contention_size_;
+    int bw_req_contention_size_;
+
+    /**
+     * Repetition code for dl-broadcast
+     */
     int Repetition_code_;
 
 

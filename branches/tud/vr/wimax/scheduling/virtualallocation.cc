@@ -43,11 +43,11 @@ int VirtualAllocation::increaseBroadcastBurst( int addedBytes)
 /*
  * Adds a new Virtual Allocation in the Map
  */
-void VirtualAllocation::addAllocation( Connection* connection, u_int32_t wantedMstrSize, u_int32_t wantedMrtrSize, int slotCapacity, int nbOfBytes, int nbOfSlots, int nbOfCdmaSlots)
+void VirtualAllocation::addAllocation( Connection* connection, u_int32_t wantedMrtrSize, u_int32_t wantedMstrSize, int slotCapacity, int nbOfBytes, int nbOfSlots, int nbOfCdmaSlots)
 {
 
     // Create new Virtual Allocation Element
-    VirtualAllocationElement newAllocationElement( connection, wantedMstrSize, wantedMrtrSize, slotCapacity, nbOfBytes, nbOfSlots, nbOfCdmaSlots);
+    VirtualAllocationElement newAllocationElement( connection, wantedMrtrSize, wantedMstrSize, slotCapacity, nbOfBytes, nbOfSlots, nbOfCdmaSlots);
 
     // Insert new Element into the map
     virtualAllocationMap_.insert ( pair< Connection*, VirtualAllocationElement>( connection, newAllocationElement) );

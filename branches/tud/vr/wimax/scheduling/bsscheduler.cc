@@ -34,6 +34,7 @@
 #include "trafficshapingtswtcm.h"
 #include "trafficshapingnone.h"
 
+
 // scheduling algorithm downlink
 #include "schedulingalgodualequalfill.h"
 #include "schedulingalgodualedf.h"
@@ -115,13 +116,12 @@ public:
 BSScheduler::BSScheduler () : WimaxScheduler ()
 {
     debug2 ("BSScheduler created\n");
-    default_mod_ = OFDM_BPSK_1_2;
+    default_mod_ = OFDM_QPSK_1_2;
     //bind ("dlratio_", &dlratio_);
     bind("Repetition_code_", &Repetition_code_);
     bind("init_contention_size_", &init_contention_size_);
     bind("bw_req_contention_size_", &bw_req_contention_size_);
 
-//  contention_size_ = MIN_CONTENTION_SIZE;
 
     nextDL_ = -1;
     nextUL_ = -1;
@@ -187,12 +187,18 @@ int BSScheduler::command(int argc, const char*const* argv)
             }
             return TCL_OK;
 
-        } else if (strcmp(argv[1], "set-contention-size") == 0) {
-            contention_size_ = atoi (argv[2]);
-#ifdef DEBUG_WIMAX
-            assert (contention_size_>=0);
-#endif
-            return TCL_OK;
+        } else if (strcmp(argv[1], "set-init-contention-size") == 0) {
+        	init_contention_size_ = atoi (argv[2]);
+        	return TCL_OK;
+
+        } else if (strcmp(argv[1], "set-bw-req-contention-size") == 0) {
+        	bw_req_contention_size_ = atoi (argv[2]);
+        	return TCL_OK;
+
+        } else if (strcmp(argv[1], "set-repetition-code") == 0) {
+        	Repetition_code_ = atoi (argv[2]);
+        	return TCL_OK;
+
 
         } else if (strcmp(argv[1], "set-traffic-shaping") == 0) {
             if (strcmp(argv[2], "accurate") == 0) {
@@ -200,21 +206,21 @@ int BSScheduler::command(int argc, const char*const* argv)
                 delete trafficShapingAlgorithm_;
                 // create new alogrithm object
                 trafficShapingAlgorithm_ =  new TrafficShapingAccurate( mac_->getFrameDuration());
-                printf("New Traffic Shaping Algorithm: Traffic Shaping Accurate");
+                printf("New Traffic Shaping Algorithm: Traffic Shaping Accurate \n");
             } else if (strcmp(argv[2], "tswtcm") == 0) {
                 // delete previous algorithm
                 delete trafficShapingAlgorithm_;
                 // create new alogrithm object
                 trafficShapingAlgorithm_ =  new TrafficShapingTswTcm( mac_->getFrameDuration());
-                printf("New Traffic Shaping Algorithm: Time Sliding Window Three Color Marker");
+                printf("New Traffic Shaping Algorithm: Time Sliding Window Three Color Marker \n");
             } else if (strcmp(argv[2], "none") == 0) {
                 // delete previous algorithm
                 delete trafficShapingAlgorithm_;
                 // create new alogrithm object
                 trafficShapingAlgorithm_ =  new TrafficShapingNone( mac_->getFrameDuration());
-                printf("New Traffic Shaping Algorithm: None");
+                printf("New Traffic Shaping Algorithm: None \n");
             } else {
-                fprintf(stderr, "Specified Traffic Shaping Algorithm NOT found !");
+                fprintf(stderr, "Specified Traffic Shaping Algorithm NOT found ! \n");
                 return TCL_ERROR;
             }
             return TCL_OK;
@@ -268,28 +274,6 @@ int BSScheduler::command(int argc, const char*const* argv)
             return TCL_OK;
         }
 
-
-
-
-        /*
-            else if (strcmp(argv[1], "set-init-contention-size") == 0) {
-              init_contention_size_ = atoi (argv[2]);
-        #ifdef DEBUG_WIMAX
-              assert (init_contention_size_>=0);
-        #endif
-              return TCL_OK;
-            }
-            else if (strcmp(argv[1], "set-bw-req-contention-size") == 0) {
-              bw_req_contention_size_ = atoi (argv[2]);
-        #ifdef DEBUG_WIMAX
-              assert (bw_req_contention_size_>=0);
-        #endif
-              return TCL_OK;
-            }
-        */
-
-
-
     }
     return TCL_ERROR;
 }
@@ -304,13 +288,19 @@ void BSScheduler::init ()
     // Create default alogrithm objects
 
     // traffic policing
-    trafficShapingAlgorithm_ =  new TrafficShapingNone( mac_->getFrameDuration());
+    if ( !trafficShapingAlgorithm_) {
+    	trafficShapingAlgorithm_ =  new TrafficShapingNone( mac_->getFrameDuration());
+    }
 
     // Scheduling Algorithm for Downlink Direction
-    dlSchedulingAlgorithm_ = new SchedulingAlgoDualEqualFill();
+    if ( !dlSchedulingAlgorithm_) {
+    	dlSchedulingAlgorithm_ = new SchedulingAlgoDualEqualFill();
+    }
 
     // Scheduling Alorithm for Uplink Direction
-    ulSchedulingAlgorithm_ = new SchedulingProportionalFairUl();
+    if ( !ulSchedulingAlgorithm_) {
+    	ulSchedulingAlgorithm_ = new SchedulingProportionalFairUl();
+    }
 
     printf("Algorithm Objects created \n");
 
@@ -823,8 +813,9 @@ void BSScheduler::schedule ()
     // Build broadcast burst first
 
     // Set capacity for broadcast burst
-    int broadcastSlotCapacity = phy->getSlotCapacity(map->getDlSubframe()->getProfile ( map->getDlSubframe()->getProfile (DIUC_PROFILE_2)->getIUC())->getEncoding(), DL_);
-    broadcastSlotCapacity = broadcastSlotCapacity / Repetition_code_;
+    int broadcastSlotCapacity = phy->getSlotCapacity(map->getDlSubframe()->getProfile ( map->getDlSubframe()->getProfile (default_mod_)->getIUC())->getEncoding(), DL_);
+    // TODO: May result in false values
+    broadcastSlotCapacity = int( ceil( float(broadcastSlotCapacity) / Repetition_code_));
     virtualAlloc->setBroadcastSlotCapacity( broadcastSlotCapacity);
 
     // 1. Virtual DL_MAP
@@ -2032,7 +2023,7 @@ mac802_16_ul_map_frame * BSScheduler::buildUplinkMap( Connection *head, int tota
                     // create new entry
                     Ofdm_mod_rate burstProfile = mac_->getMap()->getUlSubframe()->getProfile(currentCon->getPeerNode()->getUIUC())->getEncoding();
                     int slotCapacity = mac_->getPhy()->getSlotCapacity( burstProfile, UL_);
-                    virtualAlloc->addAllocation( currentCon, wantedMstrSize, wantedMrtrSize, slotCapacity);
+                    virtualAlloc->addAllocation( currentCon, wantedMrtrSize, wantedMstrSize, slotCapacity);
                 }
 
             }

@@ -9,8 +9,6 @@
 #define TRAFFICSHAPINGTSWTCM_H_
 
 #include "trafficshapinginterface.h"
-#include "wimaxscheduler.h"
-#include "connection.h"
 #include <map>
 #include <deque>
 using namespace std;

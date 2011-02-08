@@ -76,7 +76,7 @@ public:
     /*
      * Adds a new Virtual Allocation in the Map
      */
-    void addAllocation( Connection* connectionPtr, u_int32_t wantedMstrSize, u_int32_t wantedMrtrSize, int slotCapacity, int nbOfBytes = 0, int nbOfSlots = 0, int nbOfCdmaSlots = 0);
+    void addAllocation( Connection* connectionPtr, u_int32_t wantedMrtrSize, u_int32_t wantedMstrSize, int slotCapacity, int nbOfBytes = 0, int nbOfSlots = 0, int nbOfCdmaSlots = 0);
 
 
     /*
