@@ -43,7 +43,15 @@
 #include "schedulingproportionalfairul.h"
 
 
-#define FRAME_SIZE 0.005
+// Ranging Region (cp. Table 376 IEEE 802.16-2009)
+// 0b00: Initial ranging/Handover Ranging over two symbols
+// 0b01: Initial ranging/Handover Ranging over four symbols
+// 0b10: BR/periodic ranging over one symbol
+// 0b11: BR/periodic ranging over three symbols
+
+#define INITIAL_RANGING_SYM 2
+#define BW_RANGING_SYM 1
+
 #define CODE_SIZE 256
 #define CDMA_6SUB 6
 #define MAX_CONN 2048
