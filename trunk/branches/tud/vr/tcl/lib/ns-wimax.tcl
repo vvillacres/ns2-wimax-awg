@@ -79,4 +79,4 @@ Agent/WimaxCtrl set synch_frame_delay_ 50   ;# delay used to synchronize with ne
 Mac/802_16/BS set dlratio_ 0.3              ;# portion of the frame dedicated to downlink
 Mac/802_16/SS set dlratio_ 0.3              ;# portion of the frame dedicated to downlink
 
-Mac/802_16/BS set Repetition_code_     2    ;# repetition code for DL_MAP
+Mac/802_16/BS set repetition_code_     2    ;# repetition code for DL_MAP

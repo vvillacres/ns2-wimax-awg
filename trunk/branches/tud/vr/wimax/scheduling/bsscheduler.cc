@@ -118,7 +118,7 @@ BSScheduler::BSScheduler () : WimaxScheduler ()
     debug2 ("BSScheduler created\n");
     default_mod_ = OFDM_QPSK_1_2;
     //bind ("dlratio_", &dlratio_);
-    bind("Repetition_code_", &Repetition_code_);
+    bind("repetition_code_", &repetition_code_);
     bind("init_contention_size_", &init_contention_size_);
     bind("bw_req_contention_size_", &bw_req_contention_size_);
 
@@ -196,7 +196,7 @@ int BSScheduler::command(int argc, const char*const* argv)
         	return TCL_OK;
 
         } else if (strcmp(argv[1], "set-repetition-code") == 0) {
-        	Repetition_code_ = atoi (argv[2]);
+        	repetition_code_ = atoi (argv[2]);
         	return TCL_OK;
 
 
@@ -814,8 +814,9 @@ void BSScheduler::schedule ()
 
     // Set capacity for broadcast burst
     int broadcastSlotCapacity = phy->getSlotCapacity(map->getDlSubframe()->getProfile ( map->getDlSubframe()->getProfile (default_mod_)->getIUC())->getEncoding(), DL_);
+
     // TODO: May result in false values
-    broadcastSlotCapacity = int( ceil( float(broadcastSlotCapacity) / Repetition_code_));
+    broadcastSlotCapacity = int( ceil( float(broadcastSlotCapacity) / repetition_code_));
     virtualAlloc->setBroadcastSlotCapacity( broadcastSlotCapacity);
 
     // 1. Virtual DL_MAP
