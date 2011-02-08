@@ -21,8 +21,8 @@
 #include "scheduling/wimaxscheduler.h"
 #include "arqstatus.h"
 #include "admissioncontrolinterface.h"
-// add new admission control algorithm header files here !!!
-
+#include "thresholdbasedcac.h"          // add new admission control algorithm header files here !!!
+#include "faircac.h"
 
 #define DEFAULT_POLLING_INTERVAL 1000
 
@@ -61,31 +61,42 @@ int ServiceFlowHandler::command(int argc, const char*const* argv)
 {
     if (argc == 3) {
         if (strcmp(argv[1], "set-admission-control") == 0) {
-            if (strcmp(argv[2], "schöner-name1") == 0) {
-            	// set new algorithm object
-            	printf("Text \n");
-            	// check for existing mac reference
-            	assert( mac_);
-            	if ( admissionControl_) {
-            		delete admissionControl_;
-            	}
-            	// establish new Admission Control Object
-            	admissionControl_ = new AdmissionControlInterface( mac_);
-            	return TCL_OK;
-            } else if (strcmp(argv[2], "schöner-name2") == 0) {
-            	// set new algorithm object
-            	printf("Text \n");
-            	// check for existing mac reference
-            	assert( mac_);
-            	if ( admissionControl_) {
-            		delete admissionControl_;
-            	}
-            	// establish new Admission Control Object
-            	admissionControl_ = new AdmissionControlInterface( mac_);
-            	return TCL_OK;
-            } else {
-                return TCL_ERROR;
-            }
+        	  if (strcmp(argv[2], "default") == 0) {
+        		  // set new algorithm object
+        	      printf("Text \n");
+        	      // check for existing mac reference
+        	      assert( mac_);
+        	      if ( admissionControl_) {
+        	    	  delete admissionControl_;
+        	      }
+        	      // establish new Admission Control Object
+        	      admissionControl_ = new AdmissionControlInterface( mac_);
+        	      return TCL_OK;
+        	  } else if (strcmp(argv[2], "thresholdbasedcac") == 0) {
+        		  // set new algorithm object
+        		  printf("Text \n");
+        		  // check for existing mac reference
+        		  assert( mac_);
+        		  if ( admissionControl_) {
+        			  delete admissionControl_;
+        		  }
+        		  // establish new Admission Control Object
+        		  admissionControl_ = new ThresholdBasedCAC( mac_);
+        		  return TCL_OK;
+        	  } else if (strcmp(argv[2], "fcac") == 0) {
+        		  // set new algorithm object
+        		  printf("Text \n");
+        		  // check for existing mac reference
+        		  assert( mac_);
+        		  if ( admissionControl_) {
+        			  delete admissionControl_;
+        		  }
+        		  // establish new Admission Control Object
+        		  admissionControl_ = new FairCAC( mac_);
+        		  return TCL_OK;
+        	  } else {
+        		  return TCL_ERROR;
+        	  }
         } else {
             return TCL_ERROR;
         }

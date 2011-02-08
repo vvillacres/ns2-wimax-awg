@@ -349,6 +349,9 @@ OBJ_CC = \
     wimax/scheduling/schedulingproportionalfairul.o \
     wimax/scheduling/edfqueueelement.o \
     wimax/scheduling/schedulingalgodualedf.o \
+    wimax/admissioncontrolinterface.o \
+    wimax/thresholdbasedcac.o \
+    wimax/faircac.o \
     wimax/scheduling/ssscheduler.o \
     wimax/scheduling/ulsubframetimer.o \
     wimax/scheduling/dlsubframetimer.o \
