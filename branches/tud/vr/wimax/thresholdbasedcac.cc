@@ -2,6 +2,7 @@
 #include "thresholdbasedcac.h"
 #include "serviceflowqosset.h"
 #include "mac802_16.h"
+#include "wimaxscheduler.h"
 #include "serviceflow.h"
 #include "serviceflowhandler.h"
 
@@ -35,8 +36,13 @@ bool ThresholdBasedCAC::checkAdmission( ServiceFlowQosSet * serviceFlowQosSet)
 
 	if ( serviceFlowQosSet->getDataDeliveryServiceType() == DL_NONE) {
 		// uplink
-		//frameUsageStat_t uplinkStat = mac_->getScheduler()->getUplinkStatistic();
-	    double usage = 0;// ( uplinkStat.usedMrtrSlots + uplinkStat.usedMrtrSlots * 0.1) / uplinkStat.totalNbOfSlots ;
+
+		// TODO: Check if the call comes form a BS or SS MAC
+		// Inform your supervisor if this assertation fails
+		assert( mac_->getNodeType() == STA_BS);
+
+		frameUsageStat_t uplinkStat = mac_->getScheduler()->getUplinkStatistic();
+	    double usage = ( uplinkStat.usedMrtrSlots + uplinkStat.usedMrtrSlots * 0.1) / uplinkStat.totalNbOfSlots ;
 
 		UlGrantSchedulingType_t schedulingType = serviceFlowQosSet->getUlGrantSchedulingType();
 		switch( schedulingType) {
@@ -92,8 +98,13 @@ bool ThresholdBasedCAC::checkAdmission( ServiceFlowQosSet * serviceFlowQosSet)
 
 	} else  {
 		// downlink
-		//frameUsageStat_t downlinkStat = mac_->getScheduler()->getDownlinkStatistic();
-		double usage = 0; //( downlinkStat.usedMrtrSlots + downlinkStat.usedMrtrSlots * 0.1) / downlinkStat.totalNbOfSlots ;
+
+		// TODO: Check if the call comes from a BS or SS MAC
+		// Inform your supervisor if this assertation fails
+		assert( mac_->getNodeType() == STA_BS);
+
+		frameUsageStat_t downlinkStat = mac_->getScheduler()->getDownlinkStatistic();
+		double usage = ( downlinkStat.usedMrtrSlots + downlinkStat.usedMrtrSlots * 0.1) / downlinkStat.totalNbOfSlots ;
 
 		DataDeliveryServiceType_t schedulingType = serviceFlowQosSet->getDataDeliveryServiceType();
 		switch( schedulingType) {

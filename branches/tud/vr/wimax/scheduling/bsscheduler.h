@@ -21,10 +21,6 @@
 
 #include "wimaxscheduler.h"
 #include "scanningstation.h"
-#include "trafficshapinginterface.h"
-#include "virtualallocation.h"
-#include "schedulingalgointerface.h"
-
 
 
 
@@ -76,19 +72,17 @@ public:
      */
     virtual void schedule ();
 
-    Ofdm_mod_rate change_rate(Ofdm_mod_rate rate, bool increase_modulation);
-    bool check_modulation_change(Ofdm_mod_rate current_rate, int current_mcs_index, bool increase);
-    int update_mcs_index(Ofdm_mod_rate current_rate, int current_mcs_index, bool increase);
 
     /**
      * Returns the statistic for the downlink scheduling
      */
-    frameUsageStat_t getDownlinkStatistic();
+    virtual frameUsageStat_t getDownlinkStatistic();
 
     /*
      * Returns the statistic for the uplink scheduling
      */
-    frameUsageStat_t getUplinkStatistic();
+    virtual frameUsageStat_t getUplinkStatistic();
+
 
 protected:
 
@@ -141,6 +135,10 @@ protected:
 
     mac802_16_ul_map_frame * buildUplinkMap( Connection *head, int totalUlSubchannels, int totalUlSymbols, int ulSymbolOffset, int ulSubchannelOffset, int freeUlSlots);
 
+
+    Ofdm_mod_rate change_rate(Ofdm_mod_rate rate, bool increase_modulation);
+    bool check_modulation_change(Ofdm_mod_rate current_rate, int current_mcs_index, bool increase);
+    int update_mcs_index(Ofdm_mod_rate current_rate, int current_mcs_index, bool increase);
 
 private:
 

@@ -1492,3 +1492,29 @@ int WimaxScheduler::transfer_packets_with_fragpackarq(Connection *c, Burst *b, i
     return b_data;
 }
 
+/**
+ * Returns the statistic for the downlink scheduling
+ */
+frameUsageStat_t WimaxScheduler::getDownlinkStatistic()
+{
+	// set default values an return them
+	frameUsageStat_t dummyStat;
+	dummyStat.totalNbOfSlots = 100.0;
+	dummyStat.usedMrtrSlots = 0.0;
+	dummyStat.usedMstrSlots = 0.0;
+	return dummyStat;
+}
+
+
+/*
+ * Returns the statistic for the uplink scheduling
+ */
+frameUsageStat_t WimaxScheduler::getUplinkStatistic()
+{
+	// set default values an return them
+	frameUsageStat_t dummyStat;
+	dummyStat.totalNbOfSlots = 100.0;
+	dummyStat.usedMrtrSlots = 0.0;
+	dummyStat.usedMstrSlots = 0.0;
+	return dummyStat;
+}
