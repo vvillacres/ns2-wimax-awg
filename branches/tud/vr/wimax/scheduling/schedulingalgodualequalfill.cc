@@ -27,6 +27,10 @@ void SchedulingAlgoDualEqualFill::scheduleConnections( VirtualAllocation* virtua
 	 * would break the algorithm independent interface.
 	 */
 
+	// update totalNbOfSlots_ for statistic
+	assert( ( 0 < movingAverageFactor_) && ( 1 > movingAverageFactor_) );
+	totalNbOfSlots_ = ( totalNbOfSlots_ * ( 1 - movingAverageFactor_)) + ( freeSlots * movingAverageFactor_);
+
 	int nbOfMrtrConnections = 0;
 	int nbOfMstrConnections = 0;
 	u_int32_t sumOfWantedMrtrBytes = 0;
@@ -79,6 +83,10 @@ void SchedulingAlgoDualEqualFill::scheduleConnections( VirtualAllocation* virtua
 			test = virtualAllocation->firstConnectionEntry();
 		}
 
+		// count number of allocated slots for mrtr demands
+		int mrtrSlots = 0;
+
+
 		while ( ( nbOfMrtrConnections > 0 ) && ( freeSlots > 0 ) ) {
 
 			// number of Connections which can be served in this iteration
@@ -110,8 +118,11 @@ void SchedulingAlgoDualEqualFill::scheduleConnections( VirtualAllocation* virtua
 				int allocatedSlots = nbOfSlotsPerConnection + virtualAllocation->getCurrentNbOfSlots();
 				int maximumBytes = allocatedSlots * virtualAllocation->getSlotCapacity();
 
-				// get fragmented bytes to calculate first packet size
-				int fragmentedBytes = virtualAllocation->getConnection()->getFragmentBytes();
+				// get fragmented bytes to calculate first packet size for the first round
+				int fragmentedBytes = 0;
+				if ( virtualAllocation->getCurrentNbOfSlots() > 0 ) {
+						fragmentedBytes = virtualAllocation->getConnection()->getFragmentBytes();
+				}
 
 				// get first packed
 				Packet * currentPacket = virtualAllocation->getConnection()->get_queue()->head();
@@ -167,8 +178,11 @@ void SchedulingAlgoDualEqualFill::scheduleConnections( VirtualAllocation* virtua
 				// Calculate Allocated Slots
 				allocatedSlots = int( ceil( double(allocatedBytes) / virtualAllocation->getSlotCapacity()) );
 
+				int newSlots = ( allocatedSlots - virtualAllocation->getCurrentNbOfSlots());
 				// update freeSlots
-				freeSlots -= ( allocatedSlots - virtualAllocation->getCurrentNbOfSlots());
+				freeSlots -= newSlots;
+				// update mrtrSlots
+				mrtrSlots += newSlots;
 
 				// check for debug
 				assert( freeSlots >= 0);
@@ -180,6 +194,11 @@ void SchedulingAlgoDualEqualFill::scheduleConnections( VirtualAllocation* virtua
 				conThisRound--;
 			}
 		}
+
+		// update usedMrtrSlots_ for statistic
+		assert( ( 0 < movingAverageFactor_) && ( 1 > movingAverageFactor_) );
+		usedMrtrSlots_ = ( usedMrtrSlots_ * ( 1 - usedMrtrSlots_)) + ( mrtrSlots * usedMrtrSlots_);
+
 
 		if ( nbOfMrtrConnections > 0) {
 			if (freeSlots > 0) {
@@ -194,6 +213,9 @@ void SchedulingAlgoDualEqualFill::scheduleConnections( VirtualAllocation* virtua
 		/*
 		 * Allocation of Slots for fulfilling the MSTR demands
 		 */
+
+		// count the slots used to fulfill MSTR demands
+		int mstrSlots = 0;
 
 		while ( ( nbOfMstrConnections > 0 ) && ( freeSlots > 0 ) ) {
 
@@ -283,8 +305,12 @@ void SchedulingAlgoDualEqualFill::scheduleConnections( VirtualAllocation* virtua
 				// Calculate Allocated Slots
 				allocatedSlots = int( ceil( double(allocatedBytes) / virtualAllocation->getSlotCapacity()) );
 
+				// calculate new assigned slots
+				int newSlots = ( allocatedSlots - virtualAllocation->getCurrentNbOfSlots());
 				// update freeSlots
-				freeSlots -= ( allocatedSlots - virtualAllocation->getCurrentNbOfSlots());
+				freeSlots -= newSlots;
+				// update mstrSlots
+				mstrSlots += mstrSlots;
 
 				// check for debug
 				assert( freeSlots >= 0);
@@ -297,6 +323,10 @@ void SchedulingAlgoDualEqualFill::scheduleConnections( VirtualAllocation* virtua
 			}
 
 		}
+
+		// update usedMstrSlots_ for statistic
+		assert( ( 0 < movingAverageFactor_) && ( 1 > movingAverageFactor_) );
+		usedMstrSlots_ = ( usedMstrSlots_ * ( 1 - usedMstrSlots_)) + ( mrtrSlots * usedMstrSlots_);
 
 		if ( nbOfMstrConnections > 0 ) {
 			// save last served connection for the next round
