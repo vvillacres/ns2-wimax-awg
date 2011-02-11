@@ -740,7 +740,7 @@ int ServiceFlowHandler::removeStaticFlow (int argc, const char*const* argv)
 			currentFlow->remove_entry();
 			delete currentFlow;
 			currentFlow = NULL;
-			printf("Service Flow d% removed \n", sfid);
+			printf("Service Flow %d removed \n", sfid);
 		} else {
 			currentFlow = currentFlow->next_entry();
 		}

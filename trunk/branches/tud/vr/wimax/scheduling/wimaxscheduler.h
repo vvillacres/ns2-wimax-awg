@@ -23,6 +23,9 @@
 #include "mac802_16.h"
 #include "framemap.h"
 #include "neighbordb.h"
+#include "schedulingalgointerface.h"
+#include "trafficshapinginterface.h"
+#include "virtualallocation.h"
 
 #define TX_GAP 0.000001 //Time in seconds between sending 2 packets (to avoid collision)
 
@@ -90,6 +93,16 @@ public:
      * This function is used to schedule bursts/packets
      */
     virtual void schedule ();
+
+    /**
+     * Returns the statistic for the downlink scheduling
+     */
+    virtual frameUsageStat_t getDownlinkStatistic();
+
+    /*
+     * Returns the statistic for the uplink scheduling
+     */
+    virtual frameUsageStat_t getUplinkStatistic();
 
 protected:
 
