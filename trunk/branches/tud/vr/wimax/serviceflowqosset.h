@@ -40,7 +40,8 @@ enum UlGrantSchedulingType_t {
     UL_ertPS,
     UL_rtPS,
     UL_nrtPS,
-    UL_BE
+    UL_BE,
+    UL_NONE
 };
 
 /**
@@ -57,7 +58,8 @@ enum DataDeliveryServiceType_t {
 	DL_ERTVR,
 	DL_RTVR,
 	DL_NRTVR,
-	DL_BE
+	DL_BE,
+	DL_NONE
 };
 
 

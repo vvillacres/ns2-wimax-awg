@@ -2,6 +2,8 @@
 #ifndef ADMISSIONCONTROLINTERFACE_H
 #define ADMISSIONCONTROLINTERFACE_H
 
+#include "schedulingalgointerface.h"
+
 //#include "serviceflowqosset.h"
 //#include "serviceflow.h"
 //#include "serviceflowhandler.h"
