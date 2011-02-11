@@ -870,17 +870,20 @@ void BSScheduler::schedule ()
         }
 
         // debug
-        if ( allocatedBytes == currentCon->queueByteLength()) {
-            printf(" Do it easy \n");
+        int queueLength = currentCon->get_queue()->length();
+        debug_ext("Broadcast Allocation Bytes %d Packetes %d FreeSlots %d broadcastSlotCapacity %d\n", allocatedBytes, queueLength, freeDlSlots, broadcastSlotCapacity);
+
+        // limit broadcast size to frame size
+        if (allocatedBytes > broadcastSlotCapacity * freeDlSlots) {
+        	fprintf(stderr, "Not enough dl_slots to send broadcast messages \n");
+        	allocatedBytes = broadcastSlotCapacity * freeDlSlots;
         }
 
         freeDlSlots -= virtualAlloc->increaseBroadcastBurst( allocatedBytes);
+        debug_ext("Free Downlink Slots after virtual Map %d \n", freeDlSlots );
     }
 
-    if ( freeDlSlots < 0) {
-        fprintf(stderr, "Panic : not enough dl_slots to send broadcast messages \n");
-        exit(1);
-    }
+
 
 
     //============================DL scheduling =================================
@@ -893,38 +896,35 @@ void BSScheduler::schedule ()
 
     // Call buildDownlinkMap to allocate the downlink resource
     int nbOfDlBursts = 0;
-    if (firstPeer) {
-        if ( freeDlSlots > 0) {
-            debug2 ("DL.Before going to dl-stage2 (data allocation), Frame Duration :%5.4f, PSduration :%e, symboltime :%e, nbPS :%d, rtg :%d, ttg :%d, PSleft :%d, useNbDlSymbols :%d\n", mac_->getFrameDuration(), phy->getPS(), phy->getSymbolTime(), nbPS, mac_->phymib_.rtg, mac_->phymib_.ttg, nbPSLeft, useNbDlSymbols);
-            //debug10 ("\tStartdld :%d, Enddld :%d, Dldsize :%d, Uldsize :%d, Numsubchannels (35 or 30) :%d \n", useNbDlSymbols,  phy->getNumsubchannels(/*phy->getPermutationscheme (), */DL_));
+    if ( firstPeer &&  ( freeDlSlots > 0) ) {
+		debug2 ("DL.Before going to dl-stage2 (data allocation), Frame Duration :%5.4f, PSduration :%e, symboltime :%e, nbPS :%d, rtg :%d, ttg :%d, PSleft :%d, useNbDlSymbols :%d\n", mac_->getFrameDuration(), phy->getPS(), phy->getSymbolTime(), nbPS, mac_->phymib_.rtg, mac_->phymib_.ttg, nbPSLeft, useNbDlSymbols);
+		//debug10 ("\tStartdld :%d, Enddld :%d, Dldsize :%d, Uldsize :%d, Numsubchannels (35 or 30) :%d \n", useNbDlSymbols,  phy->getNumsubchannels(/*phy->getPermutationscheme (), */DL_));
 
-            dlMap = buildDownlinkMap( virtualAlloc, mac_->getCManager()->get_out_connection (), phy->getNumsubchannels(DL_), useNbDlSymbols, dlSymbolOffset, dlSubchannelOffset, freeDlSlots);
-            if (dlMap->type == MAC_DL_MAP) {
-            	printf("ok \n");
-            }
+		dlMap = buildDownlinkMap( virtualAlloc, mac_->getCManager()->get_out_connection (), phy->getNumsubchannels(DL_), useNbDlSymbols, dlSymbolOffset, dlSubchannelOffset, freeDlSlots);
+		if (NOW > 10.0) {
+			printf("ok \n");
+		}
 
-            // create physical DL burst
-            // TODO: Note that #subchannels = #slots in this version
-            DlBurst *db;
-            int indexDlMapIe = dlMap->nb_ies;
-            assert (dlMap->nb_ies < MAX_MAP_IE);
-            for (int i = 0; i < indexDlMapIe ; i++) {
-                mac802_16_dlmap_ie  dlMapIe = dlMap->ies[i];
+		// create physical DL burst
+		// TODO: Note that #subchannels = #slots in this version
+		DlBurst *db;
+		int indexDlMapIe = dlMap->nb_ies;
+		assert (dlMap->nb_ies < MAX_MAP_IE);
+		for (int i = 0; i < indexDlMapIe ; i++) {
+			mac802_16_dlmap_ie  dlMapIe = dlMap->ies[i];
 
-                debug_ext ("Add DL Burst, #bursts %d, CID :%d, DIUC :%d, SymbolOffset :%d, SubchannelOffset :%d, #symbols :%d,  #subchannels :%d\n", nbOfDlBursts, dlMapIe.cid, dlMapIe.diuc, dlMapIe.symbol_offset,  dlMapIe.subchannel_offset, dlMapIe.num_of_symbols, dlMapIe.num_of_subchannels);
+			debug_ext ("Add DL Burst, #bursts %d, CID :%d, DIUC :%d, SymbolOffset :%d, SubchannelOffset :%d, #symbols :%d,  #subchannels :%d\n", nbOfDlBursts, dlMapIe.cid, dlMapIe.diuc, dlMapIe.symbol_offset,  dlMapIe.subchannel_offset, dlMapIe.num_of_symbols, dlMapIe.num_of_subchannels);
 
-                db = (DlBurst*) map->getDlSubframe()->getPdu ()->addBurst (nbOfDlBursts++);
-                db->setCid (dlMapIe.cid);
-                db->setIUC (dlMapIe.diuc);
-                db->setPreamble(dlMapIe.preamble);
-                db->setStarttime(dlMapIe.symbol_offset);
-                db->setSubchannelOffset(dlMapIe.subchannel_offset);
-                db->setnumSubchannels(dlMapIe.num_of_subchannels);
-                db->setDuration(dlMapIe.num_of_symbols);
+			db = (DlBurst*) map->getDlSubframe()->getPdu ()->addBurst (nbOfDlBursts++);
+			db->setCid (dlMapIe.cid);
+			db->setIUC (dlMapIe.diuc);
+			db->setPreamble(dlMapIe.preamble);
+			db->setStarttime(dlMapIe.symbol_offset);
+			db->setSubchannelOffset(dlMapIe.subchannel_offset);
+			db->setnumSubchannels(dlMapIe.num_of_subchannels);
+			db->setDuration(dlMapIe.num_of_symbols);
 
-            }
-
-        }
+		}
     } else {
         // Allocate Broadcast Burst if Downlink Map was not created
         DlBurst *db;
@@ -1166,7 +1166,7 @@ void BSScheduler::schedule ()
     // Broadcast Packets
     Connection *addBroadcastConnection = mac_->getCManager ()->get_connection (BROADCAST_CID,OUT_CONNECTION);
     if ( addBroadcastConnection->queueByteLength() > 0) {
-        freeBurstSize -= transfer_packets1( addBroadcastConnection, b, freeBurstSize);
+        freeBurstSize -= transfer_packets1( addBroadcastConnection, b, ( burstNbSubchannels * slotCapacityBurst ) - freeBurstSize);
     }
 
     //b->setStarttime(offset);
@@ -2441,3 +2441,20 @@ Ofdm_mod_rate BSScheduler::change_rate(Ofdm_mod_rate rate, bool increase_modulat
     }
     return after_rate;
 }
+
+/**
+ * Returns the statistic for the downlink scheduling
+ */
+frameUsageStat_t BSScheduler::getDownlinkStatistic()
+{
+	return dlSchedulingAlgorithm_->getUsageStatistic();
+}
+
+/*
+ * Returns the statistic for the uplink scheduling
+ */
+frameUsageStat_t BSScheduler::getUplinkStatistic()
+{
+	return ulSchedulingAlgorithm_->getUsageStatistic();
+}
+

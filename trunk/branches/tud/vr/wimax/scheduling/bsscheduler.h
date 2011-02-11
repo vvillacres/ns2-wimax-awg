@@ -32,31 +32,12 @@
 #define OTHER_NUM_DL_BURST 2 //including 1st DL burst and END_OF_MAP burst.
 #define OTHER_NUM_UL_BURST 3 //including initial ranging, bw req and END_OF_MAP burst
 
-// This structure is used for deficit round robin (next version)
-struct con_data_alloc {
-    int cid;
-    int direction;
-    Ofdm_mod_rate mod_rate;
-    int req_slots;
-    int req_bytes;
-    int grant_slots;
-    int grant_bytes;
-    double weight;
-    int counter;
-};
-
-struct con_drr {
-    int cid;
-    int quantum;
-    int counter;
-};
-
-
 class Mac802_16BS;
 class WimaxCtrlAgent;
 class TrafficPolicingInterface;
 class SchedulingAlgoInterface;
 class VirtualAllocation;
+
 /**
  * Class BSScheduler
  * Implement the packet scheduler on the BS side
@@ -74,7 +55,7 @@ public:
     BSScheduler ();
 
     /*
-     * Deleate a scheduler
+     * Delete a scheduler
      */
     ~BSScheduler ();
 
@@ -98,6 +79,16 @@ public:
     Ofdm_mod_rate change_rate(Ofdm_mod_rate rate, bool increase_modulation);
     bool check_modulation_change(Ofdm_mod_rate current_rate, int current_mcs_index, bool increase);
     int update_mcs_index(Ofdm_mod_rate current_rate, int current_mcs_index, bool increase);
+
+    /**
+     * Returns the statistic for the downlink scheduling
+     */
+    frameUsageStat_t getDownlinkStatistic();
+
+    /*
+     * Returns the statistic for the uplink scheduling
+     */
+    frameUsageStat_t getUplinkStatistic();
 
 protected:
 
