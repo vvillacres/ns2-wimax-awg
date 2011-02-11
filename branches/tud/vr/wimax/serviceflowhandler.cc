@@ -81,7 +81,7 @@ int ServiceFlowHandler::command(int argc, const char*const* argv)
         			  delete admissionControl_;
         		  }
         		  // establish new Admission Control Object
-        		  admissionControl_ = new ThresholdBasedCAC( mac_);
+        		  admissionControl_ = new ThresholdBasedCAC( mac_, 0.99, 0.97, 0.95, 0.90, 0.85);
         		  return TCL_OK;
         	  } else if (strcmp(argv[2], "fcac") == 0) {
         		  // set new algorithm object
@@ -92,7 +92,7 @@ int ServiceFlowHandler::command(int argc, const char*const* argv)
         			  delete admissionControl_;
         		  }
         		  // establish new Admission Control Object
-        		  admissionControl_ = new FairCAC( mac_);
+        		  admissionControl_ = new FairCAC( mac_, 5e+7, 5e+5, 5e+4, 0.2, 5e+7, 2e+6, 1e+6, 10);
         		  return TCL_OK;
         	  } else {
         		  return TCL_ERROR;
@@ -535,7 +535,7 @@ ServiceFlowQosSet * ServiceFlowHandler::createServiceFlowQosSet( int argc, const
     u_int32_t maxSustainedTrafficRate;
     u_int32_t maxTrafficBurst;
     u_int32_t minReservedTrafficRate;
-    UlGrantSchedulingType_t	ulGrantSchedulingType = UL_BE;
+    UlGrantSchedulingType_t	ulGrantSchedulingType = UL_NONE;
     std::bitset<8> reqTransmitPolicy;
     u_int32_t toleratedJitter;
     u_int32_t maxLatency;
@@ -548,7 +548,7 @@ ServiceFlowQosSet * ServiceFlowHandler::createServiceFlowQosSet( int argc, const
     u_int16_t arqBlockSize;
     u_int16_t unsolicitedGrantInterval = 0;
     u_int16_t unsolicitedPollingInterval = 0;
-    DataDeliveryServiceType_t dataDeliveryServiceType = DL_BE;
+    DataDeliveryServiceType_t dataDeliveryServiceType = DL_NONE;
     u_int16_t timeBase;
     double packetErrorRate;
 

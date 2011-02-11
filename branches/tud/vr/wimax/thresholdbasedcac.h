@@ -1,6 +1,6 @@
 
 #ifndef THRESHOLDBASEDCAC_H
-#define ALGORITHM1_H
+#define THRESHOLDBASEDCAC_H
 
 #include "serviceflowqosset.h"
 #include "mac802_16.h"
@@ -16,18 +16,26 @@ class ThresholdBasedCAC : public AdmissionControlInterface
 
 public:
 
-	ThresholdBasedCAC (Mac802_16 * mac
-
-/*	float used_bandwidth,
-	float threshold_be,
-	float threshold_nrtPS,
-	float threshold_rtPS,
-	float threshold_ertPS,
-	float threshold_ugs
-*/
+	ThresholdBasedCAC (Mac802_16 * mac,
+			float thresholdUgs,
+			float thresholdErtPs,
+			float thresholdRtPs,
+			float thresholdNrtPs,
+			float thresholdBe
 	);
 
 	virtual bool checkAdmission( ServiceFlowQosSet * serviceFlowQosSet);
+
+private:
+	/*
+	 * Thresholds for reserved Bandwidth
+	 */
+	float thresholdUgs_;
+	float thresholdErtPs_;
+	float thresholdRtPs_;
+	float thresholdNrtPs_;
+	float thresholdBe_;
+
 
 };
 

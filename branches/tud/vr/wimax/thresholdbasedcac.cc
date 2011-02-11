@@ -5,7 +5,16 @@
 #include "serviceflow.h"
 #include "serviceflowhandler.h"
 
-ThresholdBasedCAC::ThresholdBasedCAC (Mac802_16 * mac) : AdmissionControlInterface (mac)
+#include "admissioncontrolinterface.h"
+
+
+
+ThresholdBasedCAC::ThresholdBasedCAC (Mac802_16 * mac,
+										float thresholdUgs,
+										float thresholdErtPS,
+										float thresholdRtPS,
+										float thresholdNrtPS,
+										float thresholdBe) : AdmissionControlInterface (mac)
 {
 
 }
@@ -13,89 +22,129 @@ ThresholdBasedCAC::ThresholdBasedCAC (Mac802_16 * mac) : AdmissionControlInterfa
 bool ThresholdBasedCAC::checkAdmission( ServiceFlowQosSet * serviceFlowQosSet)
 {
 
+/*	struct frameUsageStat_t {
+	    double totalNbOfSlots;
+	    double usedMrtrSlots;
+	    double usedMstrSlots;
+	};
+*/
 
-/*
-    Dir_t RichtungUplink = UL;
-    Dir_t RichtungDownlink = DL;
 
-	if (used_bandwidth <= threshold_ugs && RichtungUplink) {
 
-   // UGS
-		UlGrantSchedulingType_t	ulGrantSchedulingType = UL_UGS;
-		result = serviceFlowHandler_->addStaticFlow(argc, argv);
-		return result;
-	    debug2("UL_UGS service is Admitted");
+	// thresholds conditions for reserved bandwidth
 
-	   } else if (used_bandwidth <= threshold_ugs && RichtungDownlink) {
+	if ( serviceFlowQosSet->getDataDeliveryServiceType() == DL_NONE) {
+		// uplink
+		//frameUsageStat_t uplinkStat = mac_->getScheduler()->getUplinkStatistic();
+	    double usage = 0;// ( uplinkStat.usedMrtrSlots + uplinkStat.usedMrtrSlots * 0.1) / uplinkStat.totalNbOfSlots ;
 
-		UlGrantSchedulingType_t	ulGrantSchedulingType = DL_UGS;
-		result = serviceFlowHandler_->addStaticFlow(argc, argv);
-		return result;
-	    debug2("DL_UGS service is Admitted");
+		UlGrantSchedulingType_t schedulingType = serviceFlowQosSet->getUlGrantSchedulingType();
+		switch( schedulingType) {
+		case UL_UGS:
+			if (usage <= thresholdUgs_ ) {
+				return true;  // UL_UGS service is admitted
+			} else {
+				return false; // UL_UGS service is rejected
+			}
 
-   // ertPS
-	   } else if (used_bandwidth <= threshold_ertps && RichtungUplink) {
+			break;
 
-		UlGrantSchedulingType_t	ulGrantSchedulingType = UL_ertPS;
-		result = serviceFlowHandler_->addStaticFlow(argc, argv);
-		return result;
-	    debug2("UL_ertPS service is Admitted");
+		case UL_ertPS:
+			if (usage <= thresholdErtPs_ ) {
+				return true;   // UL_ertPS service is admitted
+			} else {
+				return false;  // UL_ertPS service is rejected
+			}
 
-	   } else if (used_bandwidth <= threshold_ertps && RichtungDownlink) {
+			break;
 
-		UlGrantSchedulingType_t	ulGrantSchedulingType = DL_ERTVR;
-		result = serviceFlowHandler_->addStaticFlow(argc, argv);
-		return result;
-	    debug2("DL_ertPS service is Admitted");
+		case UL_rtPS:
+			if (usage <= thresholdRtPs_ ) {
+				return true;   // UL_rtPS service is admitted
+			} else {
+				return false;  // UL_rtPS service is rejected
+			}
 
-   // rtPS
-	   } else if (used_bandwidth <= threshold_rtps && RichtungUplink) {
+			break;
 
-		UlGrantSchedulingType_t	ulGrantSchedulingType = UL_rtPS;
-		result = serviceFlowHandler_->addStaticFlow(argc, argv);
-		return result;
-	    debug2("UL_rtPS service is Admitted");
+		case UL_nrtPS:
+			if (usage <= thresholdNrtPs_ ) {
+				return true;   // UL_nrtPS service is admitted
+			} else {
+				return false;  // UL_nrtPS service is rejected
+			}
 
-	   } else if (used_bandwidth <= threshold_rtps && RichtungDownlink) {
+			break;
 
-		UlGrantSchedulingType_t	ulGrantSchedulingType = DL_RTVR;
-		result = serviceFlowHandler_->addStaticFlow(argc, argv);
-		return result;
-	    debug2("DL_rtPS service is Admitted");
+		case UL_BE:
+			if (usage <= thresholdBe_ ) {
+				return true;   //  UL_BE service is admitted
+			} else {
+				return false;  //  UL_BE service is rejected
+			}
 
-    // nrtPS
-	   } else if (used_bandwidth <= threshold_nrtps && RichtungUplink) {
+			break;
 
-		UlGrantSchedulingType_t	ulGrantSchedulingType = UL_nrtPS;
-		result = serviceFlowHandler_->addStaticFlow(argc, argv);
-		return result;
-	    debug2("UL_nrtPS service is Admitted");
+		default:
 
-	   } else if (used_bandwidth <= threshold_nrtps && RichtungDownlink) {
-
-		UlGrantSchedulingType_t	ulGrantSchedulingType = DL_NRTVR;
-		result = serviceFlowHandler_->addStaticFlow(argc, argv);
-		return result;
-	    debug2("DL_nrtPS service is Admitted");
-
-     // BE
-	   } else if (used_bandwidth <= threshold_nrtps && RichtungUplink) {
-
-		UlGrantSchedulingType_t	ulGrantSchedulingType = UL_BE;
-		result = serviceFlowHandler_->addStaticFlow(argc, argv);
-		return result;
-	    debug2("UL_BE service is Admitted");
-
-	   } else if (used_bandwidth <= threshold_nrtps && RichtungDownlink) {
-
-		UlGrantSchedulingType_t	ulGrantSchedulingType = DL_BE;
-		result = serviceFlowHandler_->addStaticFlow(argc, argv);
-		return result;
-	    debug2("DL_BE service is Admitted");
-	    } else {
-
+			break;
 	    }
-	    */
+
+	} else  {
+		// downlink
+		//frameUsageStat_t downlinkStat = mac_->getScheduler()->getDownlinkStatistic();
+		double usage = 0; //( downlinkStat.usedMrtrSlots + downlinkStat.usedMrtrSlots * 0.1) / downlinkStat.totalNbOfSlots ;
+
+		DataDeliveryServiceType_t schedulingType = serviceFlowQosSet->getDataDeliveryServiceType();
+		switch( schedulingType) {
+		case DL_UGS:
+			if (usage <= thresholdUgs_ ) {
+				return true;   // DL_UGS service is admitted
+			} else {
+				return false;  // DL_UGS service is rejected
+			}
+
+			break;
+
+		case DL_ERTVR:
+			if (usage <= thresholdErtPs_ ) {
+				return true;   // DL_ertPS service is admitted
+			} else {
+				return false;  // DL_ertPS service is rejected
+			}
+
+			break;
+
+		case DL_RTVR:
+			if (usage <= thresholdRtPs_ ) {
+				return true;   // DL_rtPS service is admitted
+			} else {
+				return false;  // DL_rtPS service is rejected
+			}
+
+			break;
+
+		case DL_NRTVR:
+			if (usage <= thresholdNrtPs_ ) {
+				return true;   // DL_nrtPS service is admitted
+			} else {
+				return false;  // DL_nrtPS service is rejected
+			}
+
+			break;
+
+		case DL_BE:
+			if (usage <= thresholdBe_ ) {
+				return true;   // DL_BE service is admitted
+			} else {
+				return false;  // DL_BE service is rejected
+			}
+
+			break;
+
+		default:
+			break;
+		}
+	}
+
 }
-
-
