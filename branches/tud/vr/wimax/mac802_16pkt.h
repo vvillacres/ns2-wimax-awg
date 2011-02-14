@@ -557,7 +557,7 @@ struct mac802_16_dsa_req_frame {
     /*TLV values*/
     bool uplink; //direction of the flow, normaly coded in TLV with
     //type 145 or 146 (see p647).
-    ServiceFlow * staticflow ;
+    ServiceFlow * serviceFlow ;
     u_int16_t cid;
 };
 //parameter X indicates if cid is present (i.e request from BS)
@@ -571,7 +571,7 @@ struct mac802_16_dsa_rsp_frame {
     /*TLV values*/
     bool uplink; //direction of the flow, normaly coded in TLV with
     //type 145 or 146 (see p647).
-    ServiceFlow * staticflow ;
+    ServiceFlow * serviceFlow ;
     u_int16_t cid;
 };
 //parameter X indicates if cid is present (i.e response from BS)

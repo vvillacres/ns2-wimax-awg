@@ -23,18 +23,6 @@
 
 #define BS_NOT_CONNECTED -1 //bs_id when MN is not connected
 
-/** Defines the state of the MAC */
-enum Mac802_16State {
-    MAC802_16_DISCONNECTED,
-    MAC802_16_WAIT_DL_SYNCH,
-    MAC802_16_WAIT_DL_SYNCH_DCD,
-    MAC802_16_UL_PARAM,
-    MAC802_16_RANGING,
-    MAC802_16_WAIT_RNG_RSP,
-    MAC802_16_REGISTER,
-    MAC802_16_SCANNING,
-    MAC802_16_CONNECTED
-};
 
 /** Data structure to store MAC state */
 struct state_info {

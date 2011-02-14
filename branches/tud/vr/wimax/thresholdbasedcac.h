@@ -2,14 +2,11 @@
 #ifndef THRESHOLDBASEDCAC_H
 #define THRESHOLDBASEDCAC_H
 
-#include "serviceflowqosset.h"
-#include "mac802_16.h"
-#include "serviceflow.h"
-#include "serviceflowhandler.h"
-
 #include "admissioncontrolinterface.h"
 
 class Mac802_16;
+class ServiceFlow;
+class PeerNode;
 
 class ThresholdBasedCAC : public AdmissionControlInterface
 {
@@ -24,7 +21,7 @@ public:
 			float thresholdBe
 	);
 
-	virtual bool checkAdmission( ServiceFlowQosSet * serviceFlowQosSet);
+	virtual bool checkAdmission( ServiceFlow * serviceFlow, PeerNode * peer);
 
 private:
 	/*

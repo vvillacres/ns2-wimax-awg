@@ -1,11 +1,11 @@
 
 #include "faircac.h"
-#include "serviceflowhandler.h"
+
+#include "serviceflow.h"
+#include "peernode.h"
 #include "mac802_16.h"
 #include "serviceflowqosset.h"
-#include "serviceflow.h"
 
-#include "admissioncontrolinterface.h"
 
 FairCAC::FairCAC ( Mac802_16 * mac,
 
@@ -52,7 +52,7 @@ float FairCAC::TH_i()
 
 
 
-bool FairCAC::checkAdmission( ServiceFlowQosSet * serviceFlowQosSet)
+bool FairCAC::checkAdmission( ServiceFlow * serviceFlow, PeerNode * peer)
 {
 
 	if ( RB_i_ - B_req_i_ >= 0  &&  B_a_ - B_req_i_ >= TH_i_ ) {

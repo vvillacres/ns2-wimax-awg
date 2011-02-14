@@ -46,10 +46,7 @@ ServiceFlowHandler::ServiceFlowHandler ()
 ServiceFlowHandler::~ServiceFlowHandler ()
 {
 	// delete admission control object
-	if ( admissionControl_) {
-		delete admissionControl_;
-		admissionControl_ = NULL;
-	}
+	delete admissionControl_;
 }
 
 /*
@@ -61,42 +58,40 @@ int ServiceFlowHandler::command(int argc, const char*const* argv)
 {
     if (argc == 3) {
         if (strcmp(argv[1], "set-admission-control") == 0) {
-        	  if (strcmp(argv[2], "default") == 0) {
-        		  // set new algorithm object
-        	      printf("Text \n");
-        	      // check for existing mac reference
-        	      assert( mac_);
-        	      if ( admissionControl_) {
-        	    	  delete admissionControl_;
-        	      }
-        	      // establish new Admission Control Object
-        	      admissionControl_ = new AdmissionControlInterface( mac_);
-        	      return TCL_OK;
-        	  } else if (strcmp(argv[2], "thresholdbasedcac") == 0) {
-        		  // set new algorithm object
-        		  printf("Text \n");
-        		  // check for existing mac reference
-        		  assert( mac_);
-        		  if ( admissionControl_) {
-        			  delete admissionControl_;
-        		  }
-        		  // establish new Admission Control Object
-        		  admissionControl_ = new ThresholdBasedCAC( mac_, 0.99, 0.97, 0.95, 0.90, 0.85);
-        		  return TCL_OK;
-        	  } else if (strcmp(argv[2], "fcac") == 0) {
-        		  // set new algorithm object
-        		  printf("Text \n");
-        		  // check for existing mac reference
-        		  assert( mac_);
-        		  if ( admissionControl_) {
-        			  delete admissionControl_;
-        		  }
-        		  // establish new Admission Control Object
-        		  admissionControl_ = new FairCAC( mac_, 5e+7, 5e+5, 5e+4, 0.2, 5e+7, 2e+6, 1e+6, 10);
-        		  return TCL_OK;
-        	  } else {
-        		  return TCL_ERROR;
-        	  }
+        	// check for existing mac reference
+        	assert( mac_);
+
+        	// only Base Stations have an admission control entity
+        	if ( mac_->getNodeType() == STA_BS) {
+        		if (strcmp(argv[2], "default") == 0) {
+        			// set new algorithm object
+        			printf("Text \n");
+         	    	delete admissionControl_;
+         	    	// establish new Admission Control Object
+         	    	admissionControl_ = new AdmissionControlInterface( mac_);
+         	    	return TCL_OK;
+        		} else if (strcmp(argv[2], "thresholdbasedcac") == 0) {
+        			// set new algorithm object
+        			printf("Text \n");;
+        			delete admissionControl_;
+        			// establish new Admission Control Object
+        			admissionControl_ = new ThresholdBasedCAC( mac_, 0.99, 0.97, 0.95, 0.90, 0.85);
+        			return TCL_OK;
+        		} else if (strcmp(argv[2], "fcac") == 0) {
+        			// set new algorithm object
+        			printf("Text \n");
+        			delete admissionControl_;
+        			// establish new Admission Control Object
+        			admissionControl_ = new FairCAC( mac_, 5e+7, 5e+5, 5e+4, 0.2, 5e+7, 2e+6, 1e+6, 10);
+        			return TCL_OK;
+        		} else {
+        			return TCL_ERROR;
+        		}
+        	} else {
+        		// command was call on a Mobile Stations MAC
+        		fprintf(stderr,"Mobile Stations do not have an admission control entity !!!\n");
+        		return TCL_ERROR;
+        	}
         } else {
             return TCL_ERROR;
         }
@@ -117,15 +112,6 @@ void ServiceFlowHandler::setMac (Mac802_16 *mac)
     mac_ = mac;
 }
 
-void ServiceFlowHandler::setAdmissionControl()
-{
-	// check for existing mac reference
-	assert( mac_);
-
-	// establish new Admission Control Object
-	admissionControl_ = new AdmissionControlInterface( mac_);
-}
-
 
 /**
  * Process the given packet. Only service related packets must be sent here.
@@ -133,7 +119,7 @@ void ServiceFlowHandler::setAdmissionControl()
  */
 void ServiceFlowHandler::process (Packet * p)
 {
-    hdr_mac802_16 *wimaxHdr = HDR_MAC802_16(p);
+	hdr_mac802_16 *wimaxHdr = HDR_MAC802_16(p);
     gen_mac_header_t header = wimaxHdr->header;
 
     //we cast to this frame because all management frame start with
@@ -182,7 +168,7 @@ void ServiceFlowHandler::removeFlow (int id)
  */
 void ServiceFlowHandler::sendFlowRequest (int index, bool out)
 {
-    Packet *p;
+	Packet *p;
     struct hdr_cmn *ch;
     hdr_mac802_16 *wimaxHdr;
     mac802_16_dsa_req_frame *dsa_frame;
@@ -204,11 +190,6 @@ void ServiceFlowHandler::sendFlowRequest (int index, bool out)
     else {
         //assign a CID and include it in the message
         Connection *data = new Connection (CONN_DATA);
-        /*
-            data->setCDMA(0);
-            data->initCDMA();
-            data->setPOLL_interval(0);
-        */
 
         mac_->getCManager()->add_connection (data, out);
         if (out) {
@@ -232,7 +213,7 @@ void ServiceFlowHandler::sendFlowRequest (int index, bool out)
  */
 void ServiceFlowHandler::processDSA_req (Packet *p)
 {
-    mac_->debug ("At %f in Mac %d received DSA request from %d\n", NOW, mac_->addr(), HDR_MAC802_16(p)->header.cid);
+	mac_->debug ("At %f in Mac %d received DSA request from %d\n", NOW, mac_->addr(), HDR_MAC802_16(p)->header.cid);
     debug2(" sampad in send process DSA_request");
     Packet *rsp;
     struct hdr_cmn *ch;
@@ -249,6 +230,14 @@ void ServiceFlowHandler::processDSA_req (Packet *p)
     dsa_req_frame = (mac802_16_dsa_req_frame*) p->accessdata();
     peer = mac_->getCManager ()->get_connection (wimaxHdr_req->header.cid, true)->getPeerNode();
 
+
+    // Call admission control
+    bool isAdmitted = true;
+    if ( (admissionControl_ != NULL) && ( mac_->isAdmissionControlEnable()) ) {
+    	isAdmitted = admissionControl_->checkAdmission( dsa_req_frame->serviceFlow, peer);
+    }
+
+
     //allocate response
     //create packet for request
     rsp = mac_->getPacket ();
@@ -259,91 +248,93 @@ void ServiceFlowHandler::processDSA_req (Packet *p)
     dsa_rsp_frame->type = MAC_DSA_RSP;
     dsa_rsp_frame->transaction_id = dsa_req_frame->transaction_id;
     dsa_rsp_frame->uplink = dsa_req_frame->uplink;
-    dsa_rsp_frame->confirmation_code = 0; //OK
-    dsa_rsp_frame->staticflow = dsa_req_frame->staticflow;
+    dsa_rsp_frame->serviceFlow = dsa_req_frame->serviceFlow;
 
-    if (mac_->getNodeType()==STA_MN) {
-        //the message contains the CID for the connection
-        data = new Connection (CONN_DATA, dsa_req_frame->cid);
-        /*
-            data->setCDMA(0);
-            data->initCDMA();
-            data->setPOLL_interval(0);
-        */
+    if ( isAdmitted == true) {
+    	dsa_rsp_frame->confirmation_code = 0; //OK --> Connection admitted
 
-        data->set_serviceflow(dsa_req_frame->staticflow);
-        // We will move all the ARQ information in the service flow to the isArqStatus that maintains the Arq Information.
-        if (data->get_serviceflow ()->getQosSet ()->isArqEnabled () == true ) {
-            debug2("ARQ status is enable.\n");
-            arqstatus = new Arqstatus ();
-            data->setArqStatus (arqstatus);
-            data->getArqStatus ()->setArqEnabled (data->get_serviceflow ()->getQosSet ()->isArqEnabled ());
-            data->getArqStatus ()->setRetransTime (data->get_serviceflow ()->getQosSet ()->getArqRetransTime ());
-            data->getArqStatus ()->setMaxWindow (data->get_serviceflow ()->getQosSet ()->getArqMaxWindow ());
-            data->getArqStatus ()->setCurrWindow (data->get_serviceflow ()->getQosSet ()->getArqMaxWindow ());
-            data->getArqStatus ()->setAckPeriod (data->get_serviceflow ()->getQosSet ()->getArqAckProcessingTime ());
-            // setting timer array for the flow
-            data->getArqStatus ()->arqRetransTimer = new ARQTimer(data);        /*RPI*/
-            debug2("In DSA req STA_MN, generate a ARQ Timer and cid is %d.\n", data->get_cid());
-        }
-        if (dsa_req_frame->uplink) {
-            mac_->getCManager()->add_connection (data, OUT_CONNECTION);
-            debug2(" dsa-req-frame being processed and connection being added for uplink node = MN\n");
-            peer->addOutDataCon (data);
+        if (mac_->getNodeType()==STA_MN) {
+            //the message contains the CID for the connection
+            data = new Connection (CONN_DATA, dsa_req_frame->cid);
 
-        } else {
-            mac_->getCManager()->add_connection (data, IN_CONNECTION);
-            debug2(" dsa-req-frame being processed and connection being added for downlink node =MN\n");
-            peer->addInDataCon (data);
-        }
-        ch->size() += GET_DSA_RSP_SIZE (0);
-    } else {
-        //allocate new connection
-        data = new Connection (CONN_DATA);
-        /*
-            data->setCDMA(0);
-            data->initCDMA();
-            data->setPOLL_interval(0);
-        */
-
-        data->set_serviceflow(dsa_req_frame->staticflow);
-        // We will move all the ARQ information in the service flow to the isArqStatus that maintains the Arq Information.
-        if (data->get_serviceflow ()->getQosSet ()->isArqEnabled () == true ) {
-            debug2("Going to set ARQ parameters.\n");
-            arqstatus = new Arqstatus ();
-            data->setArqStatus (arqstatus);
-            data->getArqStatus ()->setArqEnabled (data->get_serviceflow ()->getQosSet ()->isArqEnabled ());
-            data->getArqStatus ()->setRetransTime (data->get_serviceflow ()->getQosSet ()->getArqRetransTime ());
-            data->getArqStatus ()->setMaxWindow (data->get_serviceflow ()->getQosSet ()->getArqMaxWindow ());
-            data->getArqStatus ()->setCurrWindow (data->get_serviceflow ()->getQosSet ()->getArqMaxWindow ());
-            data->getArqStatus ()->setAckPeriod (data->get_serviceflow ()->getQosSet ()->getArqAckProcessingTime ());
-            // setting timer array for the flow
-            data->getArqStatus ()->arqRetransTimer = new ARQTimer(data);        /*RPI*/
-            debug2("In DSA req STA_BS, generate a ARQ Timer and cid is %d.\n", data->get_cid());
-
-        }
-        if (dsa_req_frame->uplink) {
-            mac_->getCManager()->add_connection (data, IN_CONNECTION);
-            debug2(" dsa-req-frame being processed and connection being added for uplink node = not MN\n");
-            peer->addInDataCon (data);
-        } else {
-            mac_->getCManager()->add_connection (data, OUT_CONNECTION);
-            debug2(" dsa-req-frame being processed and connection being added for downlink node = not MN\n");
-            peer->addOutDataCon (data);
-            debug2("set outcoming data connection for mac %d\n", mac_->addr());
-//Begin RPI
+            data->set_serviceflow(dsa_req_frame->serviceFlow);
+            // We will move all the ARQ information in the service flow to the isArqStatus that maintains the Arq Information.
             if (data->get_serviceflow ()->getQosSet ()->isArqEnabled () == true ) {
-                //schedule timer based on retransmission time setting
-                //mac_->debug(" ARQ Timer Setting Downlink\n");
-                data->getArqStatus ()->arqRetransTimer->sched(data->getArqStatus ()->getRetransTime ());
-                //mac_->debug(" ARQ Timer Set Downlink\n");
+                debug2("ARQ status is enable.\n");
+                arqstatus = new Arqstatus ();
+                data->setArqStatus (arqstatus);
+                data->getArqStatus ()->setArqEnabled (data->get_serviceflow ()->getQosSet ()->isArqEnabled ());
+                data->getArqStatus ()->setRetransTime (data->get_serviceflow ()->getQosSet ()->getArqRetransTime ());
+                data->getArqStatus ()->setMaxWindow (data->get_serviceflow ()->getQosSet ()->getArqMaxWindow ());
+                data->getArqStatus ()->setCurrWindow (data->get_serviceflow ()->getQosSet ()->getArqMaxWindow ());
+                data->getArqStatus ()->setAckPeriod (data->get_serviceflow ()->getQosSet ()->getArqAckProcessingTime ());
+                // setting timer array for the flow
+                data->getArqStatus ()->arqRetransTimer = new ARQTimer(data);        /*RPI*/
+                debug2("In DSA req STA_MN, generate a ARQ Timer and cid is %d.\n", data->get_cid());
             }
-//End RPI
+            if (dsa_req_frame->uplink) {
+                mac_->getCManager()->add_connection (data, OUT_CONNECTION);
+                debug2(" dsa-req-frame being processed and connection being added for uplink node = MN\n");
+                peer->addOutDataCon (data);
+
+            } else {
+                mac_->getCManager()->add_connection (data, IN_CONNECTION);
+                debug2(" dsa-req-frame being processed and connection being added for downlink node =MN\n");
+                peer->addInDataCon (data);
+            }
+            ch->size() += GET_DSA_RSP_SIZE (0);
+        } else {
+            //allocate new connection
+            data = new Connection (CONN_DATA);
+
+            data->set_serviceflow(dsa_req_frame->serviceFlow);
+            // We will move all the ARQ information in the service flow to the isArqStatus that maintains the Arq Information.
+            if (data->get_serviceflow ()->getQosSet ()->isArqEnabled () == true ) {
+                debug2("Going to set ARQ parameters.\n");
+                arqstatus = new Arqstatus ();
+                data->setArqStatus (arqstatus);
+                data->getArqStatus ()->setArqEnabled (data->get_serviceflow ()->getQosSet ()->isArqEnabled ());
+                data->getArqStatus ()->setRetransTime (data->get_serviceflow ()->getQosSet ()->getArqRetransTime ());
+                data->getArqStatus ()->setMaxWindow (data->get_serviceflow ()->getQosSet ()->getArqMaxWindow ());
+                data->getArqStatus ()->setCurrWindow (data->get_serviceflow ()->getQosSet ()->getArqMaxWindow ());
+                data->getArqStatus ()->setAckPeriod (data->get_serviceflow ()->getQosSet ()->getArqAckProcessingTime ());
+                // setting timer array for the flow
+                data->getArqStatus ()->arqRetransTimer = new ARQTimer(data);        /*RPI*/
+                debug2("In DSA req STA_BS, generate a ARQ Timer and cid is %d.\n", data->get_cid());
+
+            }
+            if (dsa_req_frame->uplink) {
+                mac_->getCManager()->add_connection (data, IN_CONNECTION);
+                debug2(" dsa-req-frame being processed and connection being added for uplink node = not MN\n");
+                peer->addInDataCon (data);
+            } else {
+                mac_->getCManager()->add_connection (data, OUT_CONNECTION);
+                debug2(" dsa-req-frame being processed and connection being added for downlink node = not MN\n");
+                peer->addOutDataCon (data);
+                debug2("set outcoming data connection for mac %d\n", mac_->addr());
+    //Begin RPI
+                if (data->get_serviceflow ()->getQosSet ()->isArqEnabled () == true ) {
+                    //schedule timer based on retransmission time setting
+                    //mac_->debug(" ARQ Timer Setting Downlink\n");
+                    data->getArqStatus ()->arqRetransTimer->sched(data->getArqStatus ()->getRetransTime ());
+                    //mac_->debug(" ARQ Timer Set Downlink\n");
+                }
+    //End RPI
+            }
+            dsa_rsp_frame->cid = data->get_cid();
+            // send message with cid
+            ch->size() += GET_DSA_RSP_SIZE (1);
         }
-        dsa_rsp_frame->cid = data->get_cid();
-        ch->size() += GET_DSA_RSP_SIZE (1);
+
+    } else {
+    	// admission control reject request
+    	dsa_rsp_frame->confirmation_code = 1; //NOT ADMITTED
+    	// send message without cid
+    	ch->size() += GET_DSA_RSP_SIZE (0);
     }
 
+
+    // send DSA RSP
     wimaxHdr_rsp->header.cid = peer->getPrimary(OUT_CONNECTION)->get_cid();
     peer->getPrimary(OUT_CONNECTION)->enqueue (rsp);
 
@@ -355,7 +346,7 @@ void ServiceFlowHandler::processDSA_req (Packet *p)
  */
 void ServiceFlowHandler::processDSA_rsp (Packet *p)
 {
-    mac_->debug ("At %f in Mac %d received DSA response\n", NOW, mac_->addr());
+	mac_->debug ("At %f in Mac %d received DSA response\n", NOW, mac_->addr());
 
     Packet *ack;
     struct hdr_cmn *ch;
@@ -372,50 +363,6 @@ void ServiceFlowHandler::processDSA_rsp (Packet *p)
     dsa_rsp_frame = (mac802_16_dsa_rsp_frame*) p->accessdata();
     peer = mac_->getCManager ()->get_connection (wimaxHdr_rsp->header.cid, true)->getPeerNode();
 
-    //TBD: check if status not OK
-
-    if (mac_->getNodeType()==STA_MN) {
-        //the message contains the CID for the connection
-        data = new Connection (CONN_DATA, dsa_rsp_frame->cid);
-        /*
-            data->setCDMA(0);
-            data->initCDMA();
-            data->setPOLL_interval(0);
-        */
-
-        data->set_serviceflow(dsa_rsp_frame->staticflow);
-        // We will move all the ARQ information in the service flow to the isArqStatus that maintains the Arq Information.
-        if (data->get_serviceflow ()->getQosSet ()->isArqEnabled () == true ) {
-            arqstatus = new Arqstatus ();
-            data->setArqStatus (arqstatus);
-            data->getArqStatus ()->setArqEnabled (data->get_serviceflow ()->getQosSet ()->isArqEnabled ());
-            data->getArqStatus ()->setRetransTime (data->get_serviceflow ()->getQosSet ()->getArqRetransTime ());
-            data->getArqStatus ()->setMaxWindow (data->get_serviceflow ()->getQosSet ()->getArqMaxWindow ());
-            data->getArqStatus ()->setCurrWindow (data->get_serviceflow ()->getQosSet ()->getArqMaxWindow ());
-            data->getArqStatus ()->setAckPeriod (data->get_serviceflow ()->getQosSet ()->getArqAckProcessingTime ());
-            // setting timer array for the flow
-            data->getArqStatus ()->arqRetransTimer = new ARQTimer(data);             /*RPI*/
-            debug2("In DSA rsp STA_MN, generate a ARQ Timer and cid is %d.\n", data->get_cid());
-        }
-        if (dsa_rsp_frame->uplink) {
-            mac_->getCManager()->add_connection (data, OUT_CONNECTION);
-            peer->addOutDataCon (data);
-            debug2("set outcoming data connection for mac %d\n", mac_->addr());
-//Begin RPI
-            if (data->get_serviceflow ()->getQosSet ()->isArqEnabled () == true ) {
-                //schedule timer based on retransmission time setting
-                //mac_->debug(" ARQ Timer Setting -Uplink\n");
-                data->getArqStatus ()->arqRetransTimer->sched(data->getArqStatus ()->getRetransTime ());
-                //mac_->debug(" ARQ Timer Set- Uplink\n");
-            }
-//End RPI
-        } else {
-            mac_->getCManager()->add_connection (data, IN_CONNECTION);
-            peer->addInDataCon (data);
-            debug2("set incoming data connection for mac %d\n", mac_->addr());
-        }
-    }
-
     //allocate ack
     //create packet for request
     ack = mac_->getPacket ();
@@ -426,8 +373,67 @@ void ServiceFlowHandler::processDSA_rsp (Packet *p)
     dsa_ack_frame->type = MAC_DSA_ACK;
     dsa_ack_frame->transaction_id = dsa_rsp_frame->transaction_id;
     dsa_ack_frame->uplink = dsa_rsp_frame->uplink;
-    dsa_ack_frame->confirmation_code = 0; //OK
+	dsa_ack_frame->confirmation_code = 0; //OK
+
     ch->size() += DSA_ACK_SIZE;
+
+
+    if ( dsa_rsp_frame->confirmation_code = 0 ) {
+    	// connection request was admitted
+
+		if (mac_->getNodeType()==STA_MN) {
+			//the message contains the CID for the connection
+			data = new Connection (CONN_DATA, dsa_rsp_frame->cid);
+
+			data->set_serviceflow(dsa_rsp_frame->serviceFlow);
+
+			// TODO: We will move all the ARQ information in the service flow to the isArqStatus that maintains the Arq Information.
+			if (data->get_serviceflow ()->getQosSet ()->isArqEnabled () == true ) {
+				arqstatus = new Arqstatus ();
+				data->setArqStatus (arqstatus);
+				data->getArqStatus ()->setArqEnabled (data->get_serviceflow ()->getQosSet ()->isArqEnabled ());
+				data->getArqStatus ()->setRetransTime (data->get_serviceflow ()->getQosSet ()->getArqRetransTime ());
+				data->getArqStatus ()->setMaxWindow (data->get_serviceflow ()->getQosSet ()->getArqMaxWindow ());
+				data->getArqStatus ()->setCurrWindow (data->get_serviceflow ()->getQosSet ()->getArqMaxWindow ());
+				data->getArqStatus ()->setAckPeriod (data->get_serviceflow ()->getQosSet ()->getArqAckProcessingTime ());
+				// setting timer array for the flow
+				data->getArqStatus ()->arqRetransTimer = new ARQTimer(data);             /*RPI*/
+				debug2("In DSA rsp STA_MN, generate a ARQ Timer and cid is %d.\n", data->get_cid());
+			}
+
+			if (dsa_rsp_frame->uplink) {
+				mac_->getCManager()->add_connection (data, OUT_CONNECTION);
+				peer->addOutDataCon (data);
+				debug2("set outcoming data connection for mac %d\n", mac_->addr());
+				//Begin RPI
+				if (data->get_serviceflow ()->getQosSet ()->isArqEnabled () == true ) {
+					//schedule timer based on retransmission time setting
+					//mac_->debug(" ARQ Timer Setting -Uplink\n");
+					data->getArqStatus ()->arqRetransTimer->sched(data->getArqStatus ()->getRetransTime ());
+					//mac_->debug(" ARQ Timer Set- Uplink\n");
+				}
+				//End RPI
+			} else {
+				mac_->getCManager()->add_connection (data, IN_CONNECTION);
+				peer->addInDataCon (data);
+				debug2("set incoming data connection for mac %d\n", mac_->addr());
+			}
+		}
+
+		// Service flow changes to ACTIVE state
+		data->get_serviceflow()->setServiceFlowState( ACTIVE);
+
+
+    } else {
+    	// connection request was not admitted
+    	dsa_ack_frame->confirmation_code = 1; //OK
+
+    	// TODO: Check removal of service flow
+    	assert( dsa_rsp_frame->serviceFlow);
+    	dsa_rsp_frame->serviceFlow->remove_entry();
+    }
+
+
 
     wimaxHdr_ack->header.cid = peer->getPrimary(OUT_CONNECTION)->get_cid();
     peer->getPrimary(OUT_CONNECTION)->enqueue (ack);
@@ -440,14 +446,29 @@ void ServiceFlowHandler::processDSA_rsp (Packet *p)
  */
 void ServiceFlowHandler::processDSA_ack (Packet *p)
 {
-    mac_->debug ("At %f in Mac %d received DSA ack\n", NOW, mac_->addr());
+	mac_->debug ("At %f in Mac %d received DSA ack\n", NOW, mac_->addr());
 }
 
 /**
  * Add Dynamic Flow
  * includes Admission Control
  */
-int ServiceFlowHandler::addDynamicFlow ( int argc, const char*const* argv){
+int ServiceFlowHandler::addDynamicFlow ( int argc, const char*const* argv)
+{
+	// In this version service flows can only be requested by mobile stations
+
+	// 	check if it is a mobile station
+	if ( mac_->getNodeType() != STA_MN) {
+		fprintf(stderr,"In this version service flows can only be requested by mobile stations !!! \n");
+		return TCL_ERROR;
+	}
+
+	// check if this mobile station is already connected
+	if ( mac_->getMacState() != MAC802_16_CONNECTED) {
+		fprintf(stderr,"Dynmamic Service Flows can only be requested by connected stations !!! \n");
+		return TCL_ERROR;
+	}
+
 
 	ServiceFlowQosSet * serviceFlowQosSet = createServiceFlowQosSet( argc, argv);
 	if ( serviceFlowQosSet == NULL ) {
@@ -466,23 +487,42 @@ int ServiceFlowHandler::addDynamicFlow ( int argc, const char*const* argv){
 		return TCL_ERROR;
 	}
 
-	// check for existens of a admission control object
-	assert( admissionControl_);
+    /* Create the Static Service Flow */
+    ServiceFlow * dynamicServiceFlow = new ServiceFlow ( direction, serviceFlowQosSet);
 
-	bool admitted = admissionControl_->checkAdmission( serviceFlowQosSet);
+    /* Add the Service Flow to the Static Flow List*/
+    dynamicServiceFlow->insert_entry_head (&static_flow_head_);
+    // Service Flow is now in PROVISIONED state
 
-	if ( admitted == true ) {
-	    /* Create the Static Service Flow */
-		ServiceFlow * dynamicServiceFlow = new ServiceFlow ( direction, serviceFlowQosSet);
+    // send DSA request message
+    Packet * dsaReq;
+    dsaReq = mac_->getPacket();
+    struct hdr_cmn * packetHeader;
+    packetHeader = HDR_CMN( dsaReq);
+    hdr_mac802_16 * wimaxHeader = HDR_MAC802_16( dsaReq);
+    dsaReq->allocdata( sizeof (struct mac802_16_dsa_req_frame));
 
-		/* Add the Service Flow to the Static Flow List*/
-		dynamicServiceFlow->insert_entry_head (&static_flow_head_);
-		debug2(" dynamic flow static flow created after admission \n");
-	} else {
-		debug2(" Admission rejected");
-	}
+    mac802_16_dsa_req_frame * dsaFrame = (mac802_16_dsa_req_frame*) dsaReq->accessdata();
+    dsaFrame->type = MAC_DSA_REQ;
+    if ( direction == UL ) {
+    	dsaFrame->uplink = true;
+    } else {
+    	dsaFrame->uplink = false;
+    }
+   	dsaFrame->transaction_id = TransactionID++;
+   	dsaFrame->serviceFlow = dynamicServiceFlow;
 
-	return TCL_OK;
+    // size without cid
+    packetHeader->size() += GET_DSA_REQ_SIZE (0);
+
+    Connection * primaryOutCon = mac_->getPeerNode_head()->getPrimary( OUT_CONNECTION);
+    wimaxHeader->header.cid = primaryOutCon->get_cid();
+    primaryOutCon->enqueue( dsaReq);
+
+    mac_->debug ("At %f DSA Request sent from MS %d on CID %d ", NOW, mac_->addr(), primaryOutCon->get_cid());
+
+    return TCL_OK;
+
 }
 
 
@@ -493,7 +533,6 @@ int ServiceFlowHandler::addDynamicFlow ( int argc, const char*const* argv){
  */
 int ServiceFlowHandler::addStaticFlow (int argc, const char*const* argv)
 {
-
 	ServiceFlowQosSet * serviceFlowQosSet = createServiceFlowQosSet( argc, argv);
 	if ( serviceFlowQosSet == NULL ) {
 		// an error occurred
@@ -516,6 +555,8 @@ int ServiceFlowHandler::addStaticFlow (int argc, const char*const* argv)
 
     /* Add the Service Flow to the Static Flow List*/
     staticflow->insert_entry_head (&static_flow_head_);
+    // Service Flow is now in PROVISIONED state
+
     debug2(" service flow static flow created ");
     return TCL_OK;
 }
@@ -535,7 +576,7 @@ ServiceFlowQosSet * ServiceFlowHandler::createServiceFlowQosSet( int argc, const
     u_int32_t maxSustainedTrafficRate;
     u_int32_t maxTrafficBurst;
     u_int32_t minReservedTrafficRate;
-    UlGrantSchedulingType_t	ulGrantSchedulingType = UL_NONE;
+    UlGrantSchedulingType_t	ulGrantSchedulingType = UL_BE;
     std::bitset<8> reqTransmitPolicy;
     u_int32_t toleratedJitter;
     u_int32_t maxLatency;
@@ -548,12 +589,12 @@ ServiceFlowQosSet * ServiceFlowHandler::createServiceFlowQosSet( int argc, const
     u_int16_t arqBlockSize;
     u_int16_t unsolicitedGrantInterval = 0;
     u_int16_t unsolicitedPollingInterval = 0;
-    DataDeliveryServiceType_t dataDeliveryServiceType = DL_NONE;
+    DataDeliveryServiceType_t dataDeliveryServiceType = DL_BE;
     u_int16_t timeBase;
     double packetErrorRate;
 
 
-	// TODO: Check for mandatory parameters
+	// TODO: Sanity check for mandatory parameters
 
 	// get direction of the service flow
 	if ( strcmp(argv[2], "DL") == 0 ) {
@@ -750,110 +791,6 @@ int ServiceFlowHandler::removeStaticFlow (int argc, const char*const* argv)
 }
 
 
-/*
- * Add a static flow
- * @param argc The number of parameter
- * @param argv The list of parameters
- */
-/* old version vr@tud
-int ServiceFlowHandler::addStaticFlow (int argc, const char*const* argv)
-{
-    dir_t dir;
-    int32_t datarate = atoi(argv[3]);
-    SchedulingType_t  flow_type;
-    double data_size = 0.0;
-    u_int16_t period = 0;
-    u_int8_t isArqEnabled = atoi(argv[7]);
-    double arq_retrans_time = atof(argv[8]);
-    u_int32_t arq_max_window = atoi(argv[9]);
-    u_int8_t ack_period = atoi(argv[10]);
-    int delay = 0 ;
-    int burstsize = 0;
-
-    if (strcmp(argv[2], "DL") == 0) {
-        dir = DL;
-    } else if (strcmp(argv[2], "UL") == 0) {
-        dir = UL;
-    } else {
-        return TCL_ERROR;
-    }
-
-    if (strcmp(argv[4], "BE") == 0) {
-        flow_type = SERVICE_BE;
-    } else if (strcmp(argv[4], "UGS") == 0) {
-        flow_type = SERVICE_UGS;
-        if (argc != 21) {
-            return TCL_ERROR;
-        } else {
-            // convert user defined bytes to time
-            //data_size = (atoi(argv[5])<<3)/(double)(mac_->phymib_.getDataRate());
-            period = atoi(argv[6]);
-            data_size = atoi(argv[5]);
-
-        }
-    } else if (strcmp(argv[4], "ertPS") == 0) {
-        flow_type = SERVICE_ertPS;
-        if (argc != 21) {
-            return TCL_ERROR;
-        } else {
-            period = atoi(argv[6]);
-            data_size = atoi(argv[5]);
-        }
-    } else if (strcmp(argv[4], "rtPS") == 0) {
-        flow_type = SERVICE_rtPS;
-        if (argc != 21) {
-            return TCL_ERROR;
-        } else {
-            period = atoi(argv[6]);
-        }
-    } else if (strcmp(argv[4], "nrtPS") == 0) {
-        flow_type = SERVICE_nrtPS;
-        if (argc != 21) {
-            return TCL_ERROR;
-        } else {
-            period = atoi(argv[6]);
-        }
-    } else {
-        return TCL_ERROR;
-    }
-
-
-    // Create the Service Flow Qos object
-    ServiceFlowQoS * staticflowqos = new ServiceFlowQoS (delay, datarate, burstsize) ;
-    staticflowqos->setDataSize(data_size);
-    staticflowqos->setPeriod(period);
-    staticflowqos->setIsArqEnabled(isArqEnabled);
-    debug2("ARQ is enabled for this static flow.\n");
-    staticflowqos->setArqRetransTime(arq_retrans_time);
-    staticflowqos->setArqMaxWindow(arq_max_window);
-    staticflowqos->setArqAckPeriod(ack_period);
-
-
-    staticflowqos->setTrafficPriority(atoi(argv[11]));
-    staticflowqos->setPeakTrafficRate(atoi(argv[12]));
-    staticflowqos->setMinReservedTrafficRate(atoi(argv[13]));
-    staticflowqos->setReqTransmitPolicy(atoi(argv[14]));
-    staticflowqos->setJitter(atoi(argv[15]));
-    staticflowqos->setSDUIndicator(atoi(argv[16]));
-    staticflowqos->setMinTolerableTrafficRate(atoi(argv[17]));
-    staticflowqos->setSDUSize(atoi(argv[18]));
-    staticflowqos->setMaxBurstSize(atoi(argv[19]));
-    staticflowqos->setSAID(atoi(argv[20]));
-
-
-
-    // Create the Static Service Flow
-    ServiceFlow * staticflow = new ServiceFlow (flow_type, staticflowqos);
-    staticflow->setDirection(dir);
-
-    // Add the Service Flow to the Static Flow List
-    staticflow->insert_entry_head (&static_flow_head_);
-    debug2(" service flow static flow created ");
-    return TCL_OK;
-}
-end old version
-*/
-
 
 /**
  * Send a flow request to the given node
@@ -869,10 +806,7 @@ void ServiceFlowHandler::init_static_flows (int index)
     PeerNode *peer;
     Arqstatus * arqstatus;
 
-    debug2(" sampad in init staic flows\n");
-
-    for (ServiceFlow *n=static_flow_head_.lh_first;
-            n; n=n->next_entry()) {
+    for (ServiceFlow *n=static_flow_head_.lh_first; n; n=n->next_entry()) {
         //create packet for request
         peer = mac_->getPeerNode(index);
         p = mac_->getPacket ();
@@ -881,22 +815,18 @@ void ServiceFlowHandler::init_static_flows (int index)
         p->allocdata (sizeof (struct mac802_16_dsa_req_frame));
         dsa_frame = (mac802_16_dsa_req_frame*) p->accessdata();
         dsa_frame->type = MAC_DSA_REQ;
-        if (n->getDirection() == UL )
+        if (n->getDirection() == UL ) {
             dsa_frame->uplink = true;
-        else
+        } else {
             dsa_frame->uplink = false;
+        }
         dsa_frame->transaction_id = TransactionID++;
-        dsa_frame->staticflow = n;
-        if (mac_->getNodeType()==STA_MN)
+        dsa_frame->serviceFlow = n;
+        if (mac_->getNodeType()==STA_MN) {
             ch->size() += GET_DSA_REQ_SIZE (0);
-        else {
+        } else {
             //assign a CID and include it in the message
             Connection *data = new Connection (CONN_DATA);
-            /*
-            		  data->setCDMA(0);
-            		  data->initCDMA();
-                		  data->setPOLL_interval(0);
-            */
 
             data->set_serviceflow(n);
             // We will move all the ARQ information in the service flow to the isArqStatus that maintains the Arq Information.
@@ -931,9 +861,10 @@ void ServiceFlowHandler::init_static_flows (int index)
             ch->size() += GET_DSA_REQ_SIZE (1);
         }
 
-        debug2(" sampad in init staic flows before end\n");
         wimaxHdr->header.cid = peer->getPrimary(OUT_CONNECTION)->get_cid();
         peer->getPrimary(OUT_CONNECTION)->enqueue (p);
+
+        mac_->debug ("At %f DSA Request sended from MS %d on CID %d \n", NOW, mac_->addr(), peer->getPrimary(OUT_CONNECTION)->get_cid());
     }
 }
 // End RPI

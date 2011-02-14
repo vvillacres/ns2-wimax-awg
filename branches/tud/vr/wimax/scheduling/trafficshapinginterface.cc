@@ -26,6 +26,10 @@ MrtrMstrPair_t TrafficShapingInterface::getDataSizes(Connection* connection)
 {
 	printf("ERROR !!!!!!!!! \n");
 	// overwritten by subclass
+	MrtrMstrPair_t dummyPair;
+	dummyPair.first = 0;
+	dummyPair.second = 0;
+	return dummyPair;
 }
 
 

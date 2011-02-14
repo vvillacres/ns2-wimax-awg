@@ -91,7 +91,7 @@ bool VirtualAllocation::firstConnectionEntry()
  */
 bool VirtualAllocation::nextConnectionEntry()
 {
-	printf("NextConnectionEntry - Size of Map: %d \n", virtualAllocationMap_.size());
+	printf("NextConnectionEntry - Size of Map: %d \n", int( virtualAllocationMap_.size()) );
 
 	if ( ! virtualAllocationMap_.empty() ) {
 		mapIterator_++;

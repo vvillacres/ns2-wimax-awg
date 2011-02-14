@@ -1085,7 +1085,7 @@ void Mac802_16SS::receive (Packet *pktRx_)
 
                 debug2(" BLER is %f --vs.----random threshold = %.2f = \n" ,BLER, rand1 );
 
-                if (!phymib_.disableInterference && BLER > rand1) {
+                if ( phymib_.interferenceEnable_ && BLER > rand1) {
                     pkt_error = TRUE;
                     debug2("set channel to true.\n");
                     set_channel_error(TRUE);
@@ -1157,7 +1157,7 @@ void Mac802_16SS::receive (Packet *pktRx_)
 
                 debug2(" BLER is %f --vs.----random threshold = %.2f = \n" ,BLER, rand1 );
 
-                if (!phymib_.disableInterference && BLER > rand1) {
+                if ( phymib_.interferenceEnable_ && BLER > rand1) {
                     pkt_error = TRUE;
                     debug2("set channel to true.\n");
                     set_channel_error(TRUE);
@@ -1219,7 +1219,7 @@ void Mac802_16SS::receive (Packet *pktRx_)
 
                 debug2(" BLER is %f --vs.----random threshold = %.2f = \n" ,BLER, rand1 );
 
-                if (!phymib_.disableInterference && BLER > rand1) {
+                if ( phymib_.interferenceEnable_ && BLER > rand1) {
                     pkt_error = TRUE;
                     debug2("set channel to true.\n");
                 } else {
@@ -1276,7 +1276,7 @@ void Mac802_16SS::receive (Packet *pktRx_)
 
                 debug2(" BLER is %f --vs.----random threshold = %.2f = \n" ,BLER, rand1 );
 
-                if (!phymib_.disableInterference && BLER > rand1) {
+                if ( phymib_.interferenceEnable_ && BLER > rand1) {
                     pkt_error = TRUE;
                     debug2("set channel to true.\n");
                 } else {
@@ -1338,7 +1338,7 @@ void Mac802_16SS::receive (Packet *pktRx_)
 #endif
 
                     debug2(" BLER is %f --vs.----random threshold = %.2f = \n" ,BLER, rand1 );
-                    if (!phymib_.disableInterference && BLER > rand1) {
+                    if ( phymib_.interferenceEnable_ && BLER > rand1) {
                         pkt_error = TRUE;
                     } else {
                         pkt_error = FALSE;

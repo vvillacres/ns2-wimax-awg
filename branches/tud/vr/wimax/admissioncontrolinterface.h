@@ -4,14 +4,9 @@
 
 #include "schedulingalgointerface.h"
 
-//#include "serviceflowqosset.h"
-//#include "serviceflow.h"
-//#include "serviceflowhandler.h"
-//#include "algorithm1.h"
-//#include "algorithm2.h"
-
 class Mac802_16;
-class ServiceFlowQosSet;
+class ServiceFlow;
+class PeerNode;
 
 
 class AdmissionControlInterface
@@ -23,7 +18,7 @@ public:
 
 	~AdmissionControlInterface ();
 
-	virtual bool checkAdmission( ServiceFlowQosSet * serviceFlowQosSet);
+	virtual bool checkAdmission( ServiceFlow * serviceFlow, PeerNode * peer);
 
 protected:
 

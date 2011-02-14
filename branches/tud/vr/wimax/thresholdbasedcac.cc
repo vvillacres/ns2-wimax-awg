@@ -1,12 +1,13 @@
 
 #include "thresholdbasedcac.h"
+
+#include "serviceflow.h"
+#include "peernode.h"
 #include "serviceflowqosset.h"
 #include "mac802_16.h"
 #include "wimaxscheduler.h"
-#include "serviceflow.h"
-#include "serviceflowhandler.h"
 
-#include "admissioncontrolinterface.h"
+
 
 
 
@@ -20,7 +21,7 @@ ThresholdBasedCAC::ThresholdBasedCAC (Mac802_16 * mac,
 
 }
 
-bool ThresholdBasedCAC::checkAdmission( ServiceFlowQosSet * serviceFlowQosSet)
+bool ThresholdBasedCAC::checkAdmission( ServiceFlow * serviceFlow, PeerNode * peer)
 {
 
 /*	struct frameUsageStat_t {
@@ -29,20 +30,30 @@ bool ThresholdBasedCAC::checkAdmission( ServiceFlowQosSet * serviceFlowQosSet)
 	    double usedMstrSlots;
 	};
 */
-
+	Dir_t direction = serviceFlow->getDirection();
+	ServiceFlowQosSet * serviceFlowQosSet = serviceFlow->getQosSet();
 
 
 	// thresholds conditions for reserved bandwidth
 
-	if ( serviceFlowQosSet->getDataDeliveryServiceType() == DL_NONE) {
+	if ( direction == UL) {
 		// uplink
 
-		// TODO: Check if the call comes form a BS or SS MAC
-		// Inform your supervisor if this assertation fails
+		// Check if the call comes from a BS
 		assert( mac_->getNodeType() == STA_BS);
 
+		// get current frame utilization
 		frameUsageStat_t uplinkStat = mac_->getScheduler()->getUplinkStatistic();
 	    double usage = ( uplinkStat.usedMrtrSlots + uplinkStat.usedMrtrSlots * 0.1) / uplinkStat.totalNbOfSlots ;
+
+	    // estimate demand of new service flow
+	    int uiuc = peer->getUIUC();
+
+        // allocate resources for management data
+   	    int slotCapacity = mac_->getPhy()->getSlotCapacity( mac_->getMap()->getUlSubframe()->getProfile( uiuc)->getEncoding(), UL_);
+   	    printf("Current Slot Capacity %d for Peer %d \n", slotCapacity, peer->getAddr());
+
+
 
 		UlGrantSchedulingType_t schedulingType = serviceFlowQosSet->getUlGrantSchedulingType();
 		switch( schedulingType) {
@@ -99,12 +110,17 @@ bool ThresholdBasedCAC::checkAdmission( ServiceFlowQosSet * serviceFlowQosSet)
 	} else  {
 		// downlink
 
-		// TODO: Check if the call comes from a BS or SS MAC
-		// Inform your supervisor if this assertation fails
+		// Check if the call comes from a BS
 		assert( mac_->getNodeType() == STA_BS);
 
+		// get current frame utilization
 		frameUsageStat_t downlinkStat = mac_->getScheduler()->getDownlinkStatistic();
 		double usage = ( downlinkStat.usedMrtrSlots + downlinkStat.usedMrtrSlots * 0.1) / downlinkStat.totalNbOfSlots ;
+
+	    // estimate demand of new service flow
+	    int diuc = peer->getDIUC();
+	    int slotCapacity = mac_->getPhy()->getSlotCapacity( mac_->getMap()->getDlSubframe()->getProfile( diuc)->getEncoding(), DL_);
+   	    printf("Current Slot Capacity %d for Peer %d \n", slotCapacity, peer->getAddr());
 
 		DataDeliveryServiceType_t schedulingType = serviceFlowQosSet->getDataDeliveryServiceType();
 		switch( schedulingType) {
@@ -157,5 +173,6 @@ bool ThresholdBasedCAC::checkAdmission( ServiceFlowQosSet * serviceFlowQosSet)
 			break;
 		}
 	}
-
+	// default for compiler
+	return false;
 }
