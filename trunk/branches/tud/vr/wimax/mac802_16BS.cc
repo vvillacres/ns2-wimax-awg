@@ -59,7 +59,7 @@ Mac802_16BS::Mac802_16BS() : Mac802_16 (), cl_head_(0), cl_tail_(0), ctrlagent_(
     dlccc_ = 0;
     sendUCD_ = false;
     ulccc_ = 0;
-    reg_SS_number = 0;
+    reg_SS_number_ = 0;
 
     map_ = new FrameMap (this);
 
@@ -588,7 +588,7 @@ void Mac802_16BS::receive (Packet *pktRx_)
                 con_tmp->setCdmaSsidCid(req_tmp->br, con_tmp->get_cid());
                 con_tmp->setCdmaCode(0);
                 con_tmp->setCdmaTop(0);
-                reg_SS_number++;
+                reg_SS_number_++;
                 Packet::free(pktRx_);
                 debug2("==============================BS receive End ===========================================\n");
                 return;
@@ -940,7 +940,7 @@ void Mac802_16BS::receive (Packet *pktRx_)
 
                 debug2(" BLER is %f --vs.----random threshold = %.2f = \n" ,BLER, rand1 );
 
-                if (!phymib_.disableInterference && BLER > rand1) {
+                if ( phymib_.interferenceEnable_ && BLER > rand1) {
                     pkt_error = TRUE;
                     debug2("set channel to true.\n");
                     set_channel_error(TRUE);
@@ -1007,7 +1007,7 @@ void Mac802_16BS::receive (Packet *pktRx_)
 
                 debug2(" BLER is %f --vs.----random threshold = %.2f = \n" ,BLER, rand1 );
 
-                if (!phymib_.disableInterference && BLER > rand1) {
+                if ( phymib_.interferenceEnable_ && BLER > rand1) {
                     pkt_error = TRUE;
                     debug2("set channel to true.\n");
                     set_channel_error(TRUE);
@@ -1070,7 +1070,7 @@ void Mac802_16BS::receive (Packet *pktRx_)
 
                 debug2("In BS:  BLER is %f --vs.----random threshold = %.2f = \n" ,BLER, rand1 );
 
-                if (!phymib_.disableInterference && BLER > rand1) {
+                if ( phymib_.interferenceEnable_ && BLER > rand1) {
                     pkt_error = TRUE;
                     debug2("In BS: set channel to true.\n");
                 } else {
@@ -1125,7 +1125,7 @@ void Mac802_16BS::receive (Packet *pktRx_)
 
                 debug2(" In BS: BLER is %f --vs.----random threshold = %.2f = \n" ,BLER, rand1 );
 
-                if (!phymib_.disableInterference && BLER > rand1) {
+                if ( phymib_.interferenceEnable_ && BLER > rand1) {
                     pkt_error = TRUE;
                     debug2("In BS: set channel to true.\n");
                 } else {
@@ -1185,7 +1185,7 @@ void Mac802_16BS::receive (Packet *pktRx_)
 #endif
 
                     debug2("In BS:  BLER is %f --vs.----random threshold = %.2f = \n" ,BLER, rand1 );
-                    if (!phymib_.disableInterference && BLER > rand1) {
+                    if ( phymib_.interferenceEnable_ && BLER > rand1) {
                         pkt_error = TRUE;
                     } else {
                         pkt_error = FALSE;

@@ -29,7 +29,7 @@ ServiceFlow::ServiceFlow (Dir_t direction, ServiceFlowQosSet * activeQosSet )
 {
 	direction_ = direction; // assign the direction of this flow
     sfid_ = UNASSIGNED_FLOW_ID; //assign and increment flow id
-    sfState_ = ACTIVE; // since no dynamic SF has been implemented yet
+    sfState_ = PROVISIONED; // since no dynamic SF has been implemented yet
     qosSet_ = activeQosSet;
 }
 

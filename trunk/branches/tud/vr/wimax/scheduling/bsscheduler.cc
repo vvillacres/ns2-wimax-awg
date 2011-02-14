@@ -1187,6 +1187,9 @@ void BSScheduler::schedule ()
 #ifdef DEBUG_WIMAX
         assert (con);
 #endif
+        // UPDATE ALLOCATION MISSING !!!!!!!!!!!!!!!!
+
+
         //Begin RPI
         if (con != NULL) {
             debug10 ("DL.2.2.Enable Frag :%d , Pack :%d, ARQ :%p\n",con->isFragEnable(),con->isPackingEnable(), con->getArqStatus ());

@@ -319,10 +319,18 @@ public:
     int getBw ();
 
     /**
-     * Get and Set polling interval in milliseconds
+     * Get polling interval in milliseconds
      */
-    int getPOLL_interval ();
-    void setPOLL_interval (int poll_int);
+    inline int getPollingInterval () {
+    	return pollingInterval_;
+    }
+
+    /**
+     * Get polling interval in milliseconds
+     */
+    void setPollingInterval (int pollingInterval) {
+    	pollingInterval_ = pollingInterval;
+    }
 
     /**
      * Get and Set counter for cdma bandwidth requested parameters
@@ -488,14 +496,14 @@ private:
     int requested_bw_;
 
     /**
-     * Indicates polling interval for each connection
-     */
-    int poll_int_;
-
-    /**
      * Indicates a counter to resend bandwidth request (do not use for now)
      */
     int bw_req_queue_;
+
+    /**
+     * Indicates polling interval for each connection
+     */
+    int pollingInterval_;
 
     /**
      * Indicates cdma-bw-req variables

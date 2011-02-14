@@ -36,11 +36,11 @@ Connection::Connection (ConnectionType_t type) : peer_(0),
         frag_enable_(true),
         pack_enable_(true),
         requested_bw_(0),
+        bw_req_queue_(0),
+        pollingInterval_(0),
         requested_cdma_(0),
         requested_cdma_code_(0),
-        requested_cdma_top_(0),
-        poll_int_(0),
-        bw_req_queue_(0)
+        requested_cdma_top_(0)
 {
     switch (type) {
     case CONN_INIT_RANGING:
@@ -94,11 +94,11 @@ Connection::Connection (ConnectionType_t type, int cid) : peer_(0),
         frag_enable_(true),
         pack_enable_(true),
         requested_bw_(0),
+        bw_req_queue_(0),
+        pollingInterval_(0),
         requested_cdma_(0),
         requested_cdma_code_(0),
-        requested_cdma_top_(0),
-        poll_int_(0),
-        bw_req_queue_(0)
+        requested_cdma_top_(0)
 {
     cid_ = cid;
     type_ = type;
@@ -242,24 +242,6 @@ int Connection::getBw ()
 {
     //printf ("Get %d bw for connection %d(%x)\n", requested_bw_,cid_, this);
     return requested_bw_;
-}
-
-/**
- * Set the polling interval
- * @param polling frame
- */
-void Connection::setPOLL_interval (int poll_int)
-{
-    poll_int_ = poll_int;
-}
-
-/**
- * Get the polling interval
- * @param polling in frames
- */
-int Connection::getPOLL_interval ()
-{
-    return poll_int_;
 }
 
 /**

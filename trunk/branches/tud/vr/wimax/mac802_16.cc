@@ -62,7 +62,7 @@ Phy802_16MIB::Phy802_16MIB(Mac802_16 *parent)
     parent->bind ("rtg_", &rtg );
     parent->bind ("dl_permutation_", &dl_perm);
     parent->bind ("ul_permutation_", &ul_perm);
-    parent->bind ("disable_interference_", &disableInterference);
+    parent->bind ("interference_enable_", &interferenceEnable_);
 }
 
 Mac802_16MIB::Mac802_16MIB(Mac802_16 *parent)
@@ -159,7 +159,6 @@ Mac802_16::Mac802_16() : Mac (), macmib_(this), phymib_(this)//, rxTimer_(this)
     /* the following will be replaced by dynamic adding of service flow */
     serviceFlowHandler_ = new ServiceFlowHandler ();
     serviceFlowHandler_->setMac (this);
-    serviceFlowHandler_->setAdmissionControl();
     frame_number_ = 0;
     notify_upper_ = true;
 
@@ -231,6 +230,9 @@ Mac802_16::Mac802_16() : Mac (), macmib_(this), phymib_(this)//, rxTimer_(this)
     bind("amc_lower_bound_", &amc_lower_bound_);
     bind("dl_amc_smooth_factor_", &dl_amc_smooth_factor_);
     bind("ul_amc_smooth_factor_", &uL_amc_smooth_factor_);
+
+    // flag to enable admission control
+    bind("admission_control_enable_", &admissionControlEnable_);
 
 
 }
@@ -831,6 +833,16 @@ void Mac802_16::start_ulsubframe ()
 void Mac802_16::expire (timer_id id)
 {
     //handle by subclass
+}
+
+/**
+ * Return the mac state
+ * @return The new mac state
+ */
+Mac802_16State Mac802_16::getMacState ()
+{
+	//handle by subclass
+	return MAC802_16_DISCONNECTED;
 }
 
 

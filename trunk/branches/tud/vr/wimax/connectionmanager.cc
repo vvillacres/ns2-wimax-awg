@@ -72,11 +72,13 @@ void ConnectionManager::remove_connection (Connection* con)
 void ConnectionManager::remove_connection (int cid)
 {
     Connection *con = get_connection (cid, IN_CONNECTION);
-    if (con)
+    if (con) {
         remove_connection (con);
+    }
     con = get_connection (cid, OUT_CONNECTION);
-    if (con)
+    if (con) {
         remove_connection (con);
+    }
 }
 
 

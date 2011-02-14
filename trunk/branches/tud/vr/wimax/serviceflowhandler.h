@@ -58,11 +58,6 @@ public:
      */
     void setMac (Mac802_16 *mac);
 
-    /*
-     * Set default admission Control
-     */
-    void setAdmissionControl();
-
     /**
      * Process the given packet. Only service related packets must be sent here.
      * @param p The packet to process

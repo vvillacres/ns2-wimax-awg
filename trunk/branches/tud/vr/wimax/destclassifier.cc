@@ -51,6 +51,11 @@ DestClassifier::DestClassifier (): SDUClassifier ()
 int DestClassifier::classify (Packet * p)
 {
     struct hdr_mac *dh = HDR_MAC(p);
+
+    struct 	hdr_ip *iph = HDR_IP(p);
+
+    int packetSize = HDR_CMN(p)->size();
+
     int dst = dh->macDA();
     mac_->debug ("At %f in Mac %d DestClassifier classifying packet for %d(size=%d, type=%s)\n",\
                  NOW, mac_->addr(), dst, HDR_CMN(p)->size(), packet_info.name(HDR_CMN(p)->ptype()));

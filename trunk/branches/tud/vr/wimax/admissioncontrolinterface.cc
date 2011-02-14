@@ -1,11 +1,8 @@
 
 #include "admissioncontrolinterface.h"
 #include "mac802_16.h"
-#include "thresholdbasedcac.h"
-#include "faircac.h"
 #include "serviceflow.h"
-#include "serviceflowhandler.h"
-#include "serviceflowqosset.h"
+#include "peernode.h"
 
 /*
 static class AdmissionControlInterfaceClass : public TclClass {
@@ -30,10 +27,10 @@ AdmissionControlInterface::~AdmissionControlInterface(){
 
 
 
-bool AdmissionControlInterface::checkAdmission( ServiceFlowQosSet * serviceFlowQosSet)
+bool AdmissionControlInterface::checkAdmission( ServiceFlow * serviceFlow, PeerNode * peer)
 {
 
-	// default implemenation
+	// default implementation
 	return true;
 
 

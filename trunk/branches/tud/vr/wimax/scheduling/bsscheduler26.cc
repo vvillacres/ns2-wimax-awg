@@ -1729,15 +1729,15 @@ mac802_16_dl_map_frame * BSScheduler26::dl_stage2(Connection *head, int input_su
 #endif
                         /*
 #ifndef UGS_AVG
-                        int tmp_getpoll = con->getPOLL_interval();
+                        int tmp_getpoll = con->getPollingInterval();
                         if ( (tmp_getpoll%sfQosSet->getPeriod())== 0 ) {
                             allocationsize = ceil(sfQosSet->getDataSize());
-                            con->setPOLL_interval(0);
+                            con->setPollingInterval(0);
                         } else {
                             allocationsize = 0;
                         }
                         tmp_getpoll++;
-                        con->setPOLL_interval(tmp_getpoll);
+                        con->setPollingInterval(tmp_getpoll);
 #endif
 */
                     } else {
@@ -2579,15 +2579,15 @@ struct mac802_16_ul_map_frame * BSScheduler26::ul_stage2(Connection *head, int t
 
                     /* TODO Adapt to new QoS parameters vr@tud
 #ifndef UGS_AVG
-                    int tmp_getpoll = con->getPOLL_interval();
+                    int tmp_getpoll = con->getPollingInterval();
                     if ( (tmp_getpoll%sfQosSet->getGrantInterval())== 0 ) {
                         allocationsize = ceil(sfQosSet->getDataSize());
-                        con->setPOLL_interval(0);
+                        con->setPollingInterval(0);
                     } else {
                         allocationsize = 0;
                     }
                     tmp_getpoll++;
-                    con->setPOLL_interval(tmp_getpoll);
+                    con->setPollingInterval(tmp_getpoll);
 #endif
 */
 
@@ -2633,17 +2633,17 @@ struct mac802_16_ul_map_frame * BSScheduler26::ul_stage2(Connection *head, int t
                     	  else  allocationsize = GENERIC_HEADER_SIZE; 					//for explicit polling
                     */
 
-                    int tmp_getpoll = con->getPOLL_interval();
+                    int tmp_getpoll = con->getPollingInterval();
                     if (req_slots_tmp1>0) {
                         allocationsize = ceil( double(sfQosSet->getMinReservedTrafficRate()) * double(sfQosSet->getGrantInterval()) / ( 1000 * 8 ));
                         debug10 ("\tPoll_ertPS: No polling (bw-req>0), lastpoll :%d, period :%d\n", tmp_getpoll, sfQosSet->getGrantInterval());
-                        con->setPOLL_interval(0);
+                        con->setPollingInterval(0);
                     } else  {
                         if ( (tmp_getpoll% sfQosSet->getGrantInterval()) >=  ( mac_->getFrameDuration() * 1000)) {
                             debug10 ("\tPoll_ertPS(yes): Issues unicast poll, lastpoll :%d, period :%d\n", tmp_getpoll, sfQosSet->getGrantInterval());
 
                             allocationsize = GENERIC_HEADER_SIZE;                                        //for explicit polling
-                            con->setPOLL_interval(0);
+                            con->setPollingInterval(0);
                             issue_pol = 1;
                         } else {
                             debug10 ("\tPoll_ertPS(no): Don't issues unicast poll, lastpoll :%d, period :%d\n", tmp_getpoll, sfQosSet->getGrantInterval());
@@ -2651,7 +2651,7 @@ struct mac802_16_ul_map_frame * BSScheduler26::ul_stage2(Connection *head, int t
                         }
                         debug10 ("\tPoll_ertPS: Current polling_counter :%d, update_polling :%d, period :%d\n", tmp_getpoll, tmp_getpoll+1, sfQosSet->getGrantInterval());
                         tmp_getpoll += int( mac_->getFrameDuration() * 1000);
-                        con->setPOLL_interval(tmp_getpoll);
+                        con->setPollingInterval(tmp_getpoll);
                     }
 
                     int arq_enable_f = 0;
@@ -2703,17 +2703,17 @@ struct mac802_16_ul_map_frame * BSScheduler26::ul_stage2(Connection *head, int t
                     	  else  allocationsize = GENERIC_HEADER_SIZE; 					//for explicit polling
                     */
 
-                    int tmp_getpoll = con->getPOLL_interval();
+                    int tmp_getpoll = con->getPollingInterval();
                     if (req_slots_tmp1>0) {
                         allocationsize = ceil( double(sfQosSet->getMinReservedTrafficRate()) * double(sfQosSet->getPollingInterval()) / ( 1000 * 8 ));
                         debug10 ("\tPoll_rtPS: No polling (bw-req>0), lastpoll :%d, period :%d\n", tmp_getpoll, sfQosSet->getPollingInterval());
-                        con->setPOLL_interval(0);
+                        con->setPollingInterval(0);
                     } else  {
                         if ( (tmp_getpoll % sfQosSet->getPollingInterval()) >=  ( mac_->getFrameDuration() * 1000) ) {
                             debug10 ("\tPoll_rtPS(yes): Issues unicast poll, lastpoll :%d, period :%d\n", tmp_getpoll, sfQosSet->getPollingInterval());
 
                             allocationsize = GENERIC_HEADER_SIZE;                                        //for explicit polling
-                            con->setPOLL_interval(0);
+                            con->setPollingInterval(0);
                             issue_pol = 1;
                         } else {
                             debug10 ("\tPoll_rtPS(no): Don't issue unicast poll, lastpoll :%d, period :%d\n", tmp_getpoll, sfQosSet->getPollingInterval());
@@ -2721,7 +2721,7 @@ struct mac802_16_ul_map_frame * BSScheduler26::ul_stage2(Connection *head, int t
                         }
                         debug10 ("\tPoll_rtPS: Current polling_counter :%d, update_polling :%d, period :%d\n", tmp_getpoll, tmp_getpoll+1, sfQosSet->getPollingInterval());
                         tmp_getpoll += int( mac_->getFrameDuration() * 1000);
-                        con->setPOLL_interval(tmp_getpoll);
+                        con->setPollingInterval(tmp_getpoll);
                     }
 
                     int arq_enable_f = 0;

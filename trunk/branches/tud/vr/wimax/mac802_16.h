@@ -122,6 +122,20 @@ enum station_type_t {
     STA_BS
 };
 
+/** Defines the state of the MAC */
+enum Mac802_16State {
+    MAC802_16_DISCONNECTED,
+    MAC802_16_WAIT_DL_SYNCH,
+    MAC802_16_WAIT_DL_SYNCH_DCD,
+    MAC802_16_UL_PARAM,
+    MAC802_16_RANGING,
+    MAC802_16_WAIT_RNG_RSP,
+    MAC802_16_REGISTER,
+    MAC802_16_SCANNING,
+    MAC802_16_CONNECTED
+};
+
+
 //rpi
 
 #define HORIZONTAL_STRIPPING 0
@@ -214,7 +228,8 @@ public:
     u_int32_t rtg;
     u_int32_t dl_perm;
     u_int32_t ul_perm;
-    int disableInterference;
+    // enable interference simulation 0 - off / 1 - on
+    int interferenceEnable_;
 };
 
 
@@ -442,6 +457,12 @@ public:
     virtual void expire (timer_id id);
 
     /**
+     * Return the mac state
+     * @return The new mac state
+     */
+    virtual Mac802_16State getMacState ();
+
+    /**
      * Return the MAP of the current frame
      * @return the MAP of the current frame
      */
@@ -464,6 +485,7 @@ public:
      * The Physical layer MIB
      */
     Phy802_16MIB phymib_;
+
 
 //rpi
 
@@ -702,6 +724,14 @@ public:
     	return arq_block_size_ ;
     }
 
+    /**
+     * Indicates that all service flow request are checked by an admission control
+     * 0 - off  /  1 - on
+     */
+    inline int isAdmissionControlEnable() {
+    	return admissionControlEnable_;
+    }
+
 protected:
 
     /**
@@ -788,7 +818,7 @@ protected:
     /**
       * Record the number of SS.
       */
-    int reg_SS_number;
+    int reg_SS_number_;
 
 
     /**
@@ -970,6 +1000,12 @@ protected:
      * as they are treated differently here. (OFDM based cont slots)
      */
     bool contPktRxing_;
+
+    /*
+     * Indicates that all service flow request are checked by an admission control
+     * 0 - off  /  1 - on
+     */
+    int admissionControlEnable_;
 
 private:
     /**

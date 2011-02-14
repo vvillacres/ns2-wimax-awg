@@ -2,14 +2,11 @@
 #ifndef FAIRCAC_H
 #define FAIRCAC_H
 
-#include "serviceflowqosset.h"
-#include "serviceflow.h"
-#include "serviceflowhandler.h"
-#include "mac802_16.h"
-
 #include "admissioncontrolinterface.h"
 
 class Mac802_16;
+class ServiceFlow;
+class PeerNode;
 
 class FairCAC : public AdmissionControlInterface
 {
@@ -36,7 +33,7 @@ public:
             int N
 		    );
 
-	virtual bool checkAdmission( ServiceFlowQosSet * serviceFlowQosSet);
+	virtual bool checkAdmission( ServiceFlow * serviceFlow, PeerNode * peer);
 
 
    // Bandwidth requirement of a new service for user i, B_req_i= $MRTR_req_i + $beta * ($MSTR_req_i - $MRTR_req_i)
