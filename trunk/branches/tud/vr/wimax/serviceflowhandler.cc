@@ -378,7 +378,7 @@ void ServiceFlowHandler::processDSA_rsp (Packet *p)
     ch->size() += DSA_ACK_SIZE;
 
 
-    if ( dsa_rsp_frame->confirmation_code = 0 ) {
+    if ( dsa_rsp_frame->confirmation_code == 0 ) {
     	// connection request was admitted
 
 		if (mac_->getNodeType()==STA_MN) {
