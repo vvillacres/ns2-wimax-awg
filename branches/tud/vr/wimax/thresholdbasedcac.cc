@@ -33,7 +33,6 @@ bool ThresholdBasedCAC::checkAdmission( ServiceFlow * serviceFlow, PeerNode * pe
 	Dir_t direction = serviceFlow->getDirection();
 	ServiceFlowQosSet * serviceFlowQosSet = serviceFlow->getQosSet();
 
-
 	// thresholds conditions for reserved bandwidth
 
 	if ( direction == UL) {
@@ -50,10 +49,16 @@ bool ThresholdBasedCAC::checkAdmission( ServiceFlow * serviceFlow, PeerNode * pe
 	    int uiuc = peer->getUIUC();
 
         // allocate resources for management data
+
+	    // Capacity for one Slot in byte
    	    int slotCapacity = mac_->getPhy()->getSlotCapacity( mac_->getMap()->getUlSubframe()->getProfile( uiuc)->getEncoding(), UL_);
    	    printf("Current Slot Capacity %d for Peer %d \n", slotCapacity, peer->getAddr());
 
+   	    double AvailableBandwidthSlots = uplinkStat.totalNbOfSlots - ( uplinkStat.usedMrtrSlots + uplinkStat.usedMrtrSlots * 0.1);
 
+   	    double ServiceRequestSlots = ((serviceFlowQosSet->getMinReservedTrafficRate()) / 8) / AvailableBandwidthSlots * mac_->getFrameDuration();
+
+   	   if ( AvailableBandwidthSlots > ServiceRequestSlots) {
 
 		UlGrantSchedulingType_t schedulingType = serviceFlowQosSet->getUlGrantSchedulingType();
 		switch( schedulingType) {
@@ -106,6 +111,7 @@ bool ThresholdBasedCAC::checkAdmission( ServiceFlow * serviceFlow, PeerNode * pe
 
 			break;
 	    }
+   	  }
 
 	} else  {
 		// downlink
@@ -121,6 +127,12 @@ bool ThresholdBasedCAC::checkAdmission( ServiceFlow * serviceFlow, PeerNode * pe
 	    int diuc = peer->getDIUC();
 	    int slotCapacity = mac_->getPhy()->getSlotCapacity( mac_->getMap()->getDlSubframe()->getProfile( diuc)->getEncoding(), DL_);
    	    printf("Current Slot Capacity %d for Peer %d \n", slotCapacity, peer->getAddr());
+
+   	    double AvailableBandwidthSlots = downlinkStat.totalNbOfSlots - ( downlinkStat.usedMrtrSlots + downlinkStat.usedMrtrSlots * 0.1);
+
+   	    double ServiceRequestSlots = ((serviceFlowQosSet->getMinReservedTrafficRate()) / 8) / AvailableBandwidthSlots * mac_->getFrameDuration();
+
+       if ( AvailableBandwidthSlots > ServiceRequestSlots) {
 
 		DataDeliveryServiceType_t schedulingType = serviceFlowQosSet->getDataDeliveryServiceType();
 		switch( schedulingType) {
@@ -172,7 +184,10 @@ bool ThresholdBasedCAC::checkAdmission( ServiceFlow * serviceFlow, PeerNode * pe
 		default:
 			break;
 		}
-	}
+      }
+    }
+
+
 	// default for compiler
 	return false;
 }
