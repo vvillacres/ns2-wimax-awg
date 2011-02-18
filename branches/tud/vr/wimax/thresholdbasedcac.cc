@@ -18,7 +18,11 @@ ThresholdBasedCAC::ThresholdBasedCAC (Mac802_16 * mac,
 										float thresholdNrtPS,
 										float thresholdBe) : AdmissionControlInterface (mac)
 {
-
+thresholdUgs_   = thresholdUgs;
+thresholdErtPs_ = thresholdErtPS;
+thresholdRtPs_  = thresholdRtPS;
+thresholdNrtPs_ = thresholdNrtPS;
+thresholdBe_    = thresholdBe;
 }
 
 bool ThresholdBasedCAC::checkAdmission( ServiceFlow * serviceFlow, PeerNode * peer)
@@ -54,16 +58,14 @@ bool ThresholdBasedCAC::checkAdmission( ServiceFlow * serviceFlow, PeerNode * pe
    	    int slotCapacity = mac_->getPhy()->getSlotCapacity( mac_->getMap()->getUlSubframe()->getProfile( uiuc)->getEncoding(), UL_);
    	    printf("Current Slot Capacity %d for Peer %d \n", slotCapacity, peer->getAddr());
 
-   	    double AvailableBandwidthSlots = uplinkStat.totalNbOfSlots - ( uplinkStat.usedMrtrSlots + uplinkStat.usedMrtrSlots * 0.1);
+   	    double ServiceRequestSlots = ((serviceFlowQosSet->getMinReservedTrafficRate()) / 8) / slotCapacity * mac_->getFrameDuration();
 
-   	    double ServiceRequestSlots = ((serviceFlowQosSet->getMinReservedTrafficRate()) / 8) / AvailableBandwidthSlots * mac_->getFrameDuration();
-
-   	   if ( AvailableBandwidthSlots > ServiceRequestSlots) {
+   	    double ServiceRequestPercent = ( ServiceRequestSlots / uplinkStat.totalNbOfSlots );
 
 		UlGrantSchedulingType_t schedulingType = serviceFlowQosSet->getUlGrantSchedulingType();
 		switch( schedulingType) {
 		case UL_UGS:
-			if (usage <= thresholdUgs_ ) {
+			if ( (usage + ServiceRequestPercent) <= thresholdUgs_ ) {
 				return true;  // UL_UGS service is admitted
 			} else {
 				return false; // UL_UGS service is rejected
@@ -72,7 +74,7 @@ bool ThresholdBasedCAC::checkAdmission( ServiceFlow * serviceFlow, PeerNode * pe
 			break;
 
 		case UL_ertPS:
-			if (usage <= thresholdErtPs_ ) {
+			if ( (usage + ServiceRequestPercent) <= thresholdErtPs_ ) {
 				return true;   // UL_ertPS service is admitted
 			} else {
 				return false;  // UL_ertPS service is rejected
@@ -81,7 +83,7 @@ bool ThresholdBasedCAC::checkAdmission( ServiceFlow * serviceFlow, PeerNode * pe
 			break;
 
 		case UL_rtPS:
-			if (usage <= thresholdRtPs_ ) {
+			if ( (usage + ServiceRequestPercent) <= thresholdRtPs_ ) {
 				return true;   // UL_rtPS service is admitted
 			} else {
 				return false;  // UL_rtPS service is rejected
@@ -90,7 +92,7 @@ bool ThresholdBasedCAC::checkAdmission( ServiceFlow * serviceFlow, PeerNode * pe
 			break;
 
 		case UL_nrtPS:
-			if (usage <= thresholdNrtPs_ ) {
+			if ( (usage + ServiceRequestPercent) <= thresholdNrtPs_ ) {
 				return true;   // UL_nrtPS service is admitted
 			} else {
 				return false;  // UL_nrtPS service is rejected
@@ -99,7 +101,7 @@ bool ThresholdBasedCAC::checkAdmission( ServiceFlow * serviceFlow, PeerNode * pe
 			break;
 
 		case UL_BE:
-			if (usage <= thresholdBe_ ) {
+			if ( (usage + ServiceRequestPercent) <= thresholdBe_ ) {
 				return true;   //  UL_BE service is admitted
 			} else {
 				return false;  //  UL_BE service is rejected
@@ -111,7 +113,6 @@ bool ThresholdBasedCAC::checkAdmission( ServiceFlow * serviceFlow, PeerNode * pe
 
 			break;
 	    }
-   	  }
 
 	} else  {
 		// downlink
@@ -128,16 +129,14 @@ bool ThresholdBasedCAC::checkAdmission( ServiceFlow * serviceFlow, PeerNode * pe
 	    int slotCapacity = mac_->getPhy()->getSlotCapacity( mac_->getMap()->getDlSubframe()->getProfile( diuc)->getEncoding(), DL_);
    	    printf("Current Slot Capacity %d for Peer %d \n", slotCapacity, peer->getAddr());
 
-   	    double AvailableBandwidthSlots = downlinkStat.totalNbOfSlots - ( downlinkStat.usedMrtrSlots + downlinkStat.usedMrtrSlots * 0.1);
+   	    double ServiceRequestSlots = ((serviceFlowQosSet->getMinReservedTrafficRate()) / 8) / slotCapacity * mac_->getFrameDuration();
 
-   	    double ServiceRequestSlots = ((serviceFlowQosSet->getMinReservedTrafficRate()) / 8) / AvailableBandwidthSlots * mac_->getFrameDuration();
-
-       if ( AvailableBandwidthSlots > ServiceRequestSlots) {
+   	    double ServiceRequestPercent = ( ServiceRequestSlots / downlinkStat.totalNbOfSlots );
 
 		DataDeliveryServiceType_t schedulingType = serviceFlowQosSet->getDataDeliveryServiceType();
 		switch( schedulingType) {
 		case DL_UGS:
-			if (usage <= thresholdUgs_ ) {
+			if ( (usage + ServiceRequestPercent) <= thresholdUgs_ ) {
 				return true;   // DL_UGS service is admitted
 			} else {
 				return false;  // DL_UGS service is rejected
@@ -146,7 +145,7 @@ bool ThresholdBasedCAC::checkAdmission( ServiceFlow * serviceFlow, PeerNode * pe
 			break;
 
 		case DL_ERTVR:
-			if (usage <= thresholdErtPs_ ) {
+			if ( (usage + ServiceRequestPercent) <= thresholdErtPs_ ) {
 				return true;   // DL_ertPS service is admitted
 			} else {
 				return false;  // DL_ertPS service is rejected
@@ -155,7 +154,7 @@ bool ThresholdBasedCAC::checkAdmission( ServiceFlow * serviceFlow, PeerNode * pe
 			break;
 
 		case DL_RTVR:
-			if (usage <= thresholdRtPs_ ) {
+			if ( (usage + ServiceRequestPercent) <= thresholdRtPs_ ) {
 				return true;   // DL_rtPS service is admitted
 			} else {
 				return false;  // DL_rtPS service is rejected
@@ -164,7 +163,7 @@ bool ThresholdBasedCAC::checkAdmission( ServiceFlow * serviceFlow, PeerNode * pe
 			break;
 
 		case DL_NRTVR:
-			if (usage <= thresholdNrtPs_ ) {
+			if ( (usage + ServiceRequestPercent) <= thresholdNrtPs_ ) {
 				return true;   // DL_nrtPS service is admitted
 			} else {
 				return false;  // DL_nrtPS service is rejected
@@ -173,7 +172,7 @@ bool ThresholdBasedCAC::checkAdmission( ServiceFlow * serviceFlow, PeerNode * pe
 			break;
 
 		case DL_BE:
-			if (usage <= thresholdBe_ ) {
+			if ( (usage + ServiceRequestPercent) <= thresholdBe_ ) {
 				return true;   // DL_BE service is admitted
 			} else {
 				return false;  // DL_BE service is rejected
@@ -184,7 +183,6 @@ bool ThresholdBasedCAC::checkAdmission( ServiceFlow * serviceFlow, PeerNode * pe
 		default:
 			break;
 		}
-      }
     }
 
 
