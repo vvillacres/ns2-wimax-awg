@@ -75,14 +75,14 @@ int ServiceFlowHandler::command(int argc, const char*const* argv)
         			printf("Text \n");;
         			delete admissionControl_;
         			// establish new Admission Control Object
-        			admissionControl_ = new ThresholdBasedCAC( mac_, 0.99, 0.97, 0.95, 0.90, 0.85);
+        			admissionControl_ = new ThresholdBasedCAC( mac_, 0.5, 0.47, 0.45, 0.40, 0.35);
         			return TCL_OK;
         		} else if (strcmp(argv[2], "fcac") == 0) {
         			// set new algorithm object
         			printf("Text \n");
         			delete admissionControl_;
         			// establish new Admission Control Object
-        			admissionControl_ = new FairCAC( mac_, 5e+7, 5e+5, 5e+4, 0.2, 5e+7, 2e+6, 1e+6, 10);
+        			admissionControl_ = new FairCAC( mac_, 0.2, 2e+6, 1e+6, 5);
         			return TCL_OK;
         		} else {
         			return TCL_ERROR;
@@ -701,7 +701,7 @@ ServiceFlowQosSet * ServiceFlowHandler::createServiceFlowQosSet( int argc, const
 				unsolicitedGrantInterval = u_int16_t( frameDuration);
 			}
 		} else if ( ulGrantSchedulingType == UL_rtPS) {
-			unsolicitedPollingInterval = u_int16_t( atof( argv[18])); // IEEE 802.16-2009 page 372
+			unsolicitedPollingInterval = u_int16_t( atof( argv[19])); // IEEE 802.16-2009 page 372
 			if ( unsolicitedPollingInterval == 0) {
 				unsolicitedPollingInterval = u_int16_t( DEFAULT_POLLING_INTERVAL);
 			}
@@ -717,13 +717,13 @@ ServiceFlowQosSet * ServiceFlowHandler::createServiceFlowQosSet( int argc, const
 	}
 
 	// Set Time Base
-	timeBase = u_int16_t( atof( argv[19]));
+	timeBase = u_int16_t( atof( argv[20]));
 	if ( timeBase < frameDuration ) {
 		fprintf(stderr, "Time Base below Frame Duration are not possible \n");
 		timeBase = u_int16_t( frameDuration);
 	}
 
-	packetErrorRate = double( atof( argv[20]));
+	packetErrorRate = double( atof( argv[21]));
 
 
 	/* Create new Service Flow QoS Set Object */
