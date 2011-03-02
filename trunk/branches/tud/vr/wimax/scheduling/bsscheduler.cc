@@ -432,8 +432,8 @@ void BSScheduler::schedule ()
 
     printf("Simulation Time %g \n", NOW);
 
-    // ARQ will be reviewed later
-
+    // ARQ will be reviewed later vr@tud
+/*
     // We will try to Fill in the ARQ Feedback Information now...
     PeerNode * peerNode;
     Packet * ph = NULL;
@@ -449,7 +449,6 @@ void BSScheduler::schedule ()
                 continue;
             } else {
                 peerNode = n->getPeerNode ();
-                // TODO: Change for multiple data connection
                 if (peerNode->getOutDataCon() != NULL && peerNode->getOutDataCon()->queueLength() != 0 && getMac()->isArqFbinDlData()) {
                     out_datacnx_exists = true;
                 }
@@ -490,11 +489,18 @@ void BSScheduler::schedule ()
                 if (out_datacnx_exists == false) {
                     // If I am here then the Ack packet has been created, so we will enqueue it in the Basic Cid
                     basic->enqueue (pfb);
-                } else
+                } else {
                     OutData->enqueue_head (pfb);
-            }
+
+                }
+
+                            }
         }
     }
+               */
+
+    // handel ARQ feedback Information
+    sendArqFeedbackInformation();
 
     PeerNode * peernode = mac_->getPeerNode_head();
     if (peernode) {

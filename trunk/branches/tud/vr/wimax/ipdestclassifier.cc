@@ -16,28 +16,28 @@
  * @author  rouil
  */
 
-#include "destclassifier.h"
+#include "ipdestclassifier.h"
 #include "mac802_16.h"
 #include "scheduling/wimaxscheduler.h"
 
 /**
  * TCL Hooks for the simulator for classifier
  */
-static class DestClassifierClass : public TclClass
+static class IPDestClassifierClass : public TclClass
 {
 public:
-    DestClassifierClass() : TclClass("SDUClassifier/Dest") {}
+    IPDestClassifierClass() : TclClass("SDUClassifier/IPDest") {}
     TclObject* create(int, const char*const*) {
-        return (new DestClassifier());
+        return (new IPDestClassifier());
 
     }
-} class_destclassifier;
+} class_ipdestclassifier;
 
 /**
  * Create a classifier in the given mac
  * Constructor to be used by TCL
  */
-DestClassifier::DestClassifier (): SDUClassifier ()
+IPDestClassifier::IPDestClassifier (): SDUClassifier ()
 {
 
 }
@@ -48,11 +48,14 @@ DestClassifier::DestClassifier (): SDUClassifier ()
  * @param p The packet to classify
  * @return The CID or -1
  */
-int DestClassifier::classify (Packet * p)
+int IPDestClassifier::classify (Packet * p)
 {
+    //debug
+    printf("IPDestClassifer PacketSize %d \n", HDR_CMN(p)->size());
+
     struct hdr_mac *dh = HDR_MAC(p);
     int dst = dh->macDA();
-    mac_->debug ("At %f in Mac %d DestClassifier classifying packet for %d(size=%d, type=%s)\n",\
+    mac_->debug ("At %f in Mac %d IPDestClassifier classifying packet for %d(size=%d, type=%s)\n",\
                  NOW, mac_->addr(), dst, HDR_CMN(p)->size(), packet_info.name(HDR_CMN(p)->ptype()));
     //here we look at the list of peer nodes until we find the one with
     //the same destination address. Then we return its data communication
@@ -86,10 +89,14 @@ int DestClassifier::classify (Packet * p)
                 break;
 
             default:
-            	// does not work for multiple connections
-                if (n->getOutDataCon( 0)) {
+
+            	int portNumber =  HDR_IP(p)->dport();
+            	// debug
+                printf("IPDestClassifier Dport %d \n",portNumber);
+
+                if (n->getOutDataCon( portNumber)) {
                     debug2("find the outcoming data connection.\n");
-                    return n->getOutDataCon( 0)->get_cid();
+                    return n->getOutDataCon( portNumber)->get_cid();
                 } else { //this node is not ready to send data
                     debug2("cannt find the outcoming data connection.\n");
                     break;

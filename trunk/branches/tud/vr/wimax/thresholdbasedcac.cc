@@ -47,7 +47,7 @@ bool ThresholdBasedCAC::checkAdmission( ServiceFlow * serviceFlow, PeerNode * pe
 
 		// get current frame utilization
 		frameUsageStat_t uplinkStat = mac_->getScheduler()->getUplinkStatistic();
-	    double usage = ( uplinkStat.usedMrtrSlots + uplinkStat.usedMrtrSlots * 0.1) / uplinkStat.totalNbOfSlots ;
+	    double usage = ( uplinkStat.usedMrtrSlots + uplinkStat.usedMstrSlots * 0.1) / uplinkStat.totalNbOfSlots ;
 
 	    // estimate demand of new service flow
 	    int uiuc = peer->getUIUC();
@@ -122,7 +122,7 @@ bool ThresholdBasedCAC::checkAdmission( ServiceFlow * serviceFlow, PeerNode * pe
 
 		// get current frame utilization
 		frameUsageStat_t downlinkStat = mac_->getScheduler()->getDownlinkStatistic();
-		double usage = ( downlinkStat.usedMrtrSlots + downlinkStat.usedMrtrSlots * 0.1) / downlinkStat.totalNbOfSlots ;
+		double usage = ( downlinkStat.usedMrtrSlots + downlinkStat.usedMstrSlots * 0.1) / downlinkStat.totalNbOfSlots ;
 
 	    // estimate demand of new service flow
 	    int diuc = peer->getDIUC();

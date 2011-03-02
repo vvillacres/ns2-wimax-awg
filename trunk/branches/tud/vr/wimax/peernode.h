@@ -21,6 +21,9 @@
 
 #include "connection.h"
 #include "mac-stats.h"
+#include <vector>
+
+typedef std::vector<Connection *> ConnectionList_t;
 
 class PeerNode;
 LIST_HEAD (peerNode, PeerNode);
@@ -104,16 +107,11 @@ public:
     /**
      * Return the connection used for data messages
      */
-    Connection*  getOutDataCon () {
-        return outdata_;
-    }
-
+    Connection*  getOutDataCon (int index);
     /**
      * Return the connection used for data messages
      */
-    Connection*  getInDataCon () {
-        return indata_;
-    }
+    Connection*  getInDataCon (int index);
 
     /**
      * Set the time the last packet was received
@@ -279,14 +277,14 @@ private:
     Connection* secondary_out_;
 
     /**
-     * Incoming data connection to this client
+     * Incoming data connections to this client
      */
-    Connection* indata_;
+    ConnectionList_t indata_;
 
     /**
-     * Outgoing data connection to this client
+     * Outgoing data connections to this client
      */
-    Connection* outdata_;
+    ConnectionList_t outdata_;
 
     /**
      * Time last packet was received for this peer

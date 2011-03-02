@@ -229,7 +229,7 @@ Mac802_16::Mac802_16() : Mac (), macmib_(this), phymib_(this)//, rxTimer_(this)
     bind("amc_upper_bound_", &amc_upper_bound_);
     bind("amc_lower_bound_", &amc_lower_bound_);
     bind("dl_amc_smooth_factor_", &dl_amc_smooth_factor_);
-    bind("ul_amc_smooth_factor_", &uL_amc_smooth_factor_);
+    bind("ul_amc_smooth_factor_", &ul_amc_smooth_factor_);
 
     // flag to enable admission control
     bind("admission_control_enable_", &admissionControlEnable_);
@@ -248,9 +248,12 @@ int Mac802_16::command(int argc, const char*const* argv)
     if (argc == 2) {
         if (strcmp(argv[1], "dump-classifiers") == 0) {
             for (SDUClassifier *n=classifier_list_.lh_first; n; n=n->next_entry()) {
-                //debug ("Classifier %x priority=%d\n", (int)n, n->getPriority());
+                printf ("Classifier priority=%d\n", n->getPriority());
             }
             return TCL_OK;
+        } else if (strcmp(argv[1], "dump-classifiers") == 0) {
+        		printf ("Missing functionality \n");
+        	return TCL_ERROR;
         }
     } else if (argc == 3) {
         if (strcmp(argv[1], "add-classifier") == 0) {
@@ -290,12 +293,12 @@ int Mac802_16::command(int argc, const char*const* argv)
         	return serviceFlowHandler_->command( argc, argv);
         }
     } else if (argc == 22) {
-        if (strcmp(argv[1], "setflow") == 0) {
-            debug (" Command setflow with argc 22 is executed \n" );
+        if (strcmp(argv[1], "add-flow") == 0) {
+            debug (" Command add-flow with argc 22 is executed \n" );
             result = serviceFlowHandler_->addStaticFlow(argc, argv);
             return result;
-        } else if (strcmp(argv[1], "setdynamicflow") == 0) {
-            debug (" Command setdynamicflow with argc 22 is executed \n" );
+        } else if (strcmp(argv[1], "add-dynamicflow") == 0) {
+            debug (" Command add-dynamicflow with argc 22 is executed \n" );
             result = serviceFlowHandler_->addDynamicFlow(argc, argv);
             return result;
         } else {
@@ -440,6 +443,20 @@ void Mac802_16::removePeerNode (PeerNode *peer)
         delete (peer->getSecondary(IN_CONNECTION));
         delete (peer->getSecondary(OUT_CONNECTION));
     }
+    int i = 0;
+    while( peer->getInDataCon( i)) {
+    	getCManager()->remove_connection( peer->getInDataCon( i)->get_cid());
+    	delete ( peer->getInDataCon( i));
+    	i++;
+    }
+    i = 0;
+    while( peer->getOutDataCon( i)) {
+    	getCManager()->remove_connection( peer->getOutDataCon( i)->get_cid());
+    	delete ( peer->getOutDataCon( i));
+    	i++;
+    }
+
+   /*
     if (peer->getInDataCon()) {
         getCManager()->remove_connection (peer->getInDataCon()->get_cid());
         delete (peer->getInDataCon());
@@ -448,6 +465,7 @@ void Mac802_16::removePeerNode (PeerNode *peer)
         getCManager()->remove_connection (peer->getOutDataCon()->get_cid());
         delete (peer->getOutDataCon());
     }
+    */
     peer->remove_entry ();
     nb_peer_--;
     delete (peer);
@@ -631,7 +649,7 @@ void Mac802_16::addClassifier (SDUClassifier *clas)
     int i = 0;
     if (!n || (n->getPriority () >= clas->getPriority ())) {
         //the first element
-        //debug ("Add first classifier\n");
+        debug ("Add first classifier\n");
         clas->insert_entry_head (&classifier_list_);
     } else {
         while ( n && (n->getPriority () < clas->getPriority ()) ) {
@@ -639,12 +657,13 @@ void Mac802_16::addClassifier (SDUClassifier *clas)
             n=n->next_entry();
             i++;
         }
-        //debug ("insert entry at position %d\n", i);
+        debug ("insert entry at position %d\n", i);
         clas->insert_entry (prev);
     }
     //Register this mac with the classifier
     clas->setMac (this);
 }
+
 
 /**
  * Run the packet through the classifiers

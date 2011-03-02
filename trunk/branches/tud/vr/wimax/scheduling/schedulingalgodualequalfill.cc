@@ -36,6 +36,12 @@ void SchedulingAlgoDualEqualFill::scheduleConnections( VirtualAllocation* virtua
 	u_int32_t sumOfWantedMrtrBytes = 0;
 	u_int32_t sumOfWantedMstrBytes = 0;
 
+	// count number of allocated slots for mrtr demands
+	int mrtrSlots = 0;
+	// count the slots used to fulfill MSTR demands
+	int mstrSlots = 0;
+
+
 	// check if any connections have data to send
 	if ( virtualAllocation->firstConnectionEntry()) {
 
@@ -83,9 +89,6 @@ void SchedulingAlgoDualEqualFill::scheduleConnections( VirtualAllocation* virtua
 			test = virtualAllocation->firstConnectionEntry();
 		}
 
-		// count number of allocated slots for mrtr demands
-		int mrtrSlots = 0;
-
 
 		while ( ( nbOfMrtrConnections > 0 ) && ( freeSlots > 0 ) ) {
 
@@ -120,7 +123,7 @@ void SchedulingAlgoDualEqualFill::scheduleConnections( VirtualAllocation* virtua
 
 				// get fragmented bytes to calculate first packet size for the first round
 				int fragmentedBytes = 0;
-				if ( virtualAllocation->getCurrentNbOfSlots() > 0 ) {
+				if ( virtualAllocation->getCurrentNbOfSlots() == 0 ) {
 						fragmentedBytes = virtualAllocation->getConnection()->getFragmentBytes();
 				}
 
@@ -195,10 +198,6 @@ void SchedulingAlgoDualEqualFill::scheduleConnections( VirtualAllocation* virtua
 			}
 		}
 
-		// update usedMrtrSlots_ for statistic
-		assert( ( 0 < movingAverageFactor_) && ( 1 > movingAverageFactor_) );
-		usedMrtrSlots_ = ( usedMrtrSlots_ * ( 1 - movingAverageFactor_)) + ( mrtrSlots * movingAverageFactor_);
-
 
 		if ( nbOfMrtrConnections > 0) {
 			if (freeSlots > 0) {
@@ -213,9 +212,6 @@ void SchedulingAlgoDualEqualFill::scheduleConnections( VirtualAllocation* virtua
 		/*
 		 * Allocation of Slots for fulfilling the MSTR demands
 		 */
-
-		// count the slots used to fulfill MSTR demands
-		int mstrSlots = 0;
 
 		while ( ( nbOfMstrConnections > 0 ) && ( freeSlots > 0 ) ) {
 
@@ -324,14 +320,19 @@ void SchedulingAlgoDualEqualFill::scheduleConnections( VirtualAllocation* virtua
 
 		}
 
-		// update usedMstrSlots_ for statistic
-		assert( ( 0 < movingAverageFactor_) && ( 1 > movingAverageFactor_) );
-		usedMstrSlots_ = ( usedMstrSlots_ * ( 1 - movingAverageFactor_)) + ( mrtrSlots * movingAverageFactor_);
 
 		if ( nbOfMstrConnections > 0 ) {
 			// save last served connection for the next round
 			lastConnectionPtr_ = virtualAllocation->getConnection();
 		}
 	}
+
+	// sanity check
+	assert( ( 0 < movingAverageFactor_) && ( 1 > movingAverageFactor_) );
+
+	// update usedMrtrSlots_ for statistic
+	usedMrtrSlots_ = ( usedMrtrSlots_ * ( 1 - movingAverageFactor_)) + ( mrtrSlots * movingAverageFactor_);
+	// update usedMstrSlots_ for statistic
+	usedMstrSlots_ = ( usedMstrSlots_ * ( 1 - movingAverageFactor_)) + ( mstrSlots * movingAverageFactor_);
 
 }

@@ -280,7 +280,7 @@ enum fast_feedback_type {
 /*FFB report type*/
 enum fast_feedback_report_type {
     FFB_REPORT_DEALLOCATION = 0,
-    FFB_REPORT_ONE_TIME=1,
+    FFB_REPORT_ONE_TIME = 1,
     FFB_ENDLESS_REPORT = 7
 };
 
