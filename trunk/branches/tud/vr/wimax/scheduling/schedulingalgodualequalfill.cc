@@ -197,7 +197,7 @@ void SchedulingAlgoDualEqualFill::scheduleConnections( VirtualAllocation* virtua
 
 		// update usedMrtrSlots_ for statistic
 		assert( ( 0 < movingAverageFactor_) && ( 1 > movingAverageFactor_) );
-		usedMrtrSlots_ = ( usedMrtrSlots_ * ( 1 - usedMrtrSlots_)) + ( mrtrSlots * usedMrtrSlots_);
+		usedMrtrSlots_ = ( usedMrtrSlots_ * ( 1 - movingAverageFactor_)) + ( mrtrSlots * movingAverageFactor_);
 
 
 		if ( nbOfMrtrConnections > 0) {
@@ -326,7 +326,7 @@ void SchedulingAlgoDualEqualFill::scheduleConnections( VirtualAllocation* virtua
 
 		// update usedMstrSlots_ for statistic
 		assert( ( 0 < movingAverageFactor_) && ( 1 > movingAverageFactor_) );
-		usedMstrSlots_ = ( usedMstrSlots_ * ( 1 - usedMstrSlots_)) + ( mrtrSlots * usedMstrSlots_);
+		usedMstrSlots_ = ( usedMstrSlots_ * ( 1 - movingAverageFactor_)) + ( mrtrSlots * movingAverageFactor_);
 
 		if ( nbOfMstrConnections > 0 ) {
 			// save last served connection for the next round
