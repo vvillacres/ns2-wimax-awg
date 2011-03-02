@@ -651,10 +651,10 @@ public:
     int bs_ffb_report_period_;
     int bs_ffb_report_type_;
 
-    int amc_upper_bound_;
-    int amc_lower_bound_;
-    int dl_amc_smooth_factor_;
-    int uL_amc_smooth_factor_;
+    double amc_upper_bound_;
+    double amc_lower_bound_;
+    double dl_amc_smooth_factor_;
+    double ul_amc_smooth_factor_;
     int cqich_id_;
     int  amc_enable_;
 

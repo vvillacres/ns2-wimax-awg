@@ -368,7 +368,9 @@ OBJ_CC = \
     wimax/connection.o wimax/connectionmanager.o wimax/peernode.o \
     wimax/mac802_16.o wimax/mac802_16BS.o wimax/mac802_16SS.o \
     wimax/sduclassifier.o \
-    wimax/destclassifier.o wimax/mac802_16timer.o \
+    wimax/destclassifier.o \
+    wimax/ipdestclassifier.o \
+    wimax/mac802_16timer.o \
     wimax/wimaxneighborentry.o wimax/neighbordb.o \
     wimax/scheduling/wimaxctrlagent.o \
     wimax/globalparams_wimax.o \

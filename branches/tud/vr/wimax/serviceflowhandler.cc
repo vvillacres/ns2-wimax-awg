@@ -557,7 +557,7 @@ int ServiceFlowHandler::addStaticFlow (int argc, const char*const* argv)
     staticflow->insert_entry_head (&static_flow_head_);
     // Service Flow is now in PROVISIONED state
 
-    debug2(" service flow static flow created ");
+    debug2(" service flow static flow created \n");
     return TCL_OK;
 }
 

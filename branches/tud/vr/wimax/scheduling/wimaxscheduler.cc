@@ -1518,3 +1518,113 @@ frameUsageStat_t WimaxScheduler::getUplinkStatistic()
 	dummyStat.usedMstrSlots = 0.0;
 	return dummyStat;
 }
+
+/**
+ * Common part in the BS and MS scheduling process to add ARQ feedback information
+ * to data connection or enqueue a ARQ feedback packet to basic out connection
+ */
+void WimaxScheduler::sendArqFeedbackInformation()
+{
+	// We will try to Fill in the ARQ Feedback Information now...
+	// TODO: Check for correctness vr@tud
+	for (Connection * currentCon = mac_->getCManager ()->get_in_connection (); currentCon; currentCon = currentCon->next_entry()) {
+		if ( ( ( currentCon->getArqStatus () != NULL) && ( currentCon->getArqStatus ()->isArqEnabled() == 1) ) &&
+			( (currentCon->getArqStatus()->arq_feedback_queue_) && (currentCon->getArqStatus()->arq_feedback_queue_->length() > 0)) ) {
+		   // there are arq data to send
+			PeerNode * peerNode = currentCon->getPeerNode ();
+
+		   // check if arq feedback in dl data is enabeled
+		   if ( getMac()->isArqFbinDlData()) {
+			   // find data connection with availible data packets
+			   int i = 0;
+			   while ( (peerNode->getOutDataCon( i)) &&  ( peerNode->getOutDataCon( i)->queueLength() > 0 ) ) {
+				   i++;
+			   }
+			   // check if a data connection has been found
+			   if ( peerNode->getOutDataCon( i)) {
+				   Connection * outDataCon = peerNode->getOutDataCon( i);
+				   debug2("ARQ BS : Feedback in data Cid %d\n", outDataCon->get_cid());
+				   Packet * dataPacket = outDataCon->dequeue();
+				   hdr_mac802_16 * dataHeader = HDR_MAC802_16( dataPacket);
+				   // is arq feedback pressent
+				   if ( dataHeader->header.type_arqfb == 0) {
+					   debug2("ARQ BS : Feedback in data cid %d", outDataCon->get_cid());
+					   dataHeader->header.type_arqfb = 1;
+					   dataHeader->num_of_acks = 0;
+
+					   // get feedback packet
+					   Packet * feedbackPacket = currentCon->getArqStatus()->arq_feedback_queue_->deque();
+					   hdr_mac802_16 * feedbackHeader = HDR_MAC802_16( feedbackPacket);
+					   // copy feedback header to data header
+					   for ( int nbOfAcks = 0; nbOfAcks < feedbackHeader->num_of_acks; nbOfAcks++) {
+						   dataHeader->arq_ie[ nbOfAcks].cid = feedbackHeader->arq_ie[ nbOfAcks].cid;
+						   dataHeader->arq_ie[ nbOfAcks].last = feedbackHeader->arq_ie[ nbOfAcks].last;
+						   dataHeader->arq_ie[ nbOfAcks].ack_type = feedbackHeader->arq_ie[ nbOfAcks].ack_type;
+						   dataHeader->arq_ie[ nbOfAcks].fsn = feedbackHeader->arq_ie[ nbOfAcks].fsn;
+					   }
+					   dataHeader->num_of_acks = feedbackHeader->num_of_acks;
+					   // increase size of data packet
+					   HDR_CMN( dataPacket)->size() += (feedbackHeader->num_of_acks * HDR_MAC802_16_ARQFEEDBK_SIZE);
+
+					   // enque packet in data queue
+					   outDataCon->enqueue_head( dataPacket);
+
+				   } else {
+					   debug2("ARQ BS: Feedback already present, do nothing \n");
+					   outDataCon->enqueue_head( dataPacket);
+				   }
+
+			   } else {
+				   // no data connection to transport arq feedback
+				   Connection * outBasicCon = peerNode->getBasic (OUT_CONNECTION);
+				   Packet * basicPacket = mac_->getPacket();
+				   hdr_mac802_16 * basicHeader = HDR_MAC802_16( basicPacket);
+				   basicHeader->header.cid = outBasicCon->get_cid();
+				   basicHeader->num_of_acks = 0;
+
+				   // get feedback packet
+				   Packet * feedbackPacket = currentCon->getArqStatus()->arq_feedback_queue_->deque();
+				   hdr_mac802_16 * feedbackHeader = HDR_MAC802_16( feedbackPacket);
+				   // copy feedback header to data header
+				   for ( int nbOfAcks = 0; nbOfAcks < feedbackHeader->num_of_acks; nbOfAcks++) {
+					   basicHeader->arq_ie[ nbOfAcks].cid = feedbackHeader->arq_ie[ nbOfAcks].cid;
+					   basicHeader->arq_ie[ nbOfAcks].last = feedbackHeader->arq_ie[ nbOfAcks].last;
+					   basicHeader->arq_ie[ nbOfAcks].ack_type = feedbackHeader->arq_ie[ nbOfAcks].ack_type;
+					   basicHeader->arq_ie[ nbOfAcks].fsn = feedbackHeader->arq_ie[ nbOfAcks].fsn;
+				   }
+				   basicHeader->num_of_acks = feedbackHeader->num_of_acks;
+				   // increase size of data packet
+				   HDR_CMN( basicPacket)->size() += (feedbackHeader->num_of_acks * HDR_MAC802_16_ARQFEEDBK_SIZE);
+
+				   // enque packet in sending queue
+				   outBasicCon->enqueue( basicPacket);
+			   }
+
+		   } else {
+			   // No arq feedback in data enabled -> send feedback on basic cid
+			   Connection * outBasicCon = peerNode->getBasic (OUT_CONNECTION);
+			   Packet * basicPacket = mac_->getPacket();
+			   hdr_mac802_16 * basicHeader = HDR_MAC802_16( basicPacket);
+			   basicHeader->header.cid = outBasicCon->get_cid();
+			   basicHeader->num_of_acks = 0;
+
+			   // get feedback packet
+			   Packet * feedbackPacket = currentCon->getArqStatus()->arq_feedback_queue_->deque();
+			   hdr_mac802_16 * feedbackHeader = HDR_MAC802_16( feedbackPacket);
+			   // copy feedback header to data header
+			   for ( int nbOfAcks = 0; nbOfAcks < feedbackHeader->num_of_acks; nbOfAcks++) {
+				   basicHeader->arq_ie[ nbOfAcks].cid = feedbackHeader->arq_ie[ nbOfAcks].cid;
+				   basicHeader->arq_ie[ nbOfAcks].last = feedbackHeader->arq_ie[ nbOfAcks].last;
+				   basicHeader->arq_ie[ nbOfAcks].ack_type = feedbackHeader->arq_ie[ nbOfAcks].ack_type;
+				   basicHeader->arq_ie[ nbOfAcks].fsn = feedbackHeader->arq_ie[ nbOfAcks].fsn;
+			   }
+			   basicHeader->num_of_acks = feedbackHeader->num_of_acks;
+			   // increase size of data packet
+			   HDR_CMN( basicPacket)->size() += (feedbackHeader->num_of_acks * HDR_MAC802_16_ARQFEEDBK_SIZE);
+
+			   // enque packet in sending queue
+			   outBasicCon->enqueue( basicPacket);
+		   }
+	   }
+	}
+}

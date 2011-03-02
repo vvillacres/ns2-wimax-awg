@@ -107,6 +107,12 @@ public:
 protected:
 
     /**
+     * Common part in the BS and MS scheduling process to add ARQ feedback information
+     * to data connection or enqueue a ARQ feedback packet to basic out connection
+     */
+    void sendArqFeedbackInformation();
+
+    /**
      * The Mac layer
      */
     Mac802_16 * mac_;

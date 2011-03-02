@@ -13,7 +13,7 @@ SchedulingAlgoInterface::SchedulingAlgoInterface()
 	totalNbOfSlots_ = 400.0;
 	usedMrtrSlots_ = 0.0;
 	usedMstrSlots_ = 0.0;
-	movingAverageFactor_ = 0.1;
+	movingAverageFactor_ = 0.01;
 
 }
 

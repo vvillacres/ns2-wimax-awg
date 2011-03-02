@@ -19,6 +19,8 @@
 #include "peernode.h"
 #include "random.h"
 
+
+
 /**
  * Constructor
  * @param index The Mac address of the peer node
@@ -26,8 +28,7 @@
 PeerNode::PeerNode (int index): basic_in_(0), basic_out_(0),
         primary_in_(0), primary_out_(0),
         secondary_in_(0), secondary_out_(0),
-        indata_(0),
-        outdata_(0), rxtime_ (0.0), rxp_watch_()
+        rxtime_ (0.0), rxp_watch_()
 {
     peerIndex_ = index;
     going_down_ = false;
@@ -88,7 +89,7 @@ void PeerNode::addInDataCon (Connection* connection )
 {
     assert (connection != NULL);
 
-    indata_ = connection;
+    indata_.push_back( connection);
     connection->setPeerNode (this);
 }
 
@@ -100,8 +101,30 @@ void PeerNode::addOutDataCon (Connection* connection )
 {
     assert (connection != NULL);
 
-    outdata_ = connection;
+    outdata_.push_back( connection);
     connection->setPeerNode (this);
+}
+
+/**
+ * Return the connection used for incoming data messages
+ */
+Connection*  PeerNode::getInDataCon (int index) {
+    if ( index < int( outdata_.size()) ) {
+    	return outdata_.at( index);
+    } else {
+    	return NULL;
+    }
+}
+
+/**
+ * Return the connection used for data messages
+ */
+Connection*  PeerNode::getOutDataCon (int index) {
+    if ( index < int( outdata_.size()) ) {
+    	return outdata_.at( index);
+    } else {
+    	return NULL;
+    }
 }
 
 /**
@@ -152,9 +175,10 @@ int PeerNode::getReqBw ()
         bw += getSecondary(IN_CONNECTION)->getBw();
         //printf ("\tSecondary %d %d\n", getSecondary(IN_CONNECTION)->get_cid(), getSecondary(IN_CONNECTION)->getBw());
     }
-    if (getInDataCon()!=NULL) {
-        bw += getInDataCon()->getBw();
-        //printf ("\tData %d %d\n", getOutData()->get_cid(), getInData()->getBw());
+    int i = 0;
+    while ( getInDataCon( i)) {
+    	bw += getInDataCon( i)->queueByteLength();
+    	i++;
     }
     return bw;
 }
@@ -172,8 +196,11 @@ int PeerNode::getQueueLength ()
         bw += getPrimary(OUT_CONNECTION)->queueByteLength();
     if (getSecondary(OUT_CONNECTION)!= NULL)
         bw += getSecondary(OUT_CONNECTION)->queueByteLength();
-    if (getOutDataCon()!=NULL)
-        bw += getOutDataCon()->queueByteLength();
+    int i = 0;
+    while ( getOutDataCon( i)) {
+    	bw += getOutDataCon( i)->queueByteLength();
+    	i++;
+    }
     return bw;
 }
 

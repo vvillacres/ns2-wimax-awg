@@ -19,6 +19,7 @@
 #include "mac802_16BS.h"
 #include "scheduling/bsscheduler.h"
 #include "destclassifier.h"
+#include "ipdestclassifier.h"
 #include "cmu-trace.h"
 #include "globalparams_wimax.h"
 #include <rtp.h>
@@ -44,7 +45,7 @@ Mac802_16BS::Mac802_16BS() : Mac802_16 (), cl_head_(0), cl_tail_(0), ctrlagent_(
     type_ = STA_BS; //type of MAC. In this case it is for SS
 
     //Default configuration
-    addClassifier (new DestClassifier ());
+    addClassifier (new IPDestClassifier ());
     scheduler_ = new BSScheduler();
     scheduler_->setMac (this); //register the mac
 
@@ -1781,17 +1782,16 @@ end:
 
 void Mac802_16BS::UL_AMC_algorithm(float BLER, int mac_index)
 {
-    double lower_bound = (double)amc_lower_bound_/10.0;
-    double upper_bound = (double)amc_upper_bound_/10.0;
-    debug2("Ul smother factor %d, dl smooth factor %d\n", uL_amc_smooth_factor_, dl_amc_smooth_factor_);
+
+    debug2("Ul smother factor %d, dl smooth factor %d\n", ul_amc_smooth_factor_, dl_amc_smooth_factor_);
     debug2("UL AMC: smooth factor now is %d BLER is %f incresse_ul_mod %d\n", get_ul_smooth_factor(mac_index), BLER,get_increase_ul_modulation(mac_index));
 
-    if (BLER <  lower_bound) { //amc_lower_bound_) /*Radio condition is good. Use more advanced modulation.*/ // Open loop Algorithm
+    if (BLER <  amc_lower_bound_) { //amc_lower_bound_) /*Radio condition is good. Use more advanced modulation.*/ // Open loop Algorithm
         printf("UL AMC 1.1 Should use more advanced modulation for SS %d, increase mod, BLER is %f\n ", mac_index, BLER);
         //set_change_ul_modulation_flag(mac_index,TRUE);
         //set_increase_ul_modulation(mac_index, (TRUE & get_increase_ul_modulation(mac_index)));
 
-        if (get_ul_smooth_factor(mac_index)> uL_amc_smooth_factor_) { // 2 should be configurable.
+        if (get_ul_smooth_factor(mac_index)> ul_amc_smooth_factor_) { // 2 should be configurable.
             printf("DL AMC: Gonna use more advanced modulation for SS %d, increase mod, BLER is %f\n ", mac_index, BLER);
             set_change_ul_modulation_flag(mac_index,TRUE);
             set_increase_ul_modulation(mac_index, (1 & get_increase_ul_modulation(mac_index)));
@@ -1805,7 +1805,7 @@ void Mac802_16BS::UL_AMC_algorithm(float BLER, int mac_index)
                 set_ul_smooth_factor( mac_index,get_ul_smooth_factor(mac_index)+1);
             }
         }
-    } else if (BLER > upper_bound) { //amc_upper_bound_) // Open loop Algorithm
+    } else if (BLER > amc_upper_bound_) { //amc_upper_bound_) // Open loop Algorithm
         printf("UL AMC 1.2 Should  decrease modulationfor SS %d, decrease mod, BLER is %f\n ", mac_index, BLER);
         set_change_ul_modulation_flag(mac_index,TRUE);
         set_increase_ul_modulation(mac_index, 0);
@@ -1832,14 +1832,10 @@ void Mac802_16BS::AMC_algorithm(Packet * p, struct mac_hdr_ffb_report * ffb_repo
     int cqich_id = pffb_rpt->cqich_id;
     int mac_index = lookup_ssid_via_cqich_id(cqich_id);
 
-    if (amc_lower_bound_ > 10 || amc_lower_bound_ < 1
-            ||amc_upper_bound_ > 10 || amc_upper_bound_ < 1) {
+    if ( (amc_lower_bound_ > 1 || amc_lower_bound_ < 0 ) || (amc_upper_bound_ > 1 || amc_upper_bound_ < 0) ) {
         debug2("[Fatal Error] the input AMC lower or upper bound is out of range.\n");
         exit(1);
     }
-
-    double lower_bound = (double)amc_lower_bound_/10.0;
-    double upper_bound = (double)amc_upper_bound_/10.0;
 
 
     if (mac_index == MAX_SYNC_CQICH_ALLOC_INFO) {
@@ -1848,7 +1844,7 @@ void Mac802_16BS::AMC_algorithm(Packet * p, struct mac_hdr_ffb_report * ffb_repo
     }
 
     debug2("In BS DL AMC, the BLER is %f, mcs_index is %d, upper bound is %f, lower bound is %f\n",  pffb_rpt->bler, pffb_rpt->mcs_index,
-           upper_bound, lower_bound);
+    		amc_upper_bound_, amc_lower_bound_);
     float BLER =  pffb_rpt->bler;
 
     //xingting: Put MCS algorithm here to determine if need to change modulation coding method or not.
@@ -1856,7 +1852,7 @@ void Mac802_16BS::AMC_algorithm(Packet * p, struct mac_hdr_ffb_report * ffb_repo
     case FFB_DL_AVERAGE_CINR:
         //MCS algorithm here.
         /*accroding to the MCS index, the SS's signal strength should be within a certain range. */
-        if (BLER < lower_bound) /*Radio condition is good. Use more advanced modulation.*/ { // Open loop Algorithm
+        if (BLER < amc_lower_bound_) /*Radio condition is good. Use more advanced modulation.*/ { // Open loop Algorithm
 
             if (get_smooth_factor(mac_index)> dl_amc_smooth_factor_) { //configurable.
                 debug2("DL AMC: Gonna use more advanced modulation for SS %d, increase mod, BLER is %f\n ", mac_index, BLER);
@@ -1868,7 +1864,7 @@ void Mac802_16BS::AMC_algorithm(Packet * p, struct mac_hdr_ffb_report * ffb_repo
                 set_change_modulation_flag(mac_index,FALSE);
                 set_smooth_factor( mac_index,get_smooth_factor(mac_index)+1);
             }
-        } else if (BLER >  upper_bound) {
+        } else if (BLER >  amc_upper_bound_) {
             if (get_smooth_factor(mac_index)>-1) { // once need to decrease, do it immediately. will overlook the smooth factor.
                 debug2("DL AMC: Gonna decrease modulationfor SS %d, decrease mod, BLER is %f\n ", mac_index, BLER);
                 set_change_modulation_flag(mac_index,TRUE);

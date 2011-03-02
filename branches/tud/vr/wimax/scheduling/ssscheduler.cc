@@ -83,19 +83,7 @@ void SSscheduler::schedule ()
     if (peer->getchannel()>999)
         peer->setchannel(2);
 
-    //rpi
-    // Begin RPI
-    // We will try to Fill in the ARQ Feedback Information now...
-    Packet * ph = 0;
-    PeerNode * peernode;
-    Connection * basic ;
-    Connection * OutData;
-    Packet * pfb = 0;
-    hdr_mac802_16 *wimaxHdrMap, *wimaxHdr ;
-    u_int16_t   temp_num_of_acks = 0;
-    bool out_datacnx_exists = false;
 
-    struct hdr_cmn *ch;
     double txtime; //tx time for some data (in second)
     int txtime_s;  //number of symbols used to transmit the data
 
@@ -136,7 +124,7 @@ void SSscheduler::schedule ()
 
                 debug2("num_symbol %d   sym_offset %d   num_subch %d  subch_offset %d\n",
                        cqich_slot->getDuration(),cqich_slot->getStarttime(),  cqich_slot->getnumSubchannels (), cqich_slot->getSubchannelOffset ());
-                wimaxHdr = HDR_MAC802_16(cqich_report);
+                hdr_mac802_16 * wimaxHdr = HDR_MAC802_16(cqich_report);
                 if (wimaxHdr) {
                     wimaxHdr->phy_info.num_subchannels = cqich_slot->getnumSubchannels ();
                     wimaxHdr->phy_info.subchannel_offset = cqich_slot->getSubchannelOffset ();
@@ -145,7 +133,7 @@ void SSscheduler::schedule ()
                     wimaxHdr->phy_info.channel_index = 1; //broadcast packet
                     wimaxHdr->phy_info.direction = 1;
                 }
-                ch = HDR_CMN(cqich_report);
+                struct hdr_cmn * ch = HDR_CMN(cqich_report);
                 //ch->txtime() = NOW;// + txtime_s * mac_->getPhy()->getSymbolTime();
                 ch->txtime() = txtime_s * mac_->getPhy()->getSymbolTime ();
                 ch->timestamp() = NOW; //add timestamp since it bypasses the queue
@@ -159,6 +147,12 @@ void SSscheduler::schedule ()
         }
     }
 
+
+    // handel ARQ feedback Information
+    sendArqFeedbackInformation();
+
+
+    /*    old implemtation
 
     for (Connection *n= mac_->getCManager ()->get_in_connection (); n; n=n->next_entry()) {
         if (n->getArqStatus () != NULL && n->getArqStatus ()->isArqEnabled() == 1) {
@@ -211,8 +205,11 @@ void SSscheduler::schedule ()
             }
         }
     }
+
     // End RPI
     //	debug10("=SS= frame number :%d\n", frame_no++);
+
+     */
 
     debug2("\n=============MAC SS subframe ===============\n");
     mac_->getMap()->print_frame();
@@ -235,7 +232,7 @@ void SSscheduler::schedule ()
         else {
             int allocationfound = 0;
             Connection *c_burst;
-            c_burst = mac_->getCManager ()->get_connection (b_tmp->getCid(), true);
+            c_burst = mac_->getCManager ()->get_connection (b_tmp->getCid(), OUT_CONNECTION);
 
             if (!c_burst) {
                 continue;

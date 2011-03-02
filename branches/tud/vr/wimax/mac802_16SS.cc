@@ -20,6 +20,7 @@
 #include "scheduling/wimaxscheduler.h"
 #include "scheduling/ssscheduler.h"
 #include "destclassifier.h"
+#include "ipdestclassifier.h"
 #include "cmu-trace.h"
 #include "random.h"
 #include "globalparams_wimax.h"
@@ -45,7 +46,7 @@ Mac802_16SS::Mac802_16SS() : Mac802_16 ()
     type_ = STA_MN; //type of MAC. In this case it is for SS
 
     //Create default configuration
-    addClassifier (new DestClassifier ());
+    addClassifier (new IPDestClassifier ());
     scheduler_ = new SSscheduler();
     scheduler_->setMac (this); //register the mac
 
@@ -2483,7 +2484,7 @@ void Mac802_16SS::process_ranging_rsp (mac802_16_rng_rsp_frame *frame)
                 }
 
 
-                /*
+
                 int i = 0;
                 while ( peer->getInDataCon( i)) {
                 	getCManager()->remove_connection( peer->getInDataCon( i));
@@ -2497,14 +2498,14 @@ void Mac802_16SS::process_ranging_rsp (mac802_16_rng_rsp_frame *frame)
                 	i++;
                 }
 
-                */
+               /*
                 if (peer->getOutDataCon()!=NULL)
                     getCManager ()->remove_connection (peer->getOutDataCon());
                 	delete (peer->getOutDataCon());
                 if (peer->getInDataCon()!=NULL)
                     getCManager ()->remove_connection (peer->getInDataCon());
                 	delete (peer->getInDataCon());
-
+				*/
             }
 
             basic = new Connection (CONN_BASIC, frame->basic_cid);
