@@ -265,15 +265,74 @@ void VirtualAllocation::setCurrentNbOfCdmaSlots( int nbOfCdmaSlots)
 /*
  * Update values of the current virtual allocation
  */
-void VirtualAllocation::updateAllocation( int nbOfSlots, int nbOfBytes)
+void VirtualAllocation::updateAllocation( int nbOfSlots, int nbOfBytes, u_int32_t allocatedMrtrPayload, u_int32_t allocatedMstrPayload)
 {
 
     if ( virtualAllocationMap_.end() != mapIterator_ ) {
         mapIterator_->second.setNbOfAllocatedSlots( nbOfSlots);
         mapIterator_->second.setNbOfAllocatedBytes( nbOfBytes);
+        mapIterator_->second.setAllocatedMrtrPayload( allocatedMrtrPayload);
+        mapIterator_->second.setAllocatedMstrPayload( allocatedMstrPayload);
     } else {
         fprintf(stderr,"ERROR: Iterator not valid use findCidEntry() before");
         exit(5);
     }
 
+}
+
+
+/*
+ * Get the number of allocated mrtr payload for the current connection
+ */
+u_int32_t VirtualAllocation::getCurrentMrtrPayload( )
+{
+
+    if ( virtualAllocationMap_.end() != mapIterator_ ) {
+        return mapIterator_->second.getAllocatedMrtrPayload( );
+    } else {
+        fprintf(stderr,"ERROR: Iterator not valid use findCidEntry() before");
+        exit(5);
+    }
+}
+
+/*
+ * Set the number of allocated mrtr payload for the current connection
+ */
+void VirtualAllocation::setCurrentMrtrPayload( u_int32_t allocatedMrtrPayload)
+{
+
+    if ( virtualAllocationMap_.end() != mapIterator_ ) {
+        mapIterator_->second.setAllocatedMrtrPayload( allocatedMrtrPayload);
+    } else {
+        fprintf(stderr,"ERROR: Iterator not valid use findCidEntry() before");
+        exit(5);
+    }
+}
+
+/*
+ * Get the number of allocated mrtr payload for the current connection
+ */
+u_int32_t VirtualAllocation::getCurrentMstrPayload( )
+{
+
+    if ( virtualAllocationMap_.end() != mapIterator_ ) {
+        return mapIterator_->second.getAllocatedMstrPayload( );
+    } else {
+        fprintf(stderr,"ERROR: Iterator not valid use findCidEntry() before");
+        exit(5);
+    }
+}
+
+/*
+ * Set the number of allocated mrtr payload for the current connection
+ */
+void VirtualAllocation::setCurrentMstrPayload( u_int32_t allocatedMstrPayload)
+{
+
+    if ( virtualAllocationMap_.end() != mapIterator_ ) {
+        mapIterator_->second.setAllocatedMstrPayload( allocatedMstrPayload);
+    } else {
+        fprintf(stderr,"ERROR: Iterator not valid use findCidEntry() before");
+        exit(5);
+    }
 }

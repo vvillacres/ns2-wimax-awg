@@ -150,7 +150,9 @@ void SchedulingAlgoDualEdf::scheduleConnections( VirtualAllocation* virtualAlloc
 				}
 
 				// update virtual allocation container
-				virtualAllocation->updateAllocation( newSlots + virtualAllocation->getCurrentNbOfSlots(), newAllocBytes + virtualAllocation->getCurrentNbOfBytes());
+
+				// TODO: Payload allocation
+				virtualAllocation->updateAllocation( newSlots + virtualAllocation->getCurrentNbOfSlots(), newAllocBytes + virtualAllocation->getCurrentNbOfBytes(), newAllocBytes + virtualAllocation->getCurrentNbOfBytes(), 0);
 
 				// remove packet from queue
 				edfMrtrQueue.pop();
@@ -215,7 +217,7 @@ void SchedulingAlgoDualEdf::scheduleConnections( VirtualAllocation* virtualAlloc
 				freeSlots -= newSlots;
 
 				// update virtual allocation container
-				virtualAllocation->updateAllocation( newSlots + virtualAllocation->getCurrentNbOfSlots(), newAllocBytes + virtualAllocation->getCurrentNbOfBytes());
+				virtualAllocation->updateAllocation( newSlots + virtualAllocation->getCurrentNbOfSlots(), newAllocBytes + virtualAllocation->getCurrentNbOfBytes(), virtualAllocation->getCurrentMrtrPayload(), newAllocBytes + virtualAllocation->getCurrentNbOfBytes());
 
 
 			}

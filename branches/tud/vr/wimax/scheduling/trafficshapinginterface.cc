@@ -33,7 +33,7 @@ MrtrMstrPair_t TrafficShapingInterface::getDataSizes(Connection* connection)
 }
 
 
-void TrafficShapingInterface::updateAllocation(Connection* connection,u_int32_t realMstrSize,u_int32_t realMrtSize)
+void TrafficShapingInterface::updateAllocation(Connection* connection,u_int32_t realMrtrSize,u_int32_t realMstrSize)
 {
 	// overwritten by subclass
 }

@@ -1440,6 +1440,11 @@ mac802_16_dl_map_frame * BSScheduler::buildDownlinkMap( VirtualAllocation * virt
 
                 // increase size of Downlink Map TODO: Might be not necessary if connection is not scheduled
                 freeDlSlots -= virtualAlloc->increaseBroadcastBurst( DL_MAP_IE_SIZE);
+            } else {
+            	if ( currentCon->queueLength() > 0) {
+            		// connection has data and is not scheduled therefore updateAllocation has to be called separately
+            		trafficShapingAlgorithm_->updateAllocation( currentCon, 0, 0);
+            	}
             }
 
 
@@ -1517,6 +1522,11 @@ mac802_16_dl_map_frame * BSScheduler::buildDownlinkMap( VirtualAllocation * virt
             // update Symbol and Subchannel Offset
             dlSymbolOffset += int( floor( double( dlSubchannelOffset + nbOfUsedSlots) / totalDlSubchannels) * phy->getSlotLength(DL_));
             dlSubchannelOffset = ( dlSubchannelOffset + nbOfUsedSlots) % (totalDlSubchannels);
+
+            // update traffic policing
+            if ( currentCon->getType() == CONN_DATA) {
+            	trafficShapingAlgorithm_->updateAllocation( currentCon, virtualAlloc->getCurrentMrtrPayload(), virtualAlloc->getCurrentMstrPayload());
+            }
 
             // testing
             entireUsedSlots += nbOfUsedSlots;

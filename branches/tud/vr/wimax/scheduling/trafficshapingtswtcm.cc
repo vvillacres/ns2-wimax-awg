@@ -107,7 +107,7 @@ MrtrMstrPair_t TrafficShapingTswTcm::getDataSizes(Connection *connection)
  * Occurred allocation is send back to the traffic policing algorithm to use this
  * values in the next call
  */
-void TrafficShapingTswTcm::updateAllocation(Connection *con,u_int32_t realMstrSize,u_int32_t realMrtrSize)
+void TrafficShapingTswTcm::updateAllocation(Connection *con,u_int32_t realMrtrSize,u_int32_t realMstrSize)
 {
 //---------- Pointer erstellen---------//
     LastAllocationSizeIt_t mapIterator;

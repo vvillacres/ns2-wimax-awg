@@ -151,7 +151,7 @@ void SchedulingAlgoProportionalFair::scheduleConnections( VirtualAllocation* vir
 				assert( freeSlots >= 0);
 
 				// update container
-				virtualAllocation->updateAllocation( allocatedSlots, allocatedBytes);
+				virtualAllocation->updateAllocation( allocatedSlots, allocatedBytes, 0, allocatedPayload );
 
 				// decrease loop counter
 				conThisRound--;
