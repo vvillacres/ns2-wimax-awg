@@ -48,7 +48,7 @@ public:
     /*
      * Sends occurred allocation back to traffic policing
      */
-    virtual void updateAllocation(Connection* connection,u_int32_t mstrSize,u_int32_t mrtSize);
+    virtual void updateAllocation(Connection* connection,u_int32_t mrtrSize,u_int32_t mstrSize);
 private :
     /*
      * Saves the last occurred allocations

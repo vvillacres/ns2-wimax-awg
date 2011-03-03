@@ -46,7 +46,7 @@ public:
      * Occurred allocation is send back to the traffic policing algorithm to use this
      * values in the next call
      */
-    virtual void updateAllocation(Connection *connection,u_int32_t realMstrSize,u_int32_t realMrtSize);
+    virtual void updateAllocation(Connection *connection,u_int32_t realMrtrSize,u_int32_t realMstrSize);
 
 private :
     /*

@@ -138,7 +138,7 @@ public:
     /*
      * Update values of the current virtual allocation
      */
-    void updateAllocation( int nbOfslots, int nbOfBytes);
+    void updateAllocation( int nbOfSlots, int nbOfBytes, u_int32_t allocatedMrtrPayload, u_int32_t allocatedMstrPayload);
 
     /*
      * Returns the number of allocated slots for the current connection
@@ -159,6 +159,11 @@ public:
      * Set the number of allocated slots for the current connection
      */
     void setCurrentNbOfCdmaSlots( int nbOfCdmaSlots);
+
+    u_int32_t getCurrentMrtrPayload ();
+    void setCurrentMrtrPayload( u_int32_t allocatedMrtrPayload);
+    u_int32_t getCurrentMstrPayload ();
+    void setCurrentMstrPayload( u_int32_t allocatedMstrPayload);
 
 
 private:

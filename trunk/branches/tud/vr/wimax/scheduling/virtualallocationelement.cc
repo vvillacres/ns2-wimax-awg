@@ -18,6 +18,8 @@ VirtualAllocationElement::VirtualAllocationElement(Connection* connectionPtr, u_
     nbOfBytes_ = nbOfBytes;
     nbOfSlots_ = nbOfSlots;
     nbOfCdmaSlots_ = nbOfCdmaSlots;
+    allocatedMrtrPayload_ = 0;
+    allocatedMstrPayload_ = 0;
 
 }
 

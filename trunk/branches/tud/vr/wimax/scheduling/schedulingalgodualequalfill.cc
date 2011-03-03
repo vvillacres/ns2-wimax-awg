@@ -27,6 +27,11 @@ void SchedulingAlgoDualEqualFill::scheduleConnections( VirtualAllocation* virtua
 	 * would break the algorithm independent interface.
 	 */
 
+	// for debug
+	if ( NOW >=  11.008166  ) {
+		printf("Breakpoint reached \n");
+	}
+
 	// update totalNbOfSlots_ for statistic
 	assert( ( 0 < movingAverageFactor_) && ( 1 > movingAverageFactor_) );
 	totalNbOfSlots_ = ( totalNbOfSlots_ * ( 1 - movingAverageFactor_)) + ( freeSlots * movingAverageFactor_);
@@ -108,7 +113,7 @@ void SchedulingAlgoDualEqualFill::scheduleConnections( VirtualAllocation* virtua
 
 				// go to connection which has unfulfilled  Mrtr demands
 				while ( ( virtualAllocation->getConnection()->getType() != CONN_DATA ) ||
-						( virtualAllocation->getWantedMrtrSize() <= u_int32_t( virtualAllocation->getCurrentNbOfBytes() ) ) )  {
+						( virtualAllocation->getWantedMrtrSize() <= u_int32_t( virtualAllocation->getCurrentMrtrPayload() ) ) )  {
 					// next connection
 
 					// TODO: may cause problems ugly
@@ -121,11 +126,9 @@ void SchedulingAlgoDualEqualFill::scheduleConnections( VirtualAllocation* virtua
 				int allocatedSlots = nbOfSlotsPerConnection + virtualAllocation->getCurrentNbOfSlots();
 				int maximumBytes = allocatedSlots * virtualAllocation->getSlotCapacity();
 
-				// get fragmented bytes to calculate first packet size for the first round
-				int fragmentedBytes = 0;
-				if ( virtualAllocation->getCurrentNbOfSlots() == 0 ) {
-						fragmentedBytes = virtualAllocation->getConnection()->getFragmentBytes();
-				}
+				// get fragmented bytes to calculate first packet size
+				int fragmentedBytes = virtualAllocation->getConnection()->getFragmentBytes();
+
 
 				// get first packed
 				Packet * currentPacket = virtualAllocation->getConnection()->get_queue()->head();
@@ -164,18 +167,33 @@ void SchedulingAlgoDualEqualFill::scheduleConnections( VirtualAllocation* virtua
 					if ( allocatedPayload >= wantedMrtrSize) {
 						// reduce number of connection with mrtr demand
 						nbOfMrtrConnections--;
+						// avoids, that connection is called again
+						virtualAllocation->updateWantedMrtrMstr( 0, virtualAllocation->getWantedMstrSize());
 					}
 				} else {
 					// is demand fulfilled due to allocated bytes or all packets
 					if (( allocatedPayload >= wantedMrtrSize) || ( currentPacket == NULL)) {
 						// reduce number of connection with mrtr demand
 						nbOfMrtrConnections--;
+						// avoids, that connection is called again
+						virtualAllocation->updateWantedMrtrMstr( 0, virtualAllocation->getWantedMstrSize());
+
 						// consider fragmentation due to traffic policing
 						if ( allocatedPayload > wantedMrtrSize) {
 							// reduce payload
-							allocatedBytes -= ( allocatedPayload - wantedMrtrSize - HDR_MAC802_16_FRAGSUB_SIZE );
-							allocatedPayload = virtualAllocation->getWantedMrtrSize();
+							allocatedBytes -= ( (allocatedPayload - wantedMrtrSize) - HDR_MAC802_16_FRAGSUB_SIZE );
+							allocatedPayload -= ( allocatedPayload - wantedMrtrSize );
 						}
+						// no more data available or allowed
+						if ( currentPacket == NULL)  {
+							virtualAllocation->updateWantedMrtrMstr( 0, 0);
+							if ( wantedMrtrSize < int(virtualAllocation->getWantedMstrSize()))   {
+								// connection has no further demands
+								nbOfMstrConnections--;
+							}
+
+						}
+
 					}
 				}
 				// Calculate Allocated Slots
@@ -191,7 +209,7 @@ void SchedulingAlgoDualEqualFill::scheduleConnections( VirtualAllocation* virtua
 				assert( freeSlots >= 0);
 
 				// update container
-				virtualAllocation->updateAllocation( allocatedSlots, allocatedBytes);
+				virtualAllocation->updateAllocation( allocatedSlots, allocatedBytes, allocatedPayload, allocatedPayload);
 
 				// decrease loop counter
 				conThisRound--;
@@ -228,14 +246,19 @@ void SchedulingAlgoDualEqualFill::scheduleConnections( VirtualAllocation* virtua
 
 			while ( ( conThisRound > 0) && ( freeSlots > 0 ) ) {
 
-
-				// go to connection which has unfulfilled  Mrtr demands
+				int i = 0;
+				// go to connection which has unfulfilled  Mstr demands
 				while  ( ( virtualAllocation->getConnection()->getType() != CONN_DATA ) 	||
-						( virtualAllocation->getWantedMstrSize() <= u_int32_t( virtualAllocation->getCurrentNbOfBytes()) ) ) {
+						( ( virtualAllocation->getWantedMstrSize() <= u_int32_t( virtualAllocation->getCurrentMstrPayload()) ) && (i < 3 )) ){
 
 					// next connection
 
-					virtualAllocation->nextConnectionEntry();
+					if ( ! virtualAllocation->nextConnectionEntry() ) {
+						// 	count loops due to rounding errors
+						i++;
+					}
+					// debug
+					assert(i < 3);
 				}
 
 				// this connection gets up to nbOfSlotsPerConnection slots
@@ -245,8 +268,8 @@ void SchedulingAlgoDualEqualFill::scheduleConnections( VirtualAllocation* virtua
 				int maximumBytes = allocatedSlots * virtualAllocation->getSlotCapacity();
 
 				// get fragmented bytes to calculate first packet size
-				int fragmentedBytes;
-				fragmentedBytes = virtualAllocation->getConnection()->getFragmentBytes();
+				int fragmentedBytes = virtualAllocation->getConnection()->getFragmentBytes();
+
 
 				// get first packed
 				Packet * currentPacket = virtualAllocation->getConnection()->get_queue()->head();
@@ -278,23 +301,27 @@ void SchedulingAlgoDualEqualFill::scheduleConnections( VirtualAllocation* virtua
 				// calculate fragmentation of the last scheduled packet
 				if ( allocatedBytes > maximumBytes) {
 					// one additional fragmentation subheader has to be considered
-					allocatedPayload -= ( (maximumBytes - allocatedBytes) + HDR_MAC802_16_FRAGSUB_SIZE);
+					allocatedPayload -= ( (allocatedBytes - maximumBytes) + HDR_MAC802_16_FRAGSUB_SIZE);
 					allocatedBytes = maximumBytes;
 					// has demand fulfilled
 					if ( allocatedPayload >= wantedMstrSize) {
 						// reduce number of connection with mrtr demand
 						nbOfMstrConnections--;
+						// avoids, that connection is called again
+						virtualAllocation->updateWantedMrtrMstr( 0, 0);
 					}
 				} else {
 					// is demand fulfilled due to allocated bytes or all packets in the queue are scheduled
 					if (( allocatedPayload >= wantedMstrSize) || ( currentPacket == NULL)) {
-						// reduce number of connection with mrtr demand
+						// reduce number of connection with mstr demand
 						nbOfMstrConnections--;
+						// avoids, that connection is called again
+						virtualAllocation->updateWantedMrtrMstr( 0, 0);
 						// consider fragmentation due to traffic policing
 						if ( allocatedPayload > wantedMstrSize) {
 							// reduce payload
-							allocatedBytes -= ( allocatedPayload - wantedMstrSize - HDR_MAC802_16_FRAGSUB_SIZE );
-							allocatedPayload = virtualAllocation->getWantedMstrSize();
+							allocatedBytes -= ( (allocatedPayload - wantedMstrSize) - HDR_MAC802_16_FRAGSUB_SIZE);
+							allocatedPayload -= ( allocatedPayload - wantedMstrSize  );
 						}
 					}
 				}
@@ -306,13 +333,15 @@ void SchedulingAlgoDualEqualFill::scheduleConnections( VirtualAllocation* virtua
 				// update freeSlots
 				freeSlots -= newSlots;
 				// update mstrSlots
-				mstrSlots += mstrSlots;
+				mstrSlots += newSlots;
 
 				// check for debug
 				assert( freeSlots >= 0);
 
+				u_int32_t allocatedMrtrPayload = virtualAllocation->getCurrentMrtrPayload();
+
 				// update container
-				virtualAllocation->updateAllocation( allocatedSlots, allocatedBytes);
+				virtualAllocation->updateAllocation( allocatedSlots, allocatedBytes, allocatedMrtrPayload, allocatedPayload);
 
 				// decrease loop counter
 				conThisRound--;
@@ -324,6 +353,8 @@ void SchedulingAlgoDualEqualFill::scheduleConnections( VirtualAllocation* virtua
 		if ( nbOfMstrConnections > 0 ) {
 			// save last served connection for the next round
 			lastConnectionPtr_ = virtualAllocation->getConnection();
+			// all slots should have been assigned
+			assert( freeSlots == 0);
 		}
 	}
 

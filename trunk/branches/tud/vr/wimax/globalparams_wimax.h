@@ -11,7 +11,7 @@
 #include <string>
 
 // Search pattern for the ns-2 entry in the PATH environment variable vr@tud 11-09
-#define NS2_DIRECTORY "/ns-2.31/"
+#define NS2_DIRECTORY "/ns-2.34/"
 
 class GlobalParams_Wimax
 

@@ -15,7 +15,7 @@ class Connection;
 class VirtualAllocationElement
 {
 public:
-    VirtualAllocationElement( Connection* connectionPtr, u_int32_t wantedMrtrSize, u_int32_t wantedMstrSize, int slotCapacity, int nbOfBytes, int nbOfSlots, int nbOfCdmaSlots );
+    VirtualAllocationElement( Connection* connectionPtr, u_int32_t wantedMrtrSize, u_int32_t wantedMstrSize, int slotCapacity, int nbOfBytes, int nbOfSlots, int nbOfCdmaSlots);
     virtual ~VirtualAllocationElement();
 
 
@@ -119,6 +119,33 @@ public:
         nbOfCdmaSlots_ = nbOfCdmaSlots;
     }
 
+    /*
+     * Returns minimum Number of allocated Bytes assigned to fulfill the Minimum Reserved Traffic Rate value
+     */
+    inline u_int32_t getAllocatedMrtrPayload() {
+        return allocatedMrtrPayload_;
+    }
+
+    /*
+     * Set minimum Number of Bytes to fulfill the Minimum Reserved Traffic Rate value
+     */
+    inline void setAllocatedMrtrPayload( u_int32_t allocatedMrtrPayload) {
+        allocatedMrtrPayload_ = allocatedMrtrPayload;
+    }
+
+    /*
+     * Returns the maximum number of Bytes resulting of the Maximum Sustained Traffic Rate value
+     */
+    inline u_int32_t getAllocatedMstrPayload() {
+        return allocatedMstrPayload_;
+    }
+
+    /*
+     * Set the maximum number of Bytes resulting of the Maximum Sustained Traffic Rate value
+     */
+    inline void setAllocatedMstrPayload( u_int32_t allocatedMstrPayload) {
+        allocatedMstrPayload_ = allocatedMstrPayload;
+    }
 
 
 private:
@@ -158,7 +185,15 @@ private:
      */
     int nbOfCdmaSlots_;
 
+    /*
+     * fulfilled mrtr payload
+     */
+    u_int32_t allocatedMrtrPayload_;
 
+    /*
+     * fulfilled mstr payload
+     */
+    u_int32_t allocatedMstrPayload_;
 };
 
 #endif /* VIRTUALALLOCATIONELEMENT_H_ */
