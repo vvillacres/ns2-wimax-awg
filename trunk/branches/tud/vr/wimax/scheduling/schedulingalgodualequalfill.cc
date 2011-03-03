@@ -184,16 +184,6 @@ void SchedulingAlgoDualEqualFill::scheduleConnections( VirtualAllocation* virtua
 							allocatedBytes -= ( (allocatedPayload - wantedMrtrSize) - HDR_MAC802_16_FRAGSUB_SIZE );
 							allocatedPayload -= ( allocatedPayload - wantedMrtrSize );
 						}
-						// no more data available or allowed
-						if ( currentPacket == NULL)  {
-							virtualAllocation->updateWantedMrtrMstr( 0, 0);
-							if ( wantedMrtrSize < int(virtualAllocation->getWantedMstrSize()))   {
-								// connection has no further demands
-								nbOfMstrConnections--;
-							}
-
-						}
-
 					}
 				}
 				// Calculate Allocated Slots
@@ -226,6 +216,40 @@ void SchedulingAlgoDualEqualFill::scheduleConnections( VirtualAllocation* virtua
 				lastConnectionPtr_ = virtualAllocation->getConnection();
 			}
 		}
+
+		// debug
+		int oldNbOfMstrConnection = nbOfMstrConnections;
+
+		nbOfMstrConnections = 0;
+		virtualAllocation->firstConnectionEntry();
+		// run ones through whole the map
+		do {
+			if ( virtualAllocation->getConnection()->getType() == CONN_DATA ) {
+
+				// Debugging propose
+				// MRTR size is always less or equal to MSTR size
+				assert( virtualAllocation->getWantedMrtrSize() <= virtualAllocation->getWantedMstrSize());
+
+				// count the connection and the amount of data which can be schedules due to the mstr rates
+				if ( (virtualAllocation->getWantedMstrSize() >  virtualAllocation->getCurrentMrtrPayload())) {
+
+					nbOfMstrConnections++;
+				}
+			}
+		} while ( virtualAllocation->nextConnectionEntry() );
+
+		// get first data connection
+		if ( lastConnectionPtr_ != NULL ) {
+			// find last connection
+			test = virtualAllocation->findConnectionEntry( lastConnectionPtr_);
+			// get next connection
+			test = virtualAllocation->nextConnectionEntry();
+		} else {
+			// get first connection
+			test = virtualAllocation->firstConnectionEntry();
+		}
+
+
 
 		/*
 		 * Allocation of Slots for fulfilling the MSTR demands
