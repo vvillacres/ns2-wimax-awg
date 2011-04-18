@@ -62,7 +62,7 @@ Phy802_16MIB::Phy802_16MIB(Mac802_16 *parent)
     parent->bind ("rtg_", &rtg );
     parent->bind ("dl_permutation_", &dl_perm);
     parent->bind ("ul_permutation_", &ul_perm);
-    parent->bind ("interference_enable_", &interferenceEnable_);
+    parent->bind ("enable_interference_", &enableInterference_);
 }
 
 Mac802_16MIB::Mac802_16MIB(Mac802_16 *parent)
@@ -232,7 +232,7 @@ Mac802_16::Mac802_16() : Mac (), macmib_(this), phymib_(this)//, rxTimer_(this)
     bind("ul_amc_smooth_factor_", &ul_amc_smooth_factor_);
 
     // flag to enable admission control
-    bind("admission_control_enable_", &admissionControlEnable_);
+    bind("enable_admission_control_", &enableAdmissionControl_);
 
 
 }
