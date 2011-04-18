@@ -23,12 +23,26 @@ TrafficShapingNone::~TrafficShapingNone() {
 MrtrMstrPair_t TrafficShapingNone::getDataSizes(Connection * connection)
 {
     MrtrMstrPair_t mrtrMstrPair;
-    int wantedSize = connection->queuePayloadLength();
+    u_int32_t wantedMstrSize = u_int32_t( connection->queuePayloadLength());
     if ( connection->getFragmentBytes() > 0 ) {
-    	wantedSize = wantedSize - connection->getFragmentBytes() - HDR_MAC802_16_FRAGSUB_SIZE;
+    	wantedMstrSize = wantedMstrSize - u_int32_t( connection->getFragmentBytes() - HDR_MAC802_16_FRAGSUB_SIZE);
     }
-    mrtrMstrPair.first = u_int32_t ( wantedSize);
-    mrtrMstrPair.second = u_int32_t ( wantedSize);
+
+    // QoS Parameter auslesen
+    ServiceFlowQosSet* sfQosSet = connection->getServiceFlow()->getQosSet();
+    assert( sfQosSet->getMinReservedTrafficRate() <= sfQosSet->getMaxSustainedTrafficRate());
+
+    // assign size in the ratio of the MRTR / MSTR QoS parameters
+    u_int32_t mrtrSize = int( ceil( double(sfQosSet->getMinReservedTrafficRate()) * frameDuration_ / 8.0 ) );
+    u_int32_t wantedMrtrSize = u_int32_t ( ceil( wantedMstrSize * ( double(sfQosSet->getMinReservedTrafficRate()) / double(sfQosSet->getMaxSustainedTrafficRate())) )) ;
+
+    // check if the whole queue belongs to MRTR demands
+    if ( wantedMstrSize < mrtrSize) {
+    	wantedMrtrSize = wantedMstrSize;
+    }
+
+    mrtrMstrPair.first = wantedMrtrSize;
+    mrtrMstrPair.second = wantedMstrSize;
 
     return mrtrMstrPair;
 
