@@ -75,7 +75,7 @@ int ServiceFlowHandler::command(int argc, const char*const* argv)
         			printf("Text \n");;
         			delete admissionControl_;
         			// establish new Admission Control Object
-        			admissionControl_ = new ThresholdBasedCAC( mac_, 0.5, 0.47, 0.45, 0.40, 0.35);
+        			admissionControl_ = new ThresholdBasedCAC( mac_, 0.7, 0.67, 0.65, 0.60, 0.55);
         			return TCL_OK;
         		} else if (strcmp(argv[2], "fcac") == 0) {
         			// set new algorithm object
@@ -233,7 +233,7 @@ void ServiceFlowHandler::processDSA_req (Packet *p)
 
     // Call admission control
     bool isAdmitted = true;
-    if ( (admissionControl_ != NULL) && ( mac_->isAdmissionControlEnable()) ) {
+    if ( (admissionControl_ != NULL) && ( mac_->isAdmissionControlEnabled()) ) {
     	isAdmitted = admissionControl_->checkAdmission( dsa_req_frame->serviceFlow, peer);
     }
 

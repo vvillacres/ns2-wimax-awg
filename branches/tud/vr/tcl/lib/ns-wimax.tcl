@@ -69,9 +69,9 @@ Mac/802_16 set data_loss_rate_        -1    ;# to simulate uniform packet loss
 Mac/802_16 set arqfb_in_dl_data_     0
 Mac/802_16 set arqfb_in_ul_data_     0
 Mac/802_16 set arq_block_size_       128
-Mac/802_16 set interference_enable_ 0       ;# 0 - disbale / 1 - enable interference/BLER computation
+Mac/802_16 set enable_interference_ 0       ;# 0 - disbale / 1 - enable interference/BLER computation
 
-Mac/802_16 set admission_control_enable_ 0  ;# 0 - disable / 1 - enable admission control vr@tud
+Mac/802_16 set enable_admission_control_ 0  ;# 0 - disable / 1 - enable admission control vr@tud
 
 Agent/WimaxCtrl set debug_ 0                ;# display information about WiMAX controller used to handle scanning
 Agent/WimaxCtrl set adv_interval_ 1.0       ;# interval between the exchange of information between WiMAX controller

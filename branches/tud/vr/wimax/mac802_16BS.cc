@@ -941,7 +941,7 @@ void Mac802_16BS::receive (Packet *pktRx_)
 
                 debug2(" BLER is %f --vs.----random threshold = %.2f = \n" ,BLER, rand1 );
 
-                if ( phymib_.interferenceEnable_ && BLER > rand1) {
+                if ( phymib_.enableInterference_ && BLER > rand1) {
                     pkt_error = TRUE;
                     debug2("set channel to true.\n");
                     set_channel_error(TRUE);
@@ -1008,7 +1008,7 @@ void Mac802_16BS::receive (Packet *pktRx_)
 
                 debug2(" BLER is %f --vs.----random threshold = %.2f = \n" ,BLER, rand1 );
 
-                if ( phymib_.interferenceEnable_ && BLER > rand1) {
+                if ( phymib_.enableInterference_ && BLER > rand1) {
                     pkt_error = TRUE;
                     debug2("set channel to true.\n");
                     set_channel_error(TRUE);
@@ -1071,7 +1071,7 @@ void Mac802_16BS::receive (Packet *pktRx_)
 
                 debug2("In BS:  BLER is %f --vs.----random threshold = %.2f = \n" ,BLER, rand1 );
 
-                if ( phymib_.interferenceEnable_ && BLER > rand1) {
+                if ( phymib_.enableInterference_ && BLER > rand1) {
                     pkt_error = TRUE;
                     debug2("In BS: set channel to true.\n");
                 } else {
@@ -1126,7 +1126,7 @@ void Mac802_16BS::receive (Packet *pktRx_)
 
                 debug2(" In BS: BLER is %f --vs.----random threshold = %.2f = \n" ,BLER, rand1 );
 
-                if ( phymib_.interferenceEnable_ && BLER > rand1) {
+                if ( phymib_.enableInterference_ && BLER > rand1) {
                     pkt_error = TRUE;
                     debug2("In BS: set channel to true.\n");
                 } else {
@@ -1186,7 +1186,7 @@ void Mac802_16BS::receive (Packet *pktRx_)
 #endif
 
                     debug2("In BS:  BLER is %f --vs.----random threshold = %.2f = \n" ,BLER, rand1 );
-                    if ( phymib_.interferenceEnable_ && BLER > rand1) {
+                    if ( phymib_.enableInterference_ && BLER > rand1) {
                         pkt_error = TRUE;
                     } else {
                         pkt_error = FALSE;

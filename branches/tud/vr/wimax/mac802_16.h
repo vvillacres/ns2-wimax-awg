@@ -229,7 +229,7 @@ public:
     u_int32_t dl_perm;
     u_int32_t ul_perm;
     // enable interference simulation 0 - off / 1 - on
-    int interferenceEnable_;
+    int enableInterference_;
 };
 
 
@@ -728,8 +728,8 @@ public:
      * Indicates that all service flow request are checked by an admission control
      * 0 - off  /  1 - on
      */
-    inline int isAdmissionControlEnable() {
-    	return admissionControlEnable_;
+    inline int isAdmissionControlEnabled() {
+    	return enableAdmissionControl_;
     }
 
 protected:
@@ -1005,7 +1005,7 @@ protected:
      * Indicates that all service flow request are checked by an admission control
      * 0 - off  /  1 - on
      */
-    int admissionControlEnable_;
+    int enableAdmissionControl_;
 
 private:
     /**
