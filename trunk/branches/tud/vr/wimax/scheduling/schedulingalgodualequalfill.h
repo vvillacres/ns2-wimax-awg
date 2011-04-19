@@ -26,7 +26,7 @@ public:
 
 private:
 
-	Connection* lastConnectionPtr_;
+	Connection* nextConnectionPtr_;
 
 
 };

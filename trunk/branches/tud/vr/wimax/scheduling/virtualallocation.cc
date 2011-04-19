@@ -115,7 +115,7 @@ Connection* VirtualAllocation::getConnection()
 	if ( virtualAllocationMap_.end() != mapIterator_ ) {
 		return mapIterator_->second.getConnectionPtr();
 	} else {
-	    fprintf(stderr,"ERROR: Iterator not valid use findCidEntry() before");
+	    fprintf(stderr,"ERROR getConnection: Iterator not valid use findCidEntry() before");
 	    exit(5);
 	}
 }
