@@ -12,7 +12,7 @@
 
 SchedulingAlgoDualEqualFill::SchedulingAlgoDualEqualFill() {
 	// Initialize member variables
-	lastConnectionPtr_ = NULL;
+	nextConnectionPtr_ = NULL;
 
 }
 
@@ -71,7 +71,7 @@ void SchedulingAlgoDualEqualFill::scheduleConnections( VirtualAllocation* virtua
 					nbOfMstrConnections++;
 					sumOfWantedMstrBytes += ( virtualAllocation->getWantedMstrSize() - virtualAllocation->getWantedMrtrSize());
 				}
-				printf(" Demand MRTR %d MSTR %d \n", virtualAllocation->getWantedMrtrSize(), virtualAllocation->getWantedMstrSize());
+				printf("Connection CID %d Demand MRTR %d MSTR %d \n", virtualAllocation->getConnection()->get_cid(), virtualAllocation->getWantedMrtrSize(), virtualAllocation->getWantedMstrSize());
 			}
 		} while ( virtualAllocation->nextConnectionEntry() );
 
@@ -84,14 +84,17 @@ void SchedulingAlgoDualEqualFill::scheduleConnections( VirtualAllocation* virtua
 		bool test;
 
 		// get first data connection
-		if ( lastConnectionPtr_ != NULL ) {
+		if ( nextConnectionPtr_ != NULL ) {
 			// find last connection
-			test = virtualAllocation->findConnectionEntry( lastConnectionPtr_);
-			// get next connection
-			test = virtualAllocation->nextConnectionEntry();
+			if ( ! virtualAllocation->findConnectionEntry( nextConnectionPtr_)) {
+				// connection not found -> get first connection
+				test = virtualAllocation->firstConnectionEntry();
+				assert( test);
+			}
 		} else {
 			// get first connection
 			test = virtualAllocation->firstConnectionEntry();
+			assert( test);
 		}
 
 
@@ -203,184 +206,177 @@ void SchedulingAlgoDualEqualFill::scheduleConnections( VirtualAllocation* virtua
 
 				// decrease loop counter
 				conThisRound--;
-			}
-		}
 
-
-		if ( nbOfMrtrConnections > 0) {
-			if (freeSlots > 0) {
-				// go to next connection for mstr allocations
+				// get next connection
 				virtualAllocation->nextConnectionEntry();
+				nextConnectionPtr_ = virtualAllocation->getConnection();
+			}
+		}
+
+		// check if there are free Slots after Mrtr allocation
+		if ( freeSlots > 0) {
+
+			// count mstr connections
+			nbOfMstrConnections = 0;
+			virtualAllocation->firstConnectionEntry();
+			// run ones through whole the map
+			do {
+				if ( virtualAllocation->getConnection()->getType() == CONN_DATA ) {
+
+					// Debugging propose
+					// MRTR size is always less or equal to MSTR size
+					assert( virtualAllocation->getWantedMrtrSize() <= virtualAllocation->getWantedMstrSize());
+
+					// count the connection and the amount of data which can be schedules due to the mstr rates
+					if ( (virtualAllocation->getWantedMstrSize() >  virtualAllocation->getCurrentMrtrPayload())) {
+
+						nbOfMstrConnections++;
+					}
+				}
+			} while ( virtualAllocation->nextConnectionEntry() );
+
+			// get next connection to be served
+			if ( nextConnectionPtr_ != NULL ) {
+				// find last connection
+				if ( ! virtualAllocation->findConnectionEntry( nextConnectionPtr_)) {
+					// connection not found -> get first connection
+					virtualAllocation->firstConnectionEntry();
+				}
 			} else {
-				// save last served connection for the next round
-				lastConnectionPtr_ = virtualAllocation->getConnection();
+				// get first connection
+				virtualAllocation->firstConnectionEntry();
 			}
-		}
 
-		// debug
-		int oldNbOfMstrConnection = nbOfMstrConnections;
+			/*
+			 * Allocation of Slots for fulfilling the MSTR demands
+			 */
 
-		nbOfMstrConnections = 0;
-		virtualAllocation->firstConnectionEntry();
-		// run ones through whole the map
-		do {
-			if ( virtualAllocation->getConnection()->getType() == CONN_DATA ) {
+			while ( ( nbOfMstrConnections > 0 ) && ( freeSlots > 0 ) ) {
 
-				// Debugging propose
-				// MRTR size is always less or equal to MSTR size
-				assert( virtualAllocation->getWantedMrtrSize() <= virtualAllocation->getWantedMstrSize());
+				// number of Connections which can be served in this iteration
+				int conThisRound = nbOfMstrConnections;
 
-				// count the connection and the amount of data which can be schedules due to the mstr rates
-				if ( (virtualAllocation->getWantedMstrSize() >  virtualAllocation->getCurrentMrtrPayload())) {
+				// divide slots equally for the first round
+				int nbOfSlotsPerConnection = freeSlots / nbOfMstrConnections;
 
-					nbOfMstrConnections++;
+				// only one slot per connection left
+				if ( nbOfSlotsPerConnection <= 0 ) {
+					nbOfSlotsPerConnection = 1;
 				}
-			}
-		} while ( virtualAllocation->nextConnectionEntry() );
 
-		// get first data connection
-		if ( lastConnectionPtr_ != NULL ) {
-			// find last connection
-			test = virtualAllocation->findConnectionEntry( lastConnectionPtr_);
-			// get next connection
-			test = virtualAllocation->nextConnectionEntry();
-		} else {
-			// get first connection
-			test = virtualAllocation->firstConnectionEntry();
-		}
+				while ( ( conThisRound > 0) && ( freeSlots > 0 ) ) {
 
+					int i = 0;
+					// go to connection which has unfulfilled  Mstr demands
+					while  ( ( virtualAllocation->getConnection()->getType() != CONN_DATA ) 	||
+							( ( virtualAllocation->getWantedMstrSize() <= u_int32_t( virtualAllocation->getCurrentMstrPayload()) ) && (i < 3 )) ){
 
+						// next connection
 
-		/*
-		 * Allocation of Slots for fulfilling the MSTR demands
-		 */
-
-		while ( ( nbOfMstrConnections > 0 ) && ( freeSlots > 0 ) ) {
-
-			// number of Connections which can be served in this iteration
-			int conThisRound = nbOfMstrConnections;
-
-			// divide slots equally for the first round
-			int nbOfSlotsPerConnection = freeSlots / nbOfMstrConnections;
-
-			// only one slot per connection left
-			if ( nbOfSlotsPerConnection <= 0 ) {
-				nbOfSlotsPerConnection = 1;
-			}
-
-			while ( ( conThisRound > 0) && ( freeSlots > 0 ) ) {
-
-				int i = 0;
-				// go to connection which has unfulfilled  Mstr demands
-				while  ( ( virtualAllocation->getConnection()->getType() != CONN_DATA ) 	||
-						( ( virtualAllocation->getWantedMstrSize() <= u_int32_t( virtualAllocation->getCurrentMstrPayload()) ) && (i < 3 )) ){
-
-					// next connection
-
-					if ( ! virtualAllocation->nextConnectionEntry() ) {
-						// 	count loops due to rounding errors
-						i++;
+						if ( ! virtualAllocation->nextConnectionEntry() ) {
+							// 	count loops due to rounding errors
+							i++;
+						}
+						// debug
+						assert(i < 3);
 					}
-					// debug
-					assert(i < 3);
-				}
 
-				// this connection gets up to nbOfSlotsPerConnection slots
+					// this connection gets up to nbOfSlotsPerConnection slots
 
-				// calculate the corresponding number of bytes
-				int allocatedSlots = nbOfSlotsPerConnection + virtualAllocation->getCurrentNbOfSlots();
-				int maximumBytes = allocatedSlots * virtualAllocation->getSlotCapacity();
+					// calculate the corresponding number of bytes
+					int allocatedSlots = nbOfSlotsPerConnection + virtualAllocation->getCurrentNbOfSlots();
+					int maximumBytes = allocatedSlots * virtualAllocation->getSlotCapacity();
 
-				// get fragmented bytes to calculate first packet size
-				int fragmentedBytes = virtualAllocation->getConnection()->getFragmentBytes();
+					// get fragmented bytes to calculate first packet size
+					int fragmentedBytes = virtualAllocation->getConnection()->getFragmentBytes();
 
 
-				// get first packed
-				Packet * currentPacket = virtualAllocation->getConnection()->get_queue()->head();
-				int allocatedBytes = 0;
-				int allocatedPayload = 0;
-				int wantedMstrSize = virtualAllocation->getWantedMstrSize();
+					// get first packed
+					Packet * currentPacket = virtualAllocation->getConnection()->get_queue()->head();
+					int allocatedBytes = 0;
+					int allocatedPayload = 0;
+					int wantedMstrSize = virtualAllocation->getWantedMstrSize();
 
-				while ( ( currentPacket != NULL) && ( (allocatedBytes < maximumBytes) && ( allocatedPayload < wantedMstrSize) ) ) {
+					while ( ( currentPacket != NULL) && ( (allocatedBytes < maximumBytes) && ( allocatedPayload < wantedMstrSize) ) ) {
 
-					int packetSize = HDR_CMN(currentPacket)->size();
+						int packetSize = HDR_CMN(currentPacket)->size();
 
-					if (fragmentedBytes > 0) {
+						if (fragmentedBytes > 0) {
 
-						// payload is packet size - already send byte - Generice Header - Fragmentation Subheader
-						allocatedPayload += ( packetSize - fragmentedBytes - HDR_MAC802_16_SIZE - HDR_MAC802_16_FRAGSUB_SIZE );
+							// payload is packet size - already send byte - Generice Header - Fragmentation Subheader
+							allocatedPayload += ( packetSize - fragmentedBytes - HDR_MAC802_16_SIZE - HDR_MAC802_16_FRAGSUB_SIZE );
 
-						// packet size - already send bytes
-						allocatedBytes += ( packetSize - fragmentedBytes );
-						fragmentedBytes = 0;
+							// packet size - already send bytes
+							allocatedBytes += ( packetSize - fragmentedBytes );
+							fragmentedBytes = 0;
+						} else {
+							allocatedPayload += packetSize - HDR_MAC802_16_SIZE;
+							allocatedBytes += packetSize;
+						}
+						// get next packet
+						currentPacket = currentPacket->next_;
+					}
+
+
+					// calculate fragmentation of the last scheduled packet
+					if ( allocatedBytes > maximumBytes) {
+						// one additional fragmentation subheader has to be considered
+						allocatedPayload -= ( (allocatedBytes - maximumBytes) + HDR_MAC802_16_FRAGSUB_SIZE);
+						allocatedBytes = maximumBytes;
+						// has demand fulfilled
+						if ( allocatedPayload >= wantedMstrSize) {
+							// reduce number of connection with mrtr demand
+							nbOfMstrConnections--;
+							// avoids, that connection is called again
+							virtualAllocation->updateWantedMrtrMstr( 0, 0);
+						}
 					} else {
-						allocatedPayload += packetSize - HDR_MAC802_16_SIZE;
-						allocatedBytes += packetSize;
-					}
-					// get next packet
-					currentPacket = currentPacket->next_;
-				}
-
-
-				// calculate fragmentation of the last scheduled packet
-				if ( allocatedBytes > maximumBytes) {
-					// one additional fragmentation subheader has to be considered
-					allocatedPayload -= ( (allocatedBytes - maximumBytes) + HDR_MAC802_16_FRAGSUB_SIZE);
-					allocatedBytes = maximumBytes;
-					// has demand fulfilled
-					if ( allocatedPayload >= wantedMstrSize) {
-						// reduce number of connection with mrtr demand
-						nbOfMstrConnections--;
-						// avoids, that connection is called again
-						virtualAllocation->updateWantedMrtrMstr( 0, 0);
-					}
-				} else {
-					// is demand fulfilled due to allocated bytes or all packets in the queue are scheduled
-					if (( allocatedPayload >= wantedMstrSize) || ( currentPacket == NULL)) {
-						// reduce number of connection with mstr demand
-						nbOfMstrConnections--;
-						// avoids, that connection is called again
-						virtualAllocation->updateWantedMrtrMstr( 0, 0);
-						// consider fragmentation due to traffic policing
-						if ( allocatedPayload > wantedMstrSize) {
-							// reduce payload
-							allocatedBytes -= ( (allocatedPayload - wantedMstrSize) - HDR_MAC802_16_FRAGSUB_SIZE);
-							allocatedPayload -= ( allocatedPayload - wantedMstrSize  );
+						// is demand fulfilled due to allocated bytes or all packets in the queue are scheduled
+						if (( allocatedPayload >= wantedMstrSize) || ( currentPacket == NULL)) {
+							// reduce number of connection with mstr demand
+							nbOfMstrConnections--;
+							// avoids, that connection is called again
+							virtualAllocation->updateWantedMrtrMstr( 0, 0);
+							// consider fragmentation due to traffic policing
+							if ( allocatedPayload > wantedMstrSize) {
+								// reduce payload
+								allocatedBytes -= ( (allocatedPayload - wantedMstrSize) - HDR_MAC802_16_FRAGSUB_SIZE);
+								allocatedPayload -= ( allocatedPayload - wantedMstrSize  );
+							}
 						}
 					}
+					// Calculate Allocated Slots
+					allocatedSlots = int( ceil( double(allocatedBytes) / virtualAllocation->getSlotCapacity()) );
+
+					// calculate new assigned slots
+					int newSlots = ( allocatedSlots - virtualAllocation->getCurrentNbOfSlots());
+					// update freeSlots
+					freeSlots -= newSlots;
+					// update mstrSlots
+					mstrSlots += newSlots;
+
+					// check for debug
+					assert( freeSlots >= 0);
+
+					u_int32_t allocatedMrtrPayload = virtualAllocation->getCurrentMrtrPayload();
+
+					// update container
+					virtualAllocation->updateAllocation( allocatedSlots, allocatedBytes, allocatedMrtrPayload, allocatedPayload);
+
+					// decrease loop counter
+					conThisRound--;
+
+					// get next connection
+					virtualAllocation->nextConnectionEntry();
+					nextConnectionPtr_ = virtualAllocation->getConnection();
 				}
-				// Calculate Allocated Slots
-				allocatedSlots = int( ceil( double(allocatedBytes) / virtualAllocation->getSlotCapacity()) );
 
-				// calculate new assigned slots
-				int newSlots = ( allocatedSlots - virtualAllocation->getCurrentNbOfSlots());
-				// update freeSlots
-				freeSlots -= newSlots;
-				// update mstrSlots
-				mstrSlots += newSlots;
+			} // END Mstr allocation loop
 
-				// check for debug
-				assert( freeSlots >= 0);
+		} // END: check if there are free Slots after Mrtr allocation
 
-				u_int32_t allocatedMrtrPayload = virtualAllocation->getCurrentMrtrPayload();
+	} // END: check if any connections have data to send
 
-				// update container
-				virtualAllocation->updateAllocation( allocatedSlots, allocatedBytes, allocatedMrtrPayload, allocatedPayload);
-
-				// decrease loop counter
-				conThisRound--;
-			}
-
-		}
-
-
-		if ( nbOfMstrConnections > 0 ) {
-			// save last served connection for the next round
-			lastConnectionPtr_ = virtualAllocation->getConnection();
-			// all slots should have been assigned
-			assert( freeSlots == 0);
-		}
-	}
 
 	// sanity check
 	assert( ( 0 < movingAverageFactor_) && ( 1 > movingAverageFactor_) );
