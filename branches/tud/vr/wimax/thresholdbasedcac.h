@@ -14,7 +14,7 @@ class ThresholdBasedCAC : public AdmissionControlInterface
 public:
 
 	ThresholdBasedCAC (Mac802_16 * mac,
-			float thresholdUgs,
+			float thresholdUgs,   //Thresholds for Admission Control
 			float thresholdErtPs,
 			float thresholdRtPs,
 			float thresholdNrtPs,
