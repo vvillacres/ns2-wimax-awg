@@ -75,7 +75,7 @@ int ServiceFlowHandler::command(int argc, const char*const* argv)
         			printf("Text \n");;
         			delete admissionControl_;
         			// establish new Admission Control Object
-        			admissionControl_ = new ThresholdBasedCAC( mac_, 0.7, 0.67, 0.65, 0.60, 0.55);
+        			admissionControl_ = new ThresholdBasedCAC( mac_, 0.97, 0.95, 0.93, 0.85, 0.80);
         			return TCL_OK;
         		} else if (strcmp(argv[2], "fcac") == 0) {
         			// set new algorithm object
