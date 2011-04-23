@@ -25,7 +25,7 @@ TrafficShapingTswTcm::~TrafficShapingTswTcm()
  * Returns wantedMstrSize and wantedMrtrSize as guideline for the scheduling algorithm
  * through call by reference
  */
-MrtrMstrPair_t TrafficShapingTswTcm::getDataSizes(Connection *connection)
+MrtrMstrPair_t TrafficShapingTswTcm::getDataSizes(Connection *connection, u_int32_t queuePayloadSize)
 {
     //-----------------------Initialization of the Map---------------------------------
     LastAllocationSizeIt_t mapIterator;
@@ -87,12 +87,12 @@ MrtrMstrPair_t TrafficShapingTswTcm::getDataSizes(Connection *connection)
         /*------------nimm minimalen Wert der Datengröße----------------------------------------------------------------------//
         //------------die angekommende Datengröße an MAC SAP Trasmitter,die gerechneten Datengröße für mstr und die maximale Rahmengröße--------*/
         com_mstrSize = MIN( com_mstrSize, maxTrafficBurst);
-        wantedMstrSize = MIN( com_mstrSize, u_int32_t(connection->queueByteLength()) );
+        wantedMstrSize = MIN( com_mstrSize, queuePayloadSize);
 
         /*------------nimm minimalen Wert der Datengröße-----------------------------------------------------------------------//
         //------------die angekommende Datengröße an MAC SAP Trasmitter ,die gerechneten Datengröße für mrtr und die maximale Rahmengröße--------*/
         com_mrtrSize = MIN(com_mrtrSize,maxTrafficBurst);
-        wantedMrtrSize = MIN(com_mrtrSize, u_int32_t(connection->queueByteLength()) );
+        wantedMrtrSize = MIN(com_mrtrSize, queuePayloadSize );
 
     }
 

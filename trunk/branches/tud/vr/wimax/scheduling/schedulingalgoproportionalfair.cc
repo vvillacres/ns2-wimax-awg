@@ -12,7 +12,7 @@
 
 SchedulingAlgoProportionalFair::SchedulingAlgoProportionalFair() {
 	// Initialize member variables
-	lastConnectionPtr_ = NULL;
+	nextConnectionPtr_ = NULL;
 
 }
 
@@ -23,8 +23,18 @@ SchedulingAlgoProportionalFair::~SchedulingAlgoProportionalFair() {
 void SchedulingAlgoProportionalFair::scheduleConnections( VirtualAllocation* virtualAllocation, int freeSlots)
 {
 
-	int nbOfConnections = 0;
-	u_int32_t sumOfWantedBytes = 0;
+	// update totalNbOfSlots_ for statistic
+	assert( ( 0 < movingAverageFactor_) && ( 1 > movingAverageFactor_) );
+	totalNbOfSlots_ = ( totalNbOfSlots_ * ( 1 - movingAverageFactor_)) + ( freeSlots * movingAverageFactor_);
+
+	int nbOfMstrConnections = 0;
+	u_int32_t sumOfWantedMstrBytes = 0;
+
+	// count number of allocated slots for mrtr demands
+	int mrtrSlots = 0;
+	// count the slots used to fulfill MSTR demands
+	int mstrSlots = 0;
+
 
 	// check if any connections have data to send
 	if ( virtualAllocation->firstConnectionEntry()) {
@@ -33,38 +43,42 @@ void SchedulingAlgoProportionalFair::scheduleConnections( VirtualAllocation* vir
 		do {
 			if ( virtualAllocation->getConnection()->getType() == CONN_DATA ) {
 
-				// count the connection and the amount of data which has to be scheduled
-				if ( virtualAllocation->getWantedMstrSize() > 0 ) {
+				// count the connection and the amount of data which can be schedules due to the mstr rates
+				if ( virtualAllocation->getWantedMstrSize()  > 0) {
 
-					nbOfConnections++;
-					sumOfWantedBytes += virtualAllocation->getWantedMstrSize();
+					nbOfMstrConnections++;
+					sumOfWantedMstrBytes += ( virtualAllocation->getWantedMstrSize() - virtualAllocation->getWantedMrtrSize());
 				}
+				printf("Connection CID %d Demand MSTR %d \n", virtualAllocation->getConnection()->get_cid(), virtualAllocation->getWantedMstrSize());
 			}
 		} while ( virtualAllocation->nextConnectionEntry() );
 
 
 		/*
-		 * Allocation of Slots for fulfilling the demands
+		 * Allocation of Slots for fulfilling the MSTR demands
 		 */
 
+
 		// get first data connection
-		if ( lastConnectionPtr_ != NULL ) {
+		if ( nextConnectionPtr_ != NULL ) {
 			// find last connection
-			virtualAllocation->findConnectionEntry( lastConnectionPtr_);
-			// get next connection
-			virtualAllocation->nextConnectionEntry();
+			if ( ! virtualAllocation->findConnectionEntry( nextConnectionPtr_)) {
+				// connection not found -> get first connection
+				virtualAllocation->firstConnectionEntry();
+			}
 		} else {
 			// get first connection
 			virtualAllocation->firstConnectionEntry();
 		}
 
-		while ( ( nbOfConnections > 0 ) && ( freeSlots > 0 ) ) {
+
+		while ( ( nbOfMstrConnections > 0 ) && ( freeSlots > 0 ) ) {
 
 			// number of Connections which can be served in this iteration
-			int conThisRound = nbOfConnections;
+			int conThisRound = nbOfMstrConnections;
 
 			// divide slots equally for the first round
-			int nbOfSlotsPerConnection = freeSlots / nbOfConnections;
+			int nbOfSlotsPerConnection = freeSlots / nbOfMstrConnections;
 
 			// only one slot per connection left
 			if ( nbOfSlotsPerConnection <= 0 ) {
@@ -76,8 +90,10 @@ void SchedulingAlgoProportionalFair::scheduleConnections( VirtualAllocation* vir
 
 				// go to connection which has unfulfilled  Mrtr demands
 				while ( ( virtualAllocation->getConnection()->getType() != CONN_DATA ) ||
-						( virtualAllocation->getWantedMstrSize() <= u_int32_t( virtualAllocation->getCurrentNbOfBytes() ) ) )  {
+						( virtualAllocation->getWantedMrtrSize() <= u_int32_t( virtualAllocation->getCurrentMrtrPayload() ) ) )  {
 					// next connection
+
+					// TODO: may cause problems ugly
 					virtualAllocation->nextConnectionEntry();
 				}
 
@@ -90,13 +106,15 @@ void SchedulingAlgoProportionalFair::scheduleConnections( VirtualAllocation* vir
 				// get fragmented bytes to calculate first packet size
 				int fragmentedBytes = virtualAllocation->getConnection()->getFragmentBytes();
 
+
 				// get first packed
 				Packet * currentPacket = virtualAllocation->getConnection()->get_queue()->head();
 				int allocatedBytes = 0;
 				int allocatedPayload = 0;
-				int wantedSize = virtualAllocation->getWantedMstrSize();
+				int wantedMrtrSize = virtualAllocation->getWantedMrtrSize();
+				int wantedMstrSize = virtualAllocation->getWantedMstrSize();
 
-				while ( ( currentPacket != NULL) && ( (allocatedBytes < maximumBytes) && ( allocatedPayload < wantedSize) ) ) {
+				while ( ( currentPacket != NULL) && ( (allocatedBytes < maximumBytes) && ( allocatedPayload < wantedMrtrSize) ) ) {
 
 					int packetSize = HDR_CMN(currentPacket)->size();
 
@@ -121,45 +139,82 @@ void SchedulingAlgoProportionalFair::scheduleConnections( VirtualAllocation* vir
 				// calculate fragmentation of the last scheduled packet
 				if ( allocatedBytes > maximumBytes) {
 					// one additional fragmentation subheader has to be considered
-					allocatedPayload -= ( (maximumBytes - allocatedBytes) + HDR_MAC802_16_FRAGSUB_SIZE);
+					allocatedPayload -= ( (allocatedBytes - maximumBytes) + HDR_MAC802_16_FRAGSUB_SIZE);
 					allocatedBytes = maximumBytes;
 					// is demand fulfilled ?
-					if ( allocatedPayload >= wantedSize) {
+					if ( allocatedPayload >= wantedMstrSize) {
 						// reduce number of connection with mrtr demand
-						nbOfConnections--;
+						nbOfMstrConnections--;
 					}
 				} else {
-					// is demand fulfilled
-					if ( allocatedPayload >= wantedSize) {
+					// is demand fulfilled due to allocated bytes or all packets
+					if (( allocatedPayload >= wantedMstrSize) || ( currentPacket == NULL)) {
 						// reduce number of connection with mrtr demand
-						nbOfConnections--;
+						nbOfMstrConnections--;
+
 						// consider fragmentation due to traffic policing
-						if ( allocatedPayload > wantedSize) {
+						if ( allocatedPayload > wantedMstrSize) {
 							// reduce payload
-							allocatedBytes -= ( allocatedPayload - wantedSize - HDR_MAC802_16_FRAGSUB_SIZE );
-							allocatedPayload = virtualAllocation->getWantedMstrSize();
+							allocatedBytes -= ( (allocatedPayload - wantedMstrSize) - HDR_MAC802_16_FRAGSUB_SIZE );
+							allocatedPayload -= ( allocatedPayload - wantedMstrSize );
 						}
 					}
 				}
 				// Calculate Allocated Slots
 				allocatedSlots = int( ceil( double(allocatedBytes) / virtualAllocation->getSlotCapacity()) );
 
+				int newSlots = ( allocatedSlots - virtualAllocation->getCurrentNbOfSlots());
+
+				// debug
+				printf(" %d new Mstr Slots for Connection CID %d \n", newSlots, virtualAllocation->getConnection()->get_cid() );
+
+
 				// update freeSlots
-				freeSlots -= ( allocatedSlots - virtualAllocation->getCurrentNbOfSlots());
+				freeSlots -= newSlots;
+
+				if ( allocatedPayload < wantedMrtrSize ) {
+					// update only mrtrSlots
+					mrtrSlots += newSlots;
+				} else {
+					// update mrtrSlot and m
+					int newMrtrSlots = int( ceil( double( wantedMrtrSize ) / virtualAllocation->getSlotCapacity())) - virtualAllocation->getCurrentNbOfSlots();
+
+					if ( newMrtrSlots >0 ) {
+						// update mrtrSlots and mstrSlots
+						mrtrSlots += newMrtrSlots;
+						mstrSlots += (newSlots - newMrtrSlots);
+					} else {
+						// update only mstrSlots
+						mstrSlots += newSlots;
+					}
+				}
+
 
 				// check for debug
 				assert( freeSlots >= 0);
 
 				// update container
-				virtualAllocation->updateAllocation( allocatedSlots, allocatedBytes, 0, allocatedPayload );
+				if ( allocatedPayload < wantedMrtrSize ) {
+					virtualAllocation->updateAllocation( allocatedSlots, allocatedBytes, allocatedPayload, allocatedPayload);
+				} else {
+					virtualAllocation->updateAllocation( allocatedSlots, allocatedBytes, wantedMrtrSize, allocatedPayload);
+				}
 
 				// decrease loop counter
 				conThisRound--;
+
+				// get next connection
+				virtualAllocation->nextConnectionEntry();
+				nextConnectionPtr_ = virtualAllocation->getConnection();
 			}
 		}
+	} // END: check if any connections have data to send
 
-		// save last served connection for the next round
-		lastConnectionPtr_ = virtualAllocation->getConnection();
-	}
+
+	// update usedMrtrSlots_ for statistic
+	usedMrtrSlots_ = ( usedMrtrSlots_ * ( 1 - movingAverageFactor_)) + ( mrtrSlots * movingAverageFactor_);
+	// update usedMstrSlots_ for statistic
+	usedMstrSlots_ = ( usedMstrSlots_ * ( 1 - movingAverageFactor_)) + ( mstrSlots * movingAverageFactor_);
 
 }
+

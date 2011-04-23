@@ -20,10 +20,10 @@ TrafficShapingNone::~TrafficShapingNone() {
 /*
  * Returns wantedMstrSize and wantedMrtrSize as guideline for the scheduling algorithm
  */
-MrtrMstrPair_t TrafficShapingNone::getDataSizes(Connection * connection)
+MrtrMstrPair_t TrafficShapingNone::getDataSizes(Connection * connection, u_int32_t queuePayloadSize)
 {
     MrtrMstrPair_t mrtrMstrPair;
-    u_int32_t wantedMstrSize = u_int32_t( connection->queuePayloadLength());
+    u_int32_t wantedMstrSize = queuePayloadSize;
     if ( connection->getFragmentBytes() > 0 ) {
     	wantedMstrSize = wantedMstrSize - u_int32_t( connection->getFragmentBytes() - HDR_MAC802_16_FRAGSUB_SIZE);
     }

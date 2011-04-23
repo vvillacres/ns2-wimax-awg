@@ -37,214 +37,71 @@ TrafficShapingAccurate::~TrafficShapingAccurate()
 /*
  * Calculate predicted mrtr and msrt sizes
  */
-MrtrMstrPair_t TrafficShapingAccurate::getDataSizes(Connection *connection)
+MrtrMstrPair_t TrafficShapingAccurate::getDataSizes(Connection *connection, u_int32_t queuePayloadSize)
 {
-	// for debug
-	/*
-	if ( NOW >= 11.008166  ) {
-		printf("Breakpoint reached \n");
-	}
-	*/
-
 
 	//-----------------------Initialization of the Map---------------------------------
     TrafficShapingListIt_t mapIterator;
     int currentCid = connection->get_cid();
 
-    // QoS Parameter auslesen
+    // get QoS Parameter
     ServiceFlowQosSet* sfQosSet = connection->getServiceFlow()->getQosSet();
 
-    //ist die CID in Map ?
-    // Suchen der CID in der Map - Eintrag vorhanden ?
+    // search the current CID within the map
     mapIterator = mapLastTrafficShapingList_.find(currentCid);
 
     u_int32_t wantedMrtrSize;
     u_int32_t wantedMstrSize;
 
     if ( mapIterator == mapLastTrafficShapingList_.end()) {
-        // CID nicht vorhanden
+        // there is no entry for this CID -> calculate default sizes
 
-        // mrtrsize berechnen  = 64Kbps VOIP -> 70Kbps
+        // round up the mrtr size as it is a guaranteed rate
         wantedMrtrSize = u_int32_t( ceil( double(sfQosSet->getMinReservedTrafficRate()) * frameDuration_ / 8.0 ) );
 
-        // mstrsize berechnen  = 25 Mbps MPEG4 AVC/H.264 -> 20 Mbps
+        // round down the mstr rate as it is the upper border
         wantedMstrSize = u_int32_t( floor( double(sfQosSet->getMaxSustainedTrafficRate()) * frameDuration_/ 8.0 ) );
 
-        // rounding error
+        // fix rounding errors
         if ( wantedMstrSize < wantedMrtrSize) {
         	wantedMstrSize = wantedMrtrSize;
         }
 
 
     } else {
+    	// there is an entry for this CID
 
+    	// short the mrtr and mstr sum to the current time
 
-        //----wenn das CID vorhanden ist,hole ich abgelegte Daten aus Strukture aus, um Datasize zu berechnen---//
-        //----Strukturenlemente aus Map element  holen für die Berechnung des Prediction DataSize----//
+        //  get Windows Size in milliseconds from QoS Parameter Set and convert it to seconds
+        double timeBase = double(sfQosSet->getTimeBase()) * 1e-3;
 
+        // Check if elements have to be removed
 
-        //-------------------------gültige Datasize ausholen-----------------------------------------//
-        double timeBase = double(sfQosSet->getTimeBase()) * 1e-3; // time base in second
+        TrafficShapingElement frontElement ;
+		frontElement = mapIterator->second.ptrDequeTrafficShapingElement->front();
 
-        printf("Current sumMrtrSize %d sumMstrSize %d \n", mapIterator->second.sumMrtrSize, mapIterator->second.sumMstrSize);
+		double frontTimeStamp = frontElement.timeStamp;
+		// remove all element, which are older than NOW - ( Timebase - 1.5 * frameDuration)
+		while ( frontTimeStamp < ( NOW - ( timeBase - TIMEBASEBOUNDARY * frameDuration_)) ) {
+			// update sum counters
+			mapIterator->second.sumMrtrSize -= frontElement.mrtrSize;
+			mapIterator->second.sumMstrSize -= frontElement.mstrSize;
 
-        // minimum new allocated data volume = Time base()
-        wantedMrtrSize = ( timeBase * sfQosSet->getMinReservedTrafficRate() / 8 ) - mapIterator->second.sumMrtrSize;
+			// debug check for negative overflows
+			assert( mapIterator->second.sumMrtrSize < 100000000);
+			assert( mapIterator->second.sumMstrSize < 100000000);
 
-        // maximum new allocated data volume = Time base(s)*mstr(bit/s) / 8 - Summe von MSTRSize(Byte)
-        //                              	 = Byte
-        wantedMstrSize = ( timeBase * sfQosSet->getMaxSustainedTrafficRate() / 8 ) - mapIterator->second.sumMstrSize;
+			// remove oldest element
+			mapIterator->second.ptrDequeTrafficShapingElement->pop_front();
 
+			// load new front element
+			frontElement = mapIterator->second.ptrDequeTrafficShapingElement->front();
+			// get new time stamp
+			frontTimeStamp = frontElement.timeStamp;
+		}
 
-        assert(wantedMrtrSize <= ( timeBase * sfQosSet->getMinReservedTrafficRate() / 8 ));
-        assert(wantedMstrSize <= ( timeBase * sfQosSet->getMaxSustainedTrafficRate() / 8 ));
-        assert(wantedMrtrSize <= wantedMstrSize);
-
-    }
-
-    // get Maximum Traffic Burst Size for this connection
-    u_int32_t maxTrafficBurst = sfQosSet->getMaxTrafficBurst();
-
-    //
-    u_int32_t payloadSize = u_int32_t( connection->queuePayloadLength());
-    if ( connection->getFragmentBytes() > 0 ) {
-    	payloadSize -= connection->getFragmentBytes() - HDR_MAC802_16_SIZE - HDR_MAC802_16_FRAGSUB_SIZE;
-    }
-
-    // min function Mrtr according to IEEE 802.16-2009
-    wantedMrtrSize = MIN( wantedMrtrSize, maxTrafficBurst);
-    wantedMrtrSize = MIN( wantedMrtrSize, payloadSize);
-
-    // min function for Mstr
-    wantedMstrSize = MIN(wantedMstrSize, maxTrafficBurst);
-    wantedMstrSize = MIN( wantedMstrSize, payloadSize);
-
-    MrtrMstrPair_t mrtrMstrPair;
-    mrtrMstrPair.first = wantedMrtrSize;
-    mrtrMstrPair.second = wantedMstrSize;
-
-
-    return mrtrMstrPair;
-
-}
-
-/*
- * Sends occurred allocation back to traffic policing
- */
-void TrafficShapingAccurate::updateAllocation(Connection *con,u_int32_t realMrtrSize,u_int32_t realMstrSize)
-{
-    //---------- Pointer erstellen---------//
-    MapLastTrafficShapingList_t::iterator mapIterator;
-
-    // QoS Parameter auslesen
-    ServiceFlowQosSet* sfQosSet = con->getServiceFlow()->getQosSet();
-    //-----------Cid holen-----------------//
-    int currentCid = con->get_cid();
-
-    // debug
-    assert(realMrtrSize <= realMstrSize);
-
-    //  get Windows Size < millisecond > from QoS Parameter Set
-    double timeBase = double(sfQosSet->getTimeBase()) * 1e-3; // time base in second
-
-    // die Position der Abbildung in der MAP mapLastAllocationSize_ entsprechende Cid  suchen-- verweist die  Position auf MAP Iterator//
-    mapIterator = mapLastTrafficShapingList_.find(currentCid);
-
-    //	MAP mapLastAllocationSize_ bis zu MAP_ENDE durchsuchen
-
-    if ( mapIterator == mapLastTrafficShapingList_.end()) {
-
-        // CID nicht vorhanden
-        //--neues Map element erstellen-----bzw. neue Strukture erstellen, um aktuellen DatenSize und aktuellen Zeitpunkt ab zu legen----------//
-
-    	TrafficShapingList currentAllocationList;
-
-        //----------Zuweisung auf Strukturelemente------------//
-        currentAllocationList.sumMrtrSize = realMrtrSize;
-        currentAllocationList.sumMstrSize = realMstrSize;
-        //------------------Erstellen der genügenden Speicher für deque_mrtrSize  und deque_mstr <u_int_32_t>------------------------//
-
-        currentAllocationList.ptrDequeTrafficShapingElement = new deque<TrafficShapingElement>;
-
-        // Neuer deque eintrag
-
-        TrafficShapingElement currentTrafficShapingElement;
-        // now i fill the current element in the Deque
-
-        currentTrafficShapingElement.mrtrSize = realMrtrSize;
-        currentTrafficShapingElement.mstrSize = realMstrSize;
-        currentTrafficShapingElement.timeStamp = NOW;
-
-        // Neuen Eintrag in deque spreichern
-        currentAllocationList.ptrDequeTrafficShapingElement->push_front( currentTrafficShapingElement);
-
-
-        // Fill Deque with default values to avoid start oscillations
-
-        // mrtrSize wieder berechnen  = 64Kbps VOIP -> 70Kbps
-        u_int32_t defaultMrtrSize = u_int32_t( floor( double(sfQosSet->getMinReservedTrafficRate()) * frameDuration_ / 8.0 ) );
-
-        // mstrSize wieder berechnen um angenommennen Datenvolumen in Deque hinzufügen
-
-        u_int32_t defaultMstrSize = u_int32_t( floor( double(sfQosSet->getMaxSustainedTrafficRate()) * frameDuration_/ 8.0 ) );
-
-        // avoid rounding errors
-        if ( defaultMrtrSize > defaultMstrSize) {
-        	defaultMstrSize = defaultMrtrSize;
-        }
-
-
-        // as long as the time base is not full , i will fill the default value into the deque
-        double defaultTimeStamp = NOW - frameDuration_;
-        while((NOW - defaultTimeStamp) < (timeBase - TIMEBASEBOUNDARY * frameDuration_ ) ) {
-            // default value of the deque elements
-            currentTrafficShapingElement.mrtrSize =  defaultMrtrSize;
-            currentTrafficShapingElement.mstrSize =  defaultMstrSize;
-            currentTrafficShapingElement.timeStamp = defaultTimeStamp;
-
-            // now i push the value into the front of the Deque
-            currentAllocationList.ptrDequeTrafficShapingElement->push_front( currentTrafficShapingElement);
-
-            // update sum values +
-            currentAllocationList.sumMrtrSize += defaultMrtrSize;
-            currentAllocationList.sumMstrSize += defaultMstrSize;
-
-            // decrease defaultTimeStamp
-            defaultTimeStamp -= frameDuration_;
-
-        }
-        printf("Current lenght %d sumMrtrSize %d sumMstrSize %d \n", int(currentAllocationList.ptrDequeTrafficShapingElement->size()), currentAllocationList.sumMrtrSize, currentAllocationList.sumMstrSize);
-
-        // aktuelle AllocationList in der Map speichern
-        //------------neues Map element lastAllocationSize in MAP mapLastAllocationSize_ hinzufügen----------------------//
-        mapLastTrafficShapingList_.insert( pair<int,TrafficShapingList>( currentCid, currentAllocationList) );
-
-        //---Ab jetzt können wir Cid und die Strukture lastAllocationSize(mrtrSize,mstrSize und timeStamp) nutzen-aus MAP--//
-
-    } else {
-
-        // Wenn der Cid vorhanden ist,lege ich neues Allocation Element an
-        TrafficShapingElement currentTrafficShapingElement;
-        // Neue Werte speichern
-        currentTrafficShapingElement.mrtrSize = realMrtrSize;
-        currentTrafficShapingElement.mstrSize = realMstrSize;
-        currentTrafficShapingElement.timeStamp = NOW;
-
-        //-----in Deque speichern
-        mapIterator->second.ptrDequeTrafficShapingElement->push_back(currentTrafficShapingElement);
-
-        // update summe +
-        mapIterator->second.sumMrtrSize += realMrtrSize;
-        mapIterator->second.sumMstrSize += realMstrSize;
-
-
-
-        //----Überprüfen ob Element entfernt werden muss ?
-
-        TrafficShapingElement begin_deque ;
-		begin_deque = mapIterator->second.ptrDequeTrafficShapingElement->front();
-
-		double time_begin = begin_deque.timeStamp;
+		/* old code
 		// solange (time_end - time_begin) > timeBase noch wahr ist ,lösche ich letzte Element mit pop_front()
 		while(( NOW - time_begin) >= ( timeBase - TIMEBASEBOUNDARY * frameDuration_)) {
 			//------update summe - ,ich subtrahiere begin_deque von meine Summe
@@ -258,7 +115,161 @@ void TrafficShapingAccurate::updateAllocation(Connection *con,u_int32_t realMrtr
 			begin_deque   = mapIterator->second.ptrDequeTrafficShapingElement->front();
 			time_begin   = begin_deque.timeStamp;
 		}
+    	*/
 
+		// debug
+        printf("Current sumMrtrSize %d sumMstrSize %d \n", mapIterator->second.sumMrtrSize, mapIterator->second.sumMstrSize);
+
+        // maximum data volume for mrtr allocation = Time Base size - already assigned size
+        wantedMrtrSize = u_int32_t( ceil(timeBase * sfQosSet->getMinReservedTrafficRate() / 8.0) ) - mapIterator->second.sumMrtrSize;
+
+        // maximum data volume for mstr allocation = Time Base size - already assigned size
+        wantedMstrSize = u_int32_t( floor(timeBase * sfQosSet->getMaxSustainedTrafficRate() / 8.0) ) - mapIterator->second.sumMstrSize;
+
+        // fix rounding errors
+        if ( wantedMstrSize < wantedMrtrSize) {
+        	wantedMstrSize = wantedMrtrSize;
+        }
+
+        assert(wantedMrtrSize <= u_int32_t( ceil(timeBase * sfQosSet->getMinReservedTrafficRate() / 8.0 )));
+        assert(wantedMstrSize <= u_int32_t( floor(timeBase * sfQosSet->getMaxSustainedTrafficRate() / 8.0 ))) ;
+
+    }
+
+    // get Maximum Traffic Burst Size for this connection
+    u_int32_t maxTrafficBurst = sfQosSet->getMaxTrafficBurst();
+
+    //
+    if ( connection->getFragmentBytes() > 0 ) {
+    	queuePayloadSize -= ( connection->getFragmentBytes() - HDR_MAC802_16_SIZE - HDR_MAC802_16_FRAGSUB_SIZE );
+    }
+
+    // min function Mrtr according to IEEE 802.16-2009
+    wantedMrtrSize = MIN( wantedMrtrSize, maxTrafficBurst);
+    wantedMrtrSize = MIN( wantedMrtrSize, queuePayloadSize);
+
+    // min function for Mstr
+    wantedMstrSize = MIN( wantedMstrSize, maxTrafficBurst);
+    wantedMstrSize = MIN( wantedMstrSize, queuePayloadSize);
+
+    MrtrMstrPair_t mrtrMstrPair;
+    mrtrMstrPair.first = wantedMrtrSize;
+    mrtrMstrPair.second = wantedMstrSize;
+
+
+    return mrtrMstrPair;
+
+}
+
+/*
+ * Sends occurred allocation back to traffic policing
+ */
+void TrafficShapingAccurate::updateAllocation(Connection *con, u_int32_t realMrtrSize, u_int32_t realMstrSize)
+{
+    // create iterator
+    MapLastTrafficShapingList_t::iterator mapIterator;
+
+    // get cid of current connection
+    int currentCid = con->get_cid();
+
+    // debug
+    assert(realMrtrSize <= realMstrSize);
+    assert(realMstrSize <= 100000000);
+
+    // get QoS Parameter list
+    ServiceFlowQosSet* sfQosSet = con->getServiceFlow()->getQosSet();
+
+    // get Windows Size in milliseconds from QoS Parameter Set and convert it to seconds
+    double timeBase = double(sfQosSet->getTimeBase()) * 1e-3; // time base in second
+
+    // lock for an entry for the current connection
+    mapIterator = mapLastTrafficShapingList_.find(currentCid);
+
+    if ( mapIterator == mapLastTrafficShapingList_.end()) {
+    	// no entry found for this CID
+
+    	// create a new map element and fill it with default data
+
+    	TrafficShapingList currentAllocationList;
+
+        // create map entry
+        currentAllocationList.sumMrtrSize = realMrtrSize;
+        currentAllocationList.sumMstrSize = realMstrSize;
+
+        // create new deque
+        currentAllocationList.ptrDequeTrafficShapingElement = new deque<TrafficShapingElement>;
+
+        // create first element and append it on the back site
+
+        TrafficShapingElement currentTrafficShapingElement;
+
+        currentTrafficShapingElement.mrtrSize = realMrtrSize;
+        currentTrafficShapingElement.mstrSize = realMstrSize;
+        currentTrafficShapingElement.timeStamp = NOW;
+
+        // save element in the deque queue
+        currentAllocationList.ptrDequeTrafficShapingElement->push_front( currentTrafficShapingElement);
+
+
+        // Fill Deque with default values to avoid start oscillations
+
+        // calculate default mrtr size
+        u_int32_t defaultMrtrSize = u_int32_t( ceil( double(sfQosSet->getMinReservedTrafficRate()) * frameDuration_ / 8.0 ) );
+
+        // calculate default mstr size
+        u_int32_t defaultMstrSize = u_int32_t( floor( double(sfQosSet->getMaxSustainedTrafficRate()) * frameDuration_/ 8.0 ) );
+
+        // fix rounding errors
+        if ( defaultMrtrSize > defaultMstrSize) {
+        	defaultMstrSize = defaultMrtrSize;
+        }
+
+
+        // as long as the time base is not full , i will fill the default value into the deque
+        // oldest element has to be on the front position
+        double defaultTimeStamp = NOW - frameDuration_;
+        while ( defaultTimeStamp < ( NOW - ( timeBase - frameDuration_)) ) {
+            // default value of the deque elements
+            currentTrafficShapingElement.mrtrSize =  defaultMrtrSize;
+            currentTrafficShapingElement.mstrSize =  defaultMstrSize;
+            currentTrafficShapingElement.timeStamp = defaultTimeStamp;
+
+            // add element to the front position as it is older than the first element
+            currentAllocationList.ptrDequeTrafficShapingElement->push_front( currentTrafficShapingElement);
+
+            // update sum values
+            currentAllocationList.sumMrtrSize += defaultMrtrSize;
+            currentAllocationList.sumMstrSize += defaultMstrSize;
+
+            // decrease defaultTimeStamp
+            defaultTimeStamp -= frameDuration_;
+        }
+
+        // debug
+        printf("Current lenght %d sumMrtrSize %d sumMstrSize %d \n", int(currentAllocationList.ptrDequeTrafficShapingElement->size()), currentAllocationList.sumMrtrSize, currentAllocationList.sumMstrSize);
+
+
+        // add entry in the map
+        mapLastTrafficShapingList_.insert( pair<int,TrafficShapingList>( currentCid, currentAllocationList) );
+
+
+    } else {
+        // Entry for the current cid was found
+
+    	// create new element for the deque queue
+        TrafficShapingElement currentTrafficShapingElement;
+        currentTrafficShapingElement.mrtrSize = realMrtrSize;
+        currentTrafficShapingElement.mstrSize = realMstrSize;
+        currentTrafficShapingElement.timeStamp = NOW;
+
+        // add new element at the back position as it is the newest element
+        mapIterator->second.ptrDequeTrafficShapingElement->push_back(currentTrafficShapingElement);
+
+        // update sum values
+        mapIterator->second.sumMrtrSize += realMrtrSize;
+        mapIterator->second.sumMstrSize += realMstrSize;
+
+        // debug
 		printf("Current lenght %d sumMrtrSize %d sumMstrSize %d \n", int(mapIterator->second.ptrDequeTrafficShapingElement->size()), mapIterator->second.sumMrtrSize, mapIterator->second.sumMstrSize);
 		assert(mapIterator->second.sumMrtrSize <= mapIterator->second.sumMstrSize);
     }

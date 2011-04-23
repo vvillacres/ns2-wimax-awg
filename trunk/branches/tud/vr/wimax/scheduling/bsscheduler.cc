@@ -230,21 +230,21 @@ int BSScheduler::command(int argc, const char*const* argv)
                 delete dlSchedulingAlgorithm_;
                 // create new alogrithm object
                 dlSchedulingAlgorithm_ =  new SchedulingAlgoDualEqualFill();
-                printf("New Downlink Scheduling Algorithm: Dual Equal Fill");
+                printf("New Downlink Scheduling Algorithm: Dual Equal Fill \n");
             } else if (strcmp(argv[2], "dual-edf") == 0) {
                 // delete previous algorithm
                 delete dlSchedulingAlgorithm_;
                 // create new alogrithm object
                 dlSchedulingAlgorithm_ =  new SchedulingAlgoDualEdf();
-                printf("New Downlink Scheduling Algorithm: Dual Earliest Deadline First");
+                printf("New Downlink Scheduling Algorithm: Dual Earliest Deadline First \n");
             } else if (strcmp(argv[2], "proportional-fair") == 0) {
                 // delete previous algorithm
                 delete dlSchedulingAlgorithm_;
                 // create new alogrithm object
                 dlSchedulingAlgorithm_ =  new SchedulingAlgoProportionalFair();
-                printf("New Downlink Scheduling Algorithm: ProportionalFair");
+                printf("New Downlink Scheduling Algorithm: ProportionalFair \n");
             } else {
-                fprintf(stderr, "Specified Downlink Scheduling Policing Algorithm NOT found !");
+                fprintf(stderr, "Specified Downlink Scheduling Policing Algorithm NOT found ! \n");
                 return TCL_ERROR;
             }
             return TCL_OK;
@@ -1399,7 +1399,8 @@ mac802_16_dl_map_frame * BSScheduler::buildDownlinkMap( VirtualAllocation * virt
         case CONN_DATA:
 
             // remove packets which exceeded their deadline
-            maxLatency = currentCon->get_serviceflow()->getQosSet()->getMaxLatency();
+        	// QoS Parameter Max Latency in ms
+            maxLatency = double( currentCon->get_serviceflow()->getQosSet()->getMaxLatency()) / 1e3;
             if ( maxLatency > 0) {
                 double deadline = currentTime - maxLatency;
 
@@ -1410,12 +1411,12 @@ mac802_16_dl_map_frame * BSScheduler::buildDownlinkMap( VirtualAllocation * virt
                 while (( oldestPacket != NULL ) && ( HDR_CMN( oldestPacket)->timestamp() < deadline )) {
 
                     // keep this packet if it is a part of a fragment
-                    if (( currentCon->getFragmentationStatus() != FRAG_NOFRAG) && ( fragmentedPacket != NULL )) {
+                    if (( currentCon->getFragmentationStatus() != FRAG_NOFRAG) && ( fragmentedPacket == NULL )) {
                         fragmentedPacket = currentCon->dequeue();
                     } else {
                         // drop packet
+                        debug_ext("Con cid: %d deadline exceeded %f ms timestamp %f -> packet removed \n", currentCon->get_cid(), (deadline - HDR_CMN( oldestPacket)->timestamp()) * 1000, HDR_CMN( oldestPacket)->timestamp());
                         Packet::free( currentCon->dequeue());
-                        debug_ext("Con cid: %d deadline exceeded -> packet removed", currentCon->get_cid());
                     }
                     // check next packet
                     oldestPacket = currentCon->queueLookup( 0);
@@ -1427,7 +1428,7 @@ mac802_16_dl_map_frame * BSScheduler::buildDownlinkMap( VirtualAllocation * virt
             }
 
             // Traffic Policing
-            mrtrMstrPair = trafficShapingAlgorithm_->getDataSizes( currentCon);
+            mrtrMstrPair = trafficShapingAlgorithm_->getDataSizes( currentCon, u_int32_t(currentCon->queuePayloadLength()));
 
             // Add to virtual allocation if data to send
             if (( mrtrMstrPair.first > 0 ) || (mrtrMstrPair.second > 0 )) {
@@ -1440,12 +1441,15 @@ mac802_16_dl_map_frame * BSScheduler::buildDownlinkMap( VirtualAllocation * virt
 
                 // increase size of Downlink Map TODO: Might be not necessary if connection is not scheduled
                 freeDlSlots -= virtualAlloc->increaseBroadcastBurst( DL_MAP_IE_SIZE);
-            } else {
+            }
+
+         // udpate of traffic shaping now with get Data Sizese
+         /*   else {
             	if ( currentCon->queueLength() > 0) {
             		// connection has data and is not scheduled therefore updateAllocation has to be called separately
             		trafficShapingAlgorithm_->updateAllocation( currentCon, 0, 0);
             	}
-            }
+            } */
 
 
             break;
@@ -2019,6 +2023,7 @@ mac802_16_ul_map_frame * BSScheduler::buildUplinkMap( Connection *head, int tota
 
     // Resource allocation for data connections
     currentCon = head;
+    MrtrMstrPair_t mrtrMstrPair;
     while ( currentCon != NULL) {
         // get type of connection
         conType = currentCon->get_category();
@@ -2032,20 +2037,25 @@ mac802_16_ul_map_frame * BSScheduler::buildUplinkMap( Connection *head, int tota
             requestedAllocationSize = currentCon->getBw();
             if ( requestedAllocationSize > 0 ) {
                 // get mrtr und mstr for this connection
-            	u_int32_t wantedMrtrSize = u_int32_t( ceil( double(requestedAllocationSize) * ( double(currentCon->get_serviceflow()->getQosSet()->getMinReservedTrafficRate()) / currentCon->get_serviceflow()->getQosSet()->getMaxSustainedTrafficRate() )));
-                u_int32_t wantedMstrSize = requestedAllocationSize;
+
+            	mrtrMstrPair = trafficShapingAlgorithm_->getDataSizes( currentCon, requestedAllocationSize);
+
+            	//u_int32_t wantedMrtrSize = u_int32_t( ceil( double(requestedAllocationSize) * ( double(currentCon->get_serviceflow()->getQosSet()->getMinReservedTrafficRate()) / currentCon->get_serviceflow()->getQosSet()->getMaxSustainedTrafficRate() )));
+                //u_int32_t wantedMstrSize = requestedAllocationSize;
 
 
                 if ( virtualAlloc->findConnectionEntry( currentCon) ) {
                     // update wanted Sizes
-                    virtualAlloc->updateWantedMrtrMstr( wantedMrtrSize, wantedMstrSize);
+                    virtualAlloc->updateWantedMrtrMstr( mrtrMstrPair.first, mrtrMstrPair.second);
                 } else {
-                    // create new entry
-                    Ofdm_mod_rate burstProfile = mac_->getMap()->getUlSubframe()->getProfile(currentCon->getPeerNode()->getUIUC())->getEncoding();
-                    int slotCapacity = mac_->getPhy()->getSlotCapacity( burstProfile, UL_);
-                    virtualAlloc->addAllocation( currentCon, wantedMrtrSize, wantedMstrSize, slotCapacity);
-                }
+                	if ( (mrtrMstrPair.first > 0) || (mrtrMstrPair.second >0 )) {
 
+                		// create new entry
+                		Ofdm_mod_rate burstProfile = mac_->getMap()->getUlSubframe()->getProfile(currentCon->getPeerNode()->getUIUC())->getEncoding();
+                		int slotCapacity = mac_->getPhy()->getSlotCapacity( burstProfile, UL_);
+                		virtualAlloc->addAllocation( currentCon, mrtrMstrPair.first , mrtrMstrPair.second, slotCapacity);
+                	}
+                }
             }
 
             break;
@@ -2097,6 +2107,10 @@ mac802_16_ul_map_frame * BSScheduler::buildUplinkMap( Connection *head, int tota
             			requestedBandwidth = 0;
             		}
             		currentCon->setBw(requestedBandwidth);
+
+            		// update traffic shaping
+            		trafficShapingAlgorithm_->updateAllocation( currentCon, virtualAlloc->getCurrentMrtrPayload(), virtualAlloc->getCurrentMstrPayload());
+
             	}
 
 

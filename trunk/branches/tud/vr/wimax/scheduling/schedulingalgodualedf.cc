@@ -34,25 +34,47 @@ void SchedulingAlgoDualEdf::scheduleConnections( VirtualAllocation* virtualAlloc
 
     double currentTime = NOW;
 
+	// for debug
+	if ( NOW >=  11.008166  ) {
+		printf("Breakpoint reached \n");
+	}
+
+	// update totalNbOfSlots_ for statistic
+	assert( ( 0 < movingAverageFactor_) && ( 1 > movingAverageFactor_) );
+	totalNbOfSlots_ = ( totalNbOfSlots_ * ( 1 - movingAverageFactor_)) + ( freeSlots * movingAverageFactor_);
+
+	// count number of allocated slots for mrtr demands
+	int mrtrSlots = 0;
+	// count the slots used to fulfill MSTR demands
+	int mstrSlots = 0;
 
 
 	// check if any connections have data to send
 	if ( virtualAllocation->firstConnectionEntry()) {
+
+
+		if ( lastConnectionPtr_ != NULL) {
+			if ( ! virtualAllocation->findConnectionEntry( lastConnectionPtr_)) {
+				// connection not found -> get first connection
+				virtualAllocation->firstConnectionEntry();
+			}
+		}
+		Connection * firstConnectionPtr = virtualAllocation->getConnection();
 
 		// run ones through whole the map
 		do {
 			Connection * currentCon = virtualAllocation->getConnection();
 
 			if ( currentCon->getType() == CONN_DATA ) {
-				u_int32_t maxAllocationSize =  virtualAllocation->getWantedMstrSize();
+				int maxAllocationSize =  int( virtualAllocation->getWantedMstrSize());
 
 				// only for active connections
 				if ( maxAllocationSize > 0) {
 
 					ServiceFlowQosSet * qosSet = currentCon->getServiceFlow()->getQosSet();
 
-					// get Maximum Latency for this connection
-					double maxLatency =  double( qosSet->getMaxLatency());
+					// get Maximum Latency in ms for this connection
+					double maxLatency =  double( qosSet->getMaxLatency()) / 1e3;
 					if ( maxLatency > 0 ) {
 						// a higher priority will be served first
 						maxLatency -= ( 1e-6 * qosSet->getTrafficPriority());
@@ -69,25 +91,36 @@ void SchedulingAlgoDualEdf::scheduleConnections( VirtualAllocation* virtualAlloc
 					Packet * currentPacket;
 					currentPacket = currentCon->get_queue()->head();
 
+					//debug
+					// printf("Current Connection has %d packet with %d bytes \n", currentCon->get_queue()->length(), currentCon->get_queue()->byteLength());
+
 					int packetSize;
 
 
-					while (( currentPacket != 0) && ( maxAllocationSize > 0 )) {
+					while (( currentPacket != NULL) && ( maxAllocationSize > 0 )) {
 						// calculate packetSize
 						packetSize = HDR_CMN(currentPacket)->size() - fragmentedBytes;
 						// only touch packets which are admitted
-						maxAllocationSize -= packetSize;
+						// Allocation size is based on payload
+						maxAllocationSize -= packetSize - HDR_MAC802_16_SIZE;
 						// create new queue element for this packet
 						edfElement = EdfQueueElement( currentCon, ( HDR_CMN(currentPacket)->timestamp() + maxLatency) - currentTime, packetSize );
 						// save this queue element
 						edfMrtrQueue.push( edfElement);
-						// reset fragmentet bytes
+						// reset fragmented bytes
 						fragmentedBytes = 0;
+						// next packet
+						currentPacket = currentPacket->next_;
 					}
 				}
 			}
-		} while ( virtualAllocation->nextConnectionEntry() );
+			// start next time with the last connection
+			lastConnectionPtr_ = virtualAllocation->getConnection();
 
+			// handle next connection
+			virtualAllocation->nextConnectionEntry();
+			// compare if all connections have been served
+		} while ( virtualAllocation->getConnection() != firstConnectionPtr );
 
 		/*
 		 * Allocation of Slots for fulfilling the MRTR demands
@@ -101,6 +134,7 @@ void SchedulingAlgoDualEdf::scheduleConnections( VirtualAllocation* virtualAlloc
 
 			// get already assigned bytes
 			int allocBytes =  virtualAllocation->getCurrentNbOfBytes();
+			int allocPayload = virtualAllocation->getCurrentMrtrPayload();
 
 			int wantedMrtrSize;
 			int wantedMstrSize;
@@ -115,21 +149,23 @@ void SchedulingAlgoDualEdf::scheduleConnections( VirtualAllocation* virtualAlloc
 			}
 
 			// are there free mrtr size
-			if (( wantedMrtrSize - allocBytes) > 0 ) {
+			if (( wantedMrtrSize - allocPayload) > 0 ) {
 
 				// get slot capacity
 				int slotCapacity = virtualAllocation->getSlotCapacity();
 
 				// size of the current packet
 				int newAllocBytes = edfMrtrQueue.top().getSize();
+				int newAllocPayload = newAllocBytes - HDR_MAC802_16_SIZE;
 
 				// reduce to maximum amount of addition allocations
-				if ( newAllocBytes > (wantedMrtrSize - allocBytes)) {
-					newAllocBytes = wantedMrtrSize - allocBytes;
+				if ( newAllocPayload > (wantedMrtrSize - allocPayload)) {
+					newAllocPayload = wantedMrtrSize - allocPayload;
+					newAllocBytes = newAllocPayload + HDR_MAC802_16_SIZE;
 				}
 
 				// number of additional slots for this connection
-				int newSlots = int( ceil( double(newAllocBytes + allocBytes) / slotCapacity ));
+				int newSlots = int( ceil( double(newAllocBytes + allocBytes) / slotCapacity )) - virtualAllocation->getCurrentNbOfSlots();
 
 
 				if ( freeSlots < newSlots) {
@@ -137,11 +173,15 @@ void SchedulingAlgoDualEdf::scheduleConnections( VirtualAllocation* virtualAlloc
 					newSlots = freeSlots;
 					// recalculate new allocations
 					newAllocBytes = (newSlots + virtualAllocation->getCurrentNbOfSlots()) * slotCapacity - allocBytes;
+					newAllocPayload = newAllocBytes - HDR_MAC802_16_SIZE;
 				}
 				// update free slots
 				freeSlots -= newSlots;
 
-				if (( newAllocBytes > (wantedMrtrSize - allocBytes)) && ( wantedMstrSize > ( newAllocBytes + allocBytes) )){
+				// update mrtrSlots
+				mrtrSlots += newSlots;
+
+				if (( ( edfMrtrQueue.top().getSize() - HDR_MAC802_16_SIZE) > (wantedMrtrSize - allocPayload)) && ( wantedMstrSize > wantedMrtrSize) ){
 					// has connection Mstr addmitments
 					// create new element for the MSTR Queue
 					EdfQueueElement newQueueElement( edfMrtrQueue.top().getConnection(), edfMrtrQueue.top().getDeadline(),
@@ -149,17 +189,18 @@ void SchedulingAlgoDualEdf::scheduleConnections( VirtualAllocation* virtualAlloc
 					edfMstrQueue.push( newQueueElement);
 				}
 
-				// update virtual allocation container
+				// debug
+				// printf("Packet from Connection %d with %d Bytes and %f ms deadline served using %d new slots \n", edfMrtrQueue.top().getConnection()->get_cid(), edfMrtrQueue.top().getSize(), edfMrtrQueue.top().getDeadline() * 1e3, newSlots);
 
-				// TODO: Payload allocation
-				virtualAllocation->updateAllocation( newSlots + virtualAllocation->getCurrentNbOfSlots(), newAllocBytes + virtualAllocation->getCurrentNbOfBytes(), newAllocBytes + virtualAllocation->getCurrentNbOfBytes(), 0);
+				// update virtual allocation container
+				virtualAllocation->updateAllocation( newSlots + virtualAllocation->getCurrentNbOfSlots(), newAllocBytes + allocBytes, newAllocPayload + allocPayload, newAllocPayload + allocPayload);
 
 				// remove packet from queue
 				edfMrtrQueue.pop();
 
 			} else {
 				// no free mrtr size
-				if ( ( wantedMstrSize - allocBytes) > 0) {
+				if ( ( wantedMstrSize - allocPayload) > 0) {
 					// add packet to mstr queue
 					edfMstrQueue.push( edfMrtrQueue.top());
 				}
@@ -177,6 +218,7 @@ void SchedulingAlgoDualEdf::scheduleConnections( VirtualAllocation* virtualAlloc
 
 			// get already assigned bytes
 			int allocBytes =  virtualAllocation->getCurrentNbOfBytes();
+			int allocPayload = virtualAllocation->getCurrentMstrPayload();
 
 			int wantedMstrSize;
 
@@ -189,21 +231,23 @@ void SchedulingAlgoDualEdf::scheduleConnections( VirtualAllocation* virtualAlloc
 			}
 
 			// are there free mrtr size
-			if (( wantedMstrSize - allocBytes) > 0 ) {
+			if (( wantedMstrSize - allocPayload) > 0 ) {
 
 				// get slot capacity
 				int slotCapacity = virtualAllocation->getSlotCapacity();
 
 				// size of the current packet
-				int newAllocBytes = edfMrtrQueue.top().getSize();
+				int newAllocBytes = edfMstrQueue.top().getSize();
+				int newAllocPayload = newAllocBytes - HDR_MAC802_16_SIZE;
 
 				// reduce to maximum amount of addition allocations
-				if ( newAllocBytes > (wantedMstrSize - allocBytes)) {
-					newAllocBytes = wantedMstrSize - allocBytes;
+				if ( newAllocPayload > (wantedMstrSize - allocPayload)) {
+					newAllocPayload = wantedMstrSize - allocPayload;
+					newAllocBytes = newAllocPayload + HDR_MAC802_16_SIZE;
 				}
 
 				// number of additional slots for this connection
-				int newSlots = int( ceil( double(newAllocBytes + allocBytes) / slotCapacity ));
+				int newSlots = int( ceil( double(newAllocBytes + allocBytes) / slotCapacity )) - virtualAllocation->getCurrentNbOfSlots();
 
 
 				if ( freeSlots < newSlots) {
@@ -211,13 +255,17 @@ void SchedulingAlgoDualEdf::scheduleConnections( VirtualAllocation* virtualAlloc
 						newSlots = freeSlots;
 						// recalculate new allocations
 						newAllocBytes = (newSlots + virtualAllocation->getCurrentNbOfSlots()) * slotCapacity - allocBytes;
+						newAllocPayload = newAllocBytes - HDR_MAC802_16_SIZE;
 				}
 
 				// update free slots
 				freeSlots -= newSlots;
 
+				// update mstrSlots
+				mstrSlots += newSlots;
+
 				// update virtual allocation container
-				virtualAllocation->updateAllocation( newSlots + virtualAllocation->getCurrentNbOfSlots(), newAllocBytes + virtualAllocation->getCurrentNbOfBytes(), virtualAllocation->getCurrentMrtrPayload(), newAllocBytes + virtualAllocation->getCurrentNbOfBytes());
+				virtualAllocation->updateAllocation( newSlots + virtualAllocation->getCurrentNbOfSlots(), newAllocBytes + allocBytes, virtualAllocation->getCurrentMrtrPayload(), newAllocBytes + allocPayload);
 
 
 			}
@@ -228,5 +276,10 @@ void SchedulingAlgoDualEdf::scheduleConnections( VirtualAllocation* virtualAlloc
 		} // end while
 
 	}
+
+	// update usedMrtrSlots_ for statistic
+	usedMrtrSlots_ = ( usedMrtrSlots_ * ( 1 - movingAverageFactor_)) + ( mrtrSlots * movingAverageFactor_);
+	// update usedMstrSlots_ for statistic
+	usedMstrSlots_ = ( usedMstrSlots_ * ( 1 - movingAverageFactor_)) + ( mstrSlots * movingAverageFactor_);
 
 }

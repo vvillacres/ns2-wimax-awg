@@ -193,6 +193,10 @@ void SchedulingAlgoDualEqualFill::scheduleConnections( VirtualAllocation* virtua
 				allocatedSlots = int( ceil( double(allocatedBytes) / virtualAllocation->getSlotCapacity()) );
 
 				int newSlots = ( allocatedSlots - virtualAllocation->getCurrentNbOfSlots());
+
+				// debug
+				printf(" %d new Mrtr Slots for Connection CID %d \n", newSlots, virtualAllocation->getConnection()->get_cid() );
+
 				// update freeSlots
 				freeSlots -= newSlots;
 				// update mrtrSlots
@@ -350,6 +354,10 @@ void SchedulingAlgoDualEqualFill::scheduleConnections( VirtualAllocation* virtua
 
 					// calculate new assigned slots
 					int newSlots = ( allocatedSlots - virtualAllocation->getCurrentNbOfSlots());
+
+					// debug
+					printf(" %d new Mstr Slots for Connection CID %d \n", newSlots, virtualAllocation->getConnection()->get_cid() );
+
 					// update freeSlots
 					freeSlots -= newSlots;
 					// update mstrSlots
@@ -377,9 +385,6 @@ void SchedulingAlgoDualEqualFill::scheduleConnections( VirtualAllocation* virtua
 
 	} // END: check if any connections have data to send
 
-
-	// sanity check
-	assert( ( 0 < movingAverageFactor_) && ( 1 > movingAverageFactor_) );
 
 	// update usedMrtrSlots_ for statistic
 	usedMrtrSlots_ = ( usedMrtrSlots_ * ( 1 - movingAverageFactor_)) + ( mrtrSlots * movingAverageFactor_);

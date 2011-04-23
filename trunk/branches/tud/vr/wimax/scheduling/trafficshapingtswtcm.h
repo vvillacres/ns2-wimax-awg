@@ -40,7 +40,7 @@ public:
      * Returns wantedMstrSize and wantedMrtrSize as guideline for the scheduling algorithm
      * through call by reference
      */
-    virtual MrtrMstrPair_t getDataSizes(Connection *connection);
+    virtual MrtrMstrPair_t getDataSizes(Connection * connection, u_int32_t queuePayloadSize);
 
     /*
      * Occurred allocation is send back to the traffic policing algorithm to use this
