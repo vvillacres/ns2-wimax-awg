@@ -43,7 +43,7 @@ public:
     /*
      * Calculate predicted mrtr and msrt sizes
      */
-    virtual MrtrMstrPair_t getDataSizes(Connection* connection);
+    virtual MrtrMstrPair_t getDataSizes(Connection * connection, u_int32_t queuePaylaodSize);
 
     /*
      * Sends occurred allocation back to traffic policing

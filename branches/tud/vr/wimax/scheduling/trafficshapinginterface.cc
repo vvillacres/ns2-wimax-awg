@@ -22,7 +22,7 @@ TrafficShapingInterface::~TrafficShapingInterface()
     // Nothing to do
 }
 
-MrtrMstrPair_t TrafficShapingInterface::getDataSizes(Connection* connection)
+MrtrMstrPair_t TrafficShapingInterface::getDataSizes(Connection* connection, u_int32_t queuePayloadSize)
 {
 	printf("ERROR !!!!!!!!! \n");
 	// overwritten by subclass
