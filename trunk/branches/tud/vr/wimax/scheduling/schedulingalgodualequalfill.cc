@@ -27,6 +27,10 @@ void SchedulingAlgoDualEqualFill::scheduleConnections( VirtualAllocation* virtua
 	 * would break the algorithm independent interface.
 	 */
 
+	if ( NOW > 46.0187) {
+		printf("debug \n");
+	}
+
 	// update totalNbOfSlots_ for statistic
 	assert( ( 0 < movingAverageFactor_) && ( 1 > movingAverageFactor_) );
 	totalNbOfSlots_ = ( totalNbOfSlots_ * ( 1 - movingAverageFactor_)) + ( freeSlots * movingAverageFactor_);
@@ -163,7 +167,8 @@ void SchedulingAlgoDualEqualFill::scheduleConnections( VirtualAllocation* virtua
 					allocatedBytes = maximumBytes;
 					// is demand fulfilled ?
 					if ( allocatedPayload >= wantedMrtrSize) {
-						// reduce feadback for traffic policing -> will be counted as mstr allocation
+						// reduce payload
+						allocatedBytes -= ( (allocatedPayload - wantedMrtrSize) - HDR_MAC802_16_FRAGSUB_SIZE);
 						allocatedPayload = wantedMrtrSize;
 						// reduce number of connection with mrtr demand
 						nbOfMrtrConnections--;
@@ -181,10 +186,8 @@ void SchedulingAlgoDualEqualFill::scheduleConnections( VirtualAllocation* virtua
 						// consider fragmentation due to traffic policing
 						if ( allocatedPayload > wantedMrtrSize) {
 							// reduce payload
-							allocatedBytes -= ( (allocatedPayload - wantedMrtrSize) - HDR_MAC802_16_FRAGSUB_SIZE );
-							allocatedPayload -= ( allocatedPayload - wantedMrtrSize );
-							// debug
-							assert( allocatedPayload <= wantedMrtrSize);
+							allocatedBytes -= ( (allocatedPayload - wantedMrtrSize) - HDR_MAC802_16_FRAGSUB_SIZE);
+							allocatedPayload = wantedMrtrSize;
 						}
 					}
 				}
@@ -328,7 +331,8 @@ void SchedulingAlgoDualEqualFill::scheduleConnections( VirtualAllocation* virtua
 						allocatedBytes = maximumBytes;
 						// has demand fulfilled
 						if ( allocatedPayload >= wantedMstrSize) {
-							// reduce feadback to traffic shaping
+							// reduce payload
+							allocatedBytes -= ( (allocatedPayload - wantedMstrSize) - HDR_MAC802_16_FRAGSUB_SIZE);
 							allocatedPayload = wantedMstrSize;
 							// reduce number of connection with mrtr demand
 							nbOfMstrConnections--;
@@ -346,9 +350,7 @@ void SchedulingAlgoDualEqualFill::scheduleConnections( VirtualAllocation* virtua
 							if ( allocatedPayload > wantedMstrSize) {
 								// reduce payload
 								allocatedBytes -= ( (allocatedPayload - wantedMstrSize) - HDR_MAC802_16_FRAGSUB_SIZE);
-								allocatedPayload -= ( allocatedPayload - wantedMstrSize  );
-								// debug
-								assert( allocatedPayload <= wantedMstrSize );
+								allocatedPayload = wantedMstrSize;
 							}
 						}
 					}
