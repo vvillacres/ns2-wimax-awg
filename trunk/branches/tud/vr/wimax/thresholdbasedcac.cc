@@ -55,7 +55,7 @@ bool ThresholdBasedCAC::checkAdmission( ServiceFlow * serviceFlow, PeerNode * pe
    	    printf("Current Slot Capacity %d for Peer %d \n", slotCapacity, peer->getAddr());
 
    	    // Number of Slots for request
-   	    double ServiceRequestSlots = ((serviceFlowQosSet->getMinReservedTrafficRate()) / 8) / slotCapacity * mac_->getFrameDuration();
+   	    double ServiceRequestSlots = ( serviceFlowQosSet->getMinReservedTrafficRate() * mac_->getFrameDuration() / 8.0) / double( slotCapacity);
 
    	    // Number of Slots for request in percentage of total number of Slots
    	    double ServiceRequestPercent = ( ServiceRequestSlots / uplinkStat.totalNbOfSlots );
@@ -131,7 +131,8 @@ bool ThresholdBasedCAC::checkAdmission( ServiceFlow * serviceFlow, PeerNode * pe
    	    printf("Current Slot Capacity %d for Peer %d \n", slotCapacity, peer->getAddr());
 
    	    // Number of Slots for request
-   	    double ServiceRequestSlots = ((serviceFlowQosSet->getMinReservedTrafficRate()) / 8) / slotCapacity * mac_->getFrameDuration();
+   	    // double ServiceRequestSlots = ((serviceFlowQosSet->getMinReservedTrafficRate() + 0.1 * serviceFlowQosSet->getMaxSustainedTrafficRate()) / 8) / slotCapacity * mac_->getFrameDuration();
+   	    double ServiceRequestSlots = ( serviceFlowQosSet->getMinReservedTrafficRate() * mac_->getFrameDuration() / 8.0) / double( slotCapacity);
 
    	    // Number of Slots for request in percentage of total number of Slots
    	    double ServiceRequestPercent = ( ServiceRequestSlots / downlinkStat.totalNbOfSlots );
