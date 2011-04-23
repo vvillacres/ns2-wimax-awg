@@ -1031,7 +1031,10 @@ int WimaxScheduler::transfer_packets1 (Connection *c, Burst *b, int b_data)
         //    debug10 ("B_data3 :%d, ch->size :%d\n", b_data, ch->size());
 
         b->enqueue(p);      //enqueue into burst
-        Ofdm_mod_rate dlul_map_mod;
+
+        /* Several MAC PDU may share one burst \\ vr@tud 04-09
+         * On the MAC Layer Bytes and not Slots are the smallest allocation units */
+       /* Ofdm_mod_rate dlul_map_mod;
 
         if (mac_->getNodeType()==STA_BS) {
             dlul_map_mod = mac_->getMap()->getDlSubframe()->getProfile (b->getIUC())->getEncoding();
@@ -1039,9 +1042,14 @@ int WimaxScheduler::transfer_packets1 (Connection *c, Burst *b, int b_data)
             dlul_map_mod = mac_->getMap()->getUlSubframe()->getProfile (b->getIUC())->getEncoding();
         }
         b_data += wimaxHdr->phy_info.num_subchannels*phy->getSlotCapacity(dlul_map_mod,UL_);
+		*/
 
-        //    b_data += ch->size(); //increment amount of data enqueued
+        b_data += ch->size(); //increment amount of data enqueued
         debug2 ("In station %d packet enqueued b_data = %d \n", mac_->getNodeType(), b_data);
+
+
+
+
 
         if (!pkt_transfered && mac_->getNodeType()!=STA_BS) { //if we transfert at least one packet, remove bw request
             pkt_transfered = true;
