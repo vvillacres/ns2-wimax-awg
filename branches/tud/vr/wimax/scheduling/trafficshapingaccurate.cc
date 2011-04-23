@@ -88,46 +88,6 @@ MrtrMstrPair_t TrafficShapingAccurate::getDataSizes(Connection *connection, u_in
 		assert( mapIterator->second.sumMrtrSize < 100000000);
 		assert( mapIterator->second.sumMstrSize < 100000000);
 
-
-  /*
-        frontElement = mapIterator->second.ptrDequeTrafficShapingElement->front();
-
-		double frontTimeStamp = frontElement.timeStamp;
-		// remove all element, which are older than NOW - ( Timebase - 1.5 * frameDuration)
-		while ( frontTimeStamp < ( NOW - ( timeBase - TIMEBASEBOUNDARY * frameDuration_)) ) {
-			// update sum counters
-			mapIterator->second.sumMrtrSize -= frontElement.mrtrSize;
-			mapIterator->second.sumMstrSize -= frontElement.mstrSize;
-
-			// debug check for negative overflows
-			assert( mapIterator->second.sumMrtrSize < 100000000);
-			assert( mapIterator->second.sumMstrSize < 100000000);
-
-			// remove oldest element
-			mapIterator->second.ptrDequeTrafficShapingElement->pop_front();
-
-			// load new front element
-			frontElement = mapIterator->second.ptrDequeTrafficShapingElement->front();
-			// get new time stamp
-			frontTimeStamp = frontElement.timeStamp;
-		}
-*/
-		/* old code
-		// solange (time_end - time_begin) > timeBase noch wahr ist ,lösche ich letzte Element mit pop_front()
-		while(( NOW - time_begin) >= ( timeBase - TIMEBASEBOUNDARY * frameDuration_)) {
-			//------update summe - ,ich subtrahiere begin_deque von meine Summe
-			mapIterator->second.sumMrtrSize -= begin_deque.mrtrSize;
-			mapIterator->second.sumMstrSize -= begin_deque.mstrSize;
-
-			//------und das begin element löschen
-			mapIterator->second.ptrDequeTrafficShapingElement->pop_front();
-
-			//------neues begin laden
-			begin_deque   = mapIterator->second.ptrDequeTrafficShapingElement->front();
-			time_begin   = begin_deque.timeStamp;
-		}
-    	*/
-
 		// debug
         printf("Current sumMrtrSize %d sumMstrSize %d \n", mapIterator->second.sumMrtrSize, mapIterator->second.sumMstrSize);
 
@@ -239,7 +199,7 @@ void TrafficShapingAccurate::updateAllocation(Connection *con, u_int32_t realMrt
         // as long as the time base is not full , i will fill the default value into the deque
         // oldest element has to be on the front position
         double defaultTimeStamp = NOW - frameDuration_;
-        while ( defaultTimeStamp < ( NOW - ( timeBase - frameDuration_)) ) {
+        while ( defaultTimeStamp >= ( NOW - ( timeBase - frameDuration_)) ) {
             // default value of the deque elements
             currentTrafficShapingElement.mrtrSize =  defaultMrtrSize;
             currentTrafficShapingElement.mstrSize =  defaultMstrSize;
