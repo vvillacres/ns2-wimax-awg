@@ -168,7 +168,9 @@ void SchedulingAlgoDualEqualFill::scheduleConnections( VirtualAllocation* virtua
 					// is demand fulfilled ?
 					if ( allocatedPayload >= wantedMrtrSize) {
 						// reduce payload
-						allocatedBytes -= ( (allocatedPayload - wantedMrtrSize) - HDR_MAC802_16_FRAGSUB_SIZE);
+						if ( (allocatedPayload - wantedMrtrSize) > HDR_MAC802_16_FRAGSUB_SIZE) {
+							allocatedBytes -= ( (allocatedPayload - wantedMrtrSize) - HDR_MAC802_16_FRAGSUB_SIZE);
+						}
 						allocatedPayload = wantedMrtrSize;
 						// reduce number of connection with mrtr demand
 						nbOfMrtrConnections--;
@@ -186,7 +188,9 @@ void SchedulingAlgoDualEqualFill::scheduleConnections( VirtualAllocation* virtua
 						// consider fragmentation due to traffic policing
 						if ( allocatedPayload > wantedMrtrSize) {
 							// reduce payload
-							allocatedBytes -= ( (allocatedPayload - wantedMrtrSize) - HDR_MAC802_16_FRAGSUB_SIZE);
+							if ( (allocatedPayload - wantedMrtrSize) > HDR_MAC802_16_FRAGSUB_SIZE) {
+								allocatedBytes -= ( (allocatedPayload - wantedMrtrSize) - HDR_MAC802_16_FRAGSUB_SIZE);
+							}
 							allocatedPayload = wantedMrtrSize;
 						}
 					}
@@ -332,7 +336,9 @@ void SchedulingAlgoDualEqualFill::scheduleConnections( VirtualAllocation* virtua
 						// has demand fulfilled
 						if ( allocatedPayload >= wantedMstrSize) {
 							// reduce payload
-							allocatedBytes -= ( (allocatedPayload - wantedMstrSize) - HDR_MAC802_16_FRAGSUB_SIZE);
+							if ( (allocatedPayload - wantedMstrSize) > HDR_MAC802_16_FRAGSUB_SIZE) {
+								allocatedBytes -= ( (allocatedPayload - wantedMstrSize) - HDR_MAC802_16_FRAGSUB_SIZE);
+							}
 							allocatedPayload = wantedMstrSize;
 							// reduce number of connection with mrtr demand
 							nbOfMstrConnections--;
@@ -349,7 +355,9 @@ void SchedulingAlgoDualEqualFill::scheduleConnections( VirtualAllocation* virtua
 							// consider fragmentation due to traffic policing
 							if ( allocatedPayload > wantedMstrSize) {
 								// reduce payload
-								allocatedBytes -= ( (allocatedPayload - wantedMstrSize) - HDR_MAC802_16_FRAGSUB_SIZE);
+								if ( (allocatedPayload - wantedMstrSize) > HDR_MAC802_16_FRAGSUB_SIZE) {
+									allocatedBytes -= ( (allocatedPayload - wantedMstrSize) - HDR_MAC802_16_FRAGSUB_SIZE);
+								}
 								allocatedPayload = wantedMstrSize;
 							}
 						}
