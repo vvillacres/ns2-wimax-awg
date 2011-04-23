@@ -143,20 +143,28 @@ void SchedulingAlgoProportionalFair::scheduleConnections( VirtualAllocation* vir
 					allocatedBytes = maximumBytes;
 					// is demand fulfilled ?
 					if ( allocatedPayload >= wantedMstrSize) {
+						// reduce feadback to traffic shaping
+						allocatedPayload = wantedMstrSize;
 						// reduce number of connection with mrtr demand
 						nbOfMstrConnections--;
+						// avoids, that connection is called again
+						virtualAllocation->updateWantedMrtrMstr( 0, 0);
 					}
 				} else {
 					// is demand fulfilled due to allocated bytes or all packets
 					if (( allocatedPayload >= wantedMstrSize) || ( currentPacket == NULL)) {
 						// reduce number of connection with mrtr demand
 						nbOfMstrConnections--;
+						// avoids, that connection is called again
+						virtualAllocation->updateWantedMrtrMstr( 0, 0);
 
 						// consider fragmentation due to traffic policing
 						if ( allocatedPayload > wantedMstrSize) {
 							// reduce payload
 							allocatedBytes -= ( (allocatedPayload - wantedMstrSize) - HDR_MAC802_16_FRAGSUB_SIZE );
 							allocatedPayload -= ( allocatedPayload - wantedMstrSize );
+							// debug
+							assert( allocatedPayload <= wantedMstrSize );
 						}
 					}
 				}
