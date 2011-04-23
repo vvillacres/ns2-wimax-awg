@@ -27,11 +27,6 @@ void SchedulingAlgoDualEqualFill::scheduleConnections( VirtualAllocation* virtua
 	 * would break the algorithm independent interface.
 	 */
 
-	// for debug
-	if ( NOW >=  11.008166  ) {
-		printf("Breakpoint reached \n");
-	}
-
 	// update totalNbOfSlots_ for statistic
 	assert( ( 0 < movingAverageFactor_) && ( 1 > movingAverageFactor_) );
 	totalNbOfSlots_ = ( totalNbOfSlots_ * ( 1 - movingAverageFactor_)) + ( freeSlots * movingAverageFactor_);
@@ -168,6 +163,8 @@ void SchedulingAlgoDualEqualFill::scheduleConnections( VirtualAllocation* virtua
 					allocatedBytes = maximumBytes;
 					// is demand fulfilled ?
 					if ( allocatedPayload >= wantedMrtrSize) {
+						// reduce feadback for traffic policing -> will be counted as mstr allocation
+						allocatedPayload = wantedMrtrSize;
 						// reduce number of connection with mrtr demand
 						nbOfMrtrConnections--;
 						// avoids, that connection is called again
@@ -186,6 +183,8 @@ void SchedulingAlgoDualEqualFill::scheduleConnections( VirtualAllocation* virtua
 							// reduce payload
 							allocatedBytes -= ( (allocatedPayload - wantedMrtrSize) - HDR_MAC802_16_FRAGSUB_SIZE );
 							allocatedPayload -= ( allocatedPayload - wantedMrtrSize );
+							// debug
+							assert( allocatedPayload <= wantedMrtrSize);
 						}
 					}
 				}
@@ -329,6 +328,8 @@ void SchedulingAlgoDualEqualFill::scheduleConnections( VirtualAllocation* virtua
 						allocatedBytes = maximumBytes;
 						// has demand fulfilled
 						if ( allocatedPayload >= wantedMstrSize) {
+							// reduce feadback to traffic shaping
+							allocatedPayload = wantedMstrSize;
 							// reduce number of connection with mrtr demand
 							nbOfMstrConnections--;
 							// avoids, that connection is called again
@@ -346,6 +347,8 @@ void SchedulingAlgoDualEqualFill::scheduleConnections( VirtualAllocation* virtua
 								// reduce payload
 								allocatedBytes -= ( (allocatedPayload - wantedMstrSize) - HDR_MAC802_16_FRAGSUB_SIZE);
 								allocatedPayload -= ( allocatedPayload - wantedMstrSize  );
+								// debug
+								assert( allocatedPayload <= wantedMstrSize );
 							}
 						}
 					}
