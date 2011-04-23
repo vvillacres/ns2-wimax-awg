@@ -14,7 +14,7 @@
 /*
  * Timebaseboundary * FrameDuration defines the time when an deque elements is removed
  */
-#define TIMEBASEBOUNDARY 1.5
+#define TIMEBASEBOUNDARY 0.51
 
 TrafficShapingAccurate::TrafficShapingAccurate(double frameDuration) : TrafficShapingInterface( frameDuration)
 {
@@ -23,13 +23,10 @@ TrafficShapingAccurate::TrafficShapingAccurate(double frameDuration) : TrafficSh
 
 TrafficShapingAccurate::~TrafficShapingAccurate()
 {
-    //deque mrtr und mstr delete ausführen
+    // delete all deque elements
     TrafficShapingListIt_t mapIterator;
-    // ich laufe von Anfang bis Ende des MAP
     for(mapIterator=mapLastTrafficShapingList_.begin(); mapIterator!=mapLastTrafficShapingList_.end(); mapIterator++) {
-        // lösche komplete deque object
         delete mapIterator->second.ptrDequeTrafficShapingElement;
-
     }
 }
 
@@ -76,10 +73,24 @@ MrtrMstrPair_t TrafficShapingAccurate::getDataSizes(Connection *connection, u_in
         //  get Windows Size in milliseconds from QoS Parameter Set and convert it to seconds
         double timeBase = double(sfQosSet->getTimeBase()) * 1e-3;
 
-        // Check if elements have to be removed
+		// remove all element, which are older than NOW - ( Timebase - 1.5 * frameDuration)
+        while ( ( ! mapIterator->second.ptrDequeTrafficShapingElement->empty()) &&
+        		( mapIterator->second.ptrDequeTrafficShapingElement->front().timeStamp < ( NOW - ( timeBase - TIMEBASEBOUNDARY * frameDuration_)) )) {
+			// update sum counters
+			mapIterator->second.sumMrtrSize -= mapIterator->second.ptrDequeTrafficShapingElement->front().mrtrSize;
+			mapIterator->second.sumMstrSize -= mapIterator->second.ptrDequeTrafficShapingElement->front().mstrSize;
 
-        TrafficShapingElement frontElement ;
-		frontElement = mapIterator->second.ptrDequeTrafficShapingElement->front();
+			// remove oldest element
+			mapIterator->second.ptrDequeTrafficShapingElement->pop_front();
+        }
+
+		// debug check for negative overflows
+		assert( mapIterator->second.sumMrtrSize < 100000000);
+		assert( mapIterator->second.sumMstrSize < 100000000);
+
+
+  /*
+        frontElement = mapIterator->second.ptrDequeTrafficShapingElement->front();
 
 		double frontTimeStamp = frontElement.timeStamp;
 		// remove all element, which are older than NOW - ( Timebase - 1.5 * frameDuration)
@@ -100,7 +111,7 @@ MrtrMstrPair_t TrafficShapingAccurate::getDataSizes(Connection *connection, u_in
 			// get new time stamp
 			frontTimeStamp = frontElement.timeStamp;
 		}
-
+*/
 		/* old code
 		// solange (time_end - time_begin) > timeBase noch wahr ist ,lösche ich letzte Element mit pop_front()
 		while(( NOW - time_begin) >= ( timeBase - TIMEBASEBOUNDARY * frameDuration_)) {
