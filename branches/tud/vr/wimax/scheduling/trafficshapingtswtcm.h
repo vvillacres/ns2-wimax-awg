@@ -24,8 +24,7 @@ struct LastAllocationSize {
     u_int32_t lastMstr;
     double   timeStamp;
 };
-// deque < TrafficRate > dequeTrafficRate;
-//----Abbildungen von cid auf Prediction Data heiß  LastAllocationSize(mrtrSize; mstrSize;timeStamp;)------------
+
 
 typedef map< int, LastAllocationSize > MapLastAllocationSize_t;
 typedef MapLastAllocationSize_t::iterator LastAllocationSizeIt_t;
