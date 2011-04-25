@@ -32,6 +32,7 @@ class Mac802_16BS;
 class WimaxCtrlAgent;
 class TrafficPolicingInterface;
 class SchedulingAlgoInterface;
+class DlBurstMappingInterface;
 class VirtualAllocation;
 
 /**
@@ -83,6 +84,11 @@ public:
      */
     virtual frameUsageStat_t getUplinkStatistic();
 
+    /* returns the DIUC profile associated with a current modulation and coding scheme */
+    diuc_t getDIUCProfile(Ofdm_mod_rate rate);
+
+    uiuc_t getUIUCProfile(Ofdm_mod_rate rate);
+
 
 protected:
 
@@ -124,10 +130,6 @@ protected:
      */
     void addDlBurst (int burstid, int cid, int iuc, int ofdmsymboloffset, int numofdmsymbols, int subchanneloffset, int numsubchannels);
 
-    /* returns the DIUC profile associated with a current modulation and coding scheme */
-    diuc_t getDIUCProfile(Ofdm_mod_rate rate);
-
-    uiuc_t getUIUCProfile(Ofdm_mod_rate rate);
 
 
     mac802_16_dl_map_frame * buildDownlinkMap( VirtualAllocation * virtualAlloc, Connection *head, int totalDlSubchannels, int totalDlSymbols, int dlSymbolOffset, int dlSubchannelOffset, int freeDlSlots);
@@ -197,9 +199,14 @@ private:
     SchedulingAlgoInterface* dlSchedulingAlgorithm_;
 
     /**
-     * pinter to the current scheduling algorithm for the uplink direction
+     * pointer to the current scheduling algorithm for the uplink direction
      */
     SchedulingAlgoInterface* ulSchedulingAlgorithm_;
+
+    /**
+     * pointer to the current burst mapping for the downlink direction
+     */
+    DlBurstMappingInterface* dlBurstMappingAlgorithm_;
 
 
 
