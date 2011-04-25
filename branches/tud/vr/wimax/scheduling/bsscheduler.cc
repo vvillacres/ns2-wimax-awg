@@ -43,6 +43,9 @@
 // scheduling algorithm upling
 #include "schedulingproportionalfairul.h"
 
+// downlink burst mapping algorithm
+#include "dlburstmappingsimple.h"
+
 
 // Ranging Region (cp. Table 376 IEEE 802.16-2009)
 // 0b00: Initial ranging/Handover Ranging over two symbols
@@ -137,6 +140,9 @@ BSScheduler::BSScheduler () : WimaxScheduler ()
     // Scheduling Alorithm for Uplink Direction
     ulSchedulingAlgorithm_ = NULL;
 
+    // Burst Mapping Algorithm for Downlink Direction
+    dlBurstMappingAlgorithm_ = NULL;
+
 }
 
 /*
@@ -148,6 +154,7 @@ BSScheduler::~BSScheduler ()
     delete trafficShapingAlgorithm_;
     delete dlSchedulingAlgorithm_;
     delete ulSchedulingAlgorithm_;
+    delete dlBurstMappingAlgorithm_;
 }
 
 /**
@@ -300,6 +307,11 @@ void BSScheduler::init ()
     // Scheduling Alorithm for Uplink Direction
     if ( !ulSchedulingAlgorithm_) {
     	ulSchedulingAlgorithm_ = new SchedulingProportionalFairUl();
+    }
+
+    // Downlink Burst Mapping Algorithm
+    if ( !dlBurstMappingAlgorithm_) {
+    	dlBurstMappingAlgorithm_ = new DlBurstMappingSimple( mac_, this);
     }
 
     printf("Algorithm Objects created \n");

@@ -162,7 +162,9 @@ void SchedulingAlgoProportionalFair::scheduleConnections( VirtualAllocation* vir
 						// consider fragmentation due to traffic policing
 						if ( allocatedPayload > wantedMstrSize) {
 							// reduce payload
-							allocatedBytes -= ( (allocatedPayload - wantedMstrSize) - HDR_MAC802_16_FRAGSUB_SIZE);
+							if ( (allocatedPayload - wantedMstrSize) > HDR_MAC802_16_FRAGSUB_SIZE) {
+								allocatedBytes -= ( (allocatedPayload - wantedMstrSize) - HDR_MAC802_16_FRAGSUB_SIZE);
+							}
 							allocatedPayload = wantedMstrSize;
 						}
 					}
