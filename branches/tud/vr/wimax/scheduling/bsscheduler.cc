@@ -1272,7 +1272,7 @@ void BSScheduler::addDlBurst (int burstid, int cid, int iuc, int ofdmsymboloffse
 }
 
 
-mac802_16_dl_map_frame * BSScheduler::buildDownlinkMap( VirtualAllocation * virtualAlloc, Connection *head, int totalDlSubchannels, int totalUlSymbols, int dlSymbolOffset, int dlSubchannelOffset, int freeDlSlots)
+mac802_16_dl_map_frame * BSScheduler::buildDownlinkMap( VirtualAllocation * virtualAlloc, Connection *head, int totalDlSubchannels, int totalDlSymbols, int dlSymbolOffset, int dlSubchannelOffset, int freeDlSlots)
 {
     // 1. Traffic Policing Downlink Data Connections and Allocation for management connections
     // 2. Scheduling for Data Connection
@@ -1476,7 +1476,7 @@ mac802_16_dl_map_frame * BSScheduler::buildDownlinkMap( VirtualAllocation * virt
     // Call Scheduling Algorithm to allocate data connections
     dlSchedulingAlgorithm_->scheduleConnections( virtualAlloc, freeDlSlots);
 
-    // map virtual allocations to DlMap
+ /*   // map virtual allocations to DlMap
     mac802_16_dl_map_frame * dlMap = new mac802_16_dl_map_frame;
     dlMap->type = MAC_DL_MAP;
     dlMap->bsid = mac_->addr(); // its called in the mac_ object
@@ -1557,7 +1557,23 @@ mac802_16_dl_map_frame * BSScheduler::buildDownlinkMap( VirtualAllocation * virt
     dlMap->nb_ies = dlMapIeIndex;
 
     debug_ext("Number of Connection Scheduled %d , Number of Slots used %d \n", dlMapIeIndex, entireUsedSlots);
+*/
+    mac802_16_dl_map_frame * dlMap = new mac802_16_dl_map_frame;
 
+    // call Burst Mapping Algorithm
+    dlMap = dlBurstMappingAlgorithm_->mapDlBursts( dlMap, virtualAlloc, totalDlSubchannels, totalDlSymbols, dlSymbolOffset, dlSubchannelOffset);
+
+
+    // Update Traffic Shaping
+    if ( virtualAlloc->firstConnectionEntry()) {
+    	do {
+
+    		Connection * currentCon = virtualAlloc->getConnection();
+    		if ( currentCon->getType() ==  CONN_DATA) {
+    			trafficShapingAlgorithm_->updateAllocation( currentCon, virtualAlloc->getCurrentMrtrPayload(), virtualAlloc->getCurrentMstrPayload());
+    		}
+    	} while ( virtualAlloc->nextConnectionEntry());
+    }
 
     // return DL-Map
     return dlMap;
