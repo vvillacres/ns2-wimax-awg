@@ -144,7 +144,9 @@ void SchedulingAlgoProportionalFair::scheduleConnections( VirtualAllocation* vir
 					// is demand fulfilled ?
 					if ( allocatedPayload >= wantedMstrSize) {
 						// reduce payload
-						allocatedBytes -= ( (allocatedPayload - wantedMstrSize) - HDR_MAC802_16_FRAGSUB_SIZE);
+						if ( (allocatedPayload - wantedMstrSize) > HDR_MAC802_16_FRAGSUB_SIZE) {
+							allocatedBytes -= ( (allocatedPayload - wantedMstrSize) - HDR_MAC802_16_FRAGSUB_SIZE);
+						}
 						allocatedPayload = wantedMstrSize;
 						// reduce number of connection with mrtr demand
 						nbOfMstrConnections--;
@@ -175,7 +177,7 @@ void SchedulingAlgoProportionalFair::scheduleConnections( VirtualAllocation* vir
 				int newSlots = ( allocatedSlots - virtualAllocation->getCurrentNbOfSlots());
 
 				// debug
-				printf(" %d new Mstr Slots for Connection CID %d \n", newSlots, virtualAllocation->getConnection()->get_cid() );
+				debug2(" %d new Mstr Slots for Connection CID %d \n", newSlots, virtualAllocation->getConnection()->get_cid() );
 
 
 				// update freeSlots
