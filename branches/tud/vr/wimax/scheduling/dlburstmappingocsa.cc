@@ -59,8 +59,10 @@ DlBurstMappingOcsa::mapDlBursts( mac802_16_dl_map_frame * dlMap, VirtualAllocati
     		Connection * currentCon = virtualAlloc->getConnection();
     		printf("Demand of Connection %d with %d Slots and DIUC %d \n", currentCon->get_cid(), virtualAlloc->getCurrentNbOfSlots(),
     				bsScheduler_->getDIUCProfile(mac_->getMap()->getDlSubframe()->getProfile(currentCon->getPeerNode()->getDIUC())->getEncoding()));
-    		anfrageList.push_back( new anfrage( currentCon->get_cid(), currentCon, virtualAlloc->getCurrentNbOfSlots(),
-    				bsScheduler_->getDIUCProfile(mac_->getMap()->getDlSubframe()->getProfile(currentCon->getPeerNode()->getDIUC())->getEncoding()) ));
+    		if ( virtualAlloc->getCurrentNbOfSlots() > 0) {
+    			anfrageList.push_back( new anfrage( currentCon->get_cid(), currentCon, virtualAlloc->getCurrentNbOfSlots(),
+    					bsScheduler_->getDIUCProfile(mac_->getMap()->getDlSubframe()->getProfile(currentCon->getPeerNode()->getDIUC())->getEncoding()) ));
+    		}
 
     	} while ( virtualAlloc->nextConnectionEntry());
 
@@ -95,7 +97,11 @@ DlBurstMappingOcsa::mapDlBursts( mac802_16_dl_map_frame * dlMap, VirtualAllocati
         OcsaAlgorithm osca;
         osca.sortAnfrageList( &anfrageList);
 
-        frameObject = new frame( (totalDlSymbols - dlSymbolOffset) / 2, totalDlSubchannels, (dlSymbolOffset + 1) / 2 , dlSubchannelOffset);
+        frameObject = new frame( (totalDlSymbols - 1) / 2, totalDlSubchannels, (dlSymbolOffset + 1) / 2 , dlSubchannelOffset);
+
+    	if ( NOW > 101.008 ) {
+    		printf("debug");
+    	}
 
         // call mapping algorithm                          // v max_burst_slots
         osca.finishToPackingFrame( &anfrageList, frameObject, 0);
