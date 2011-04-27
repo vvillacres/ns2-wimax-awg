@@ -132,17 +132,21 @@ void SchedulingAlgoDualEdf::scheduleConnections( VirtualAllocation* virtualAlloc
 			// get connection of this packet
 			Connection * currentCon = edfMrtrQueue.top().getConnection();
 
-			// get already assigned bytes
-			int allocBytes =  virtualAllocation->getCurrentNbOfBytes();
-			int allocPayload = virtualAllocation->getCurrentMrtrPayload();
-
 			int wantedMrtrSize;
 			int wantedMstrSize;
+			// get already assigned bytes
+			int allocBytes;
+			int allocPayload;
 
 			// find this connection in the allocation container
 			if ( virtualAllocation->findConnectionEntry( currentCon) ) {
 				wantedMrtrSize = virtualAllocation->getWantedMrtrSize();
 				wantedMstrSize = virtualAllocation->getWantedMstrSize();
+
+				// get already assigned bytes
+				allocBytes =  virtualAllocation->getCurrentNbOfBytes();
+				allocPayload = virtualAllocation->getCurrentMrtrPayload();
+
 			} else {
 				fprintf(stderr,"ERROR DEDF: This connection should have an entry ! \n");
 				exit(6);
@@ -220,14 +224,17 @@ void SchedulingAlgoDualEdf::scheduleConnections( VirtualAllocation* virtualAlloc
 			Connection * currentCon = edfMstrQueue.top().getConnection();
 
 			// get already assigned bytes
-			int allocBytes =  virtualAllocation->getCurrentNbOfBytes();
-			int allocPayload = virtualAllocation->getCurrentMstrPayload();
+			int allocBytes;
+			int allocPayload;
 
 			int wantedMstrSize;
 
 			// find this connection in the allocation container
 			if ( virtualAllocation->findConnectionEntry( currentCon) ) {
 				wantedMstrSize = virtualAllocation->getWantedMstrSize();
+				// get already assigned bytes
+				allocBytes =  virtualAllocation->getCurrentNbOfBytes();
+				allocPayload = virtualAllocation->getCurrentMstrPayload();
 			} else {
 				fprintf(stderr,"ERROR DEDF: This connection should have an entry ! \n");
 				exit(6);
@@ -272,7 +279,6 @@ void SchedulingAlgoDualEdf::scheduleConnections( VirtualAllocation* virtualAlloc
 
 				// update virtual allocation container
 				virtualAllocation->updateAllocation( newSlots + virtualAllocation->getCurrentNbOfSlots(), newAllocBytes + allocBytes, virtualAllocation->getCurrentMrtrPayload(), newAllocPayload + allocPayload);
-
 
 			}
 
