@@ -214,7 +214,7 @@ void SchedulingAlgoDualEdf::scheduleConnections( VirtualAllocation* virtualAlloc
 		while ( ( ! edfMstrQueue.empty() ) && ( freeSlots > 0 ) ) {
 
 			// get connection of this packet
-			Connection * currentCon = edfMrtrQueue.top().getConnection();
+			Connection * currentCon = edfMstrQueue.top().getConnection();
 
 			// get already assigned bytes
 			int allocBytes =  virtualAllocation->getCurrentNbOfBytes();
@@ -230,7 +230,7 @@ void SchedulingAlgoDualEdf::scheduleConnections( VirtualAllocation* virtualAlloc
 				exit(6);
 			}
 
-			// are there free mrtr size
+			// are there free mstr size
 			if (( wantedMstrSize - allocPayload) > 0 ) {
 
 				// get slot capacity
@@ -271,7 +271,7 @@ void SchedulingAlgoDualEdf::scheduleConnections( VirtualAllocation* virtualAlloc
 			}
 
 			// remove packet from queue
-			edfMrtrQueue.pop();
+			edfMstrQueue.pop();
 
 		} // end while
 
