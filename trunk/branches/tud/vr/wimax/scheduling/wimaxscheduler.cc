@@ -1636,3 +1636,213 @@ void WimaxScheduler::sendArqFeedbackInformation()
 	   }
 	}
 }
+
+
+/**
+ * Transfer the packets from the given connection to the given burst
+ * @param con The connection
+ * @param b The burst
+ * @param b_data Amount of data in the burst
+ * @return the new burst occupation
+ */
+int WimaxScheduler::transferPacketsDownlinkBurst (Connection * c, Burst * b, int b_data)
+{
+    Packet *p;
+    hdr_cmn* ch;
+    hdr_mac802_16 *wimaxHdr;
+    OFDMAPhy *phy = mac_->getPhy();
+    PeerNode *peer;
+
+    int num_symbol_per_slot;
+
+    if (mac_->amc_enable_ ==1 &&  c->getPeerNode() != NULL ) {
+        debug2("CID %d the current MCS index is %d\n", c->get_cid(),c->getPeerNode()->getCurrentMcsIndex());
+    }
+
+
+    if (mac_->getNodeType()==STA_BS) {
+        num_symbol_per_slot = phy->getSlotLength (DL_);
+    } else {
+        num_symbol_per_slot = phy->getSlotLength (UL_);
+
+        // this function is only for downlink burst
+        assert(false);
+    }
+
+    debug10 ("\nEntered transfer_packets1 for MacADDR :%d, for connection :%d with bdata  :%d, #subchannels :%d, #symbol :%d, IUC :%d, cqichSlotFlag %d\n",
+             mac_->addr(), c->get_cid(), b_data, b->getnumSubchannels(), b->getDuration(), b->getIUC(), b->getCqichSlotFlag());
+
+
+    peer = mac_->getPeerNode_head();
+    p = c->get_queue()->head();
+
+    // connection should have packets to send
+    assert ( p != NULL);
+
+    int max_data;
+
+    max_data = phy->getMaxPktSize (b->getnumSubchannels() * b->getDuration() / phy->getSlotLength(DL_), mac_->getMap()->getDlSubframe()->getProfile (b->getIUC())->getEncoding(), DL_) - b_data;
+
+    debug10 ("\tBS_transfer1.1, CID :%d with bdata :%d, but MaxData (MaxSize-bdata) :%d, MaxSize :%d, q->bytes :%d\n", c->get_cid(), b_data, max_data, phy->getMaxPktSize (b->getnumSubchannels(), mac_->getMap()->getDlSubframe()->getProfile (b->getIUC())->getEncoding(), DL_), c->queueByteLength() );
+    debug10 ("\t   Bduration :%d, Biuc :%d, B#subchannel :%d CqichSlotFlag %d\n",b->getDuration(), b->getIUC(), b->getnumSubchannels(), b->getCqichSlotFlag());
+
+
+    // handle fragmentation
+    if (max_data < HDR_MAC802_16_SIZE ||(c->getFragmentationStatus()!=FRAG_NOFRAG
+                                         && max_data < HDR_MAC802_16_SIZE+HDR_MAC802_16_FRAGSUB_SIZE)) {
+        debug2("In station %d returning as no space\n", mac_->getNodeType());
+        return b_data; //not even space for header
+    }
+
+
+    // transfer packets
+
+    while (p) {
+    	debug10 ("In station %d Entering while loop, connection type %d, CID :%d\n", mac_->getNodeType(), c->get_category(), c->get_cid());
+        ch = HDR_CMN(p);
+        wimaxHdr = HDR_MAC802_16(p);
+
+        if (ch->size() < 0 ) {
+        	debug2(" packet size negative --- panic!!! ");
+        }
+
+        max_data = phy->getMaxPktSize (b->getnumSubchannels() * b->getDuration() / phy->getSlotLength(DL_), mac_->getMap()->getDlSubframe()->getProfile (b->getIUC())->getEncoding(), DL_) - b_data;
+
+        if (max_data <= HDR_MAC802_16_SIZE ||	(c->getFragmentationStatus()!=FRAG_NOFRAG && max_data <= HDR_MAC802_16_SIZE+HDR_MAC802_16_FRAGSUB_SIZE)) {
+            return b_data; //not even space for header
+        }
+
+        if (c->getFragmentationStatus()==FRAG_NOFRAG && max_data <= HDR_MAC802_16_SIZE+HDR_MAC802_16_FRAGSUB_SIZE && (ch->size()>HDR_MAC802_16_SIZE+HDR_MAC802_16_FRAGSUB_SIZE) ) {
+            return b_data; //not even space for header
+        }
+
+        if (c->getFragmentationStatus()!=FRAG_NOFRAG) {
+            if (max_data >= ch->size()-c->getFragmentBytes() + HDR_MAC802_16_FRAGSUB_SIZE) { //getFrag => include MACHEADER
+                //add fragmentation header
+                wimaxHdr->header.type_frag = true;
+                //no need to fragment again
+                wimaxHdr->frag_subheader.fc = FRAG_LAST;
+                wimaxHdr->frag_subheader.fsn = c->getFragmentNumber ();
+                int more_bw = 0;
+
+
+                c->dequeue();  /*remove packet from queue */
+                ch->size() = ch->size()-c->getFragmentBytes()+HDR_MAC802_16_FRAGSUB_SIZE; //new packet size
+                //update fragmentation
+                if (ch->size() < 0 )
+                    debug2(" packet size negative -- panic !!! \n") ;
+
+                debug2 ("\nEnd of fragmentation %d, CID :%d, (max_data :%d, bytes to send :%d, getFragmentBytes :%d, getFragNumber :%d, updated Frag :%d, update FragBytes :%d, con->qBytes :%d, con->qlen :%d, more_bw :%d)\n", wimaxHdr->frag_subheader.fsn, c->get_cid(), max_data, ch->size(), c->getFragmentBytes(), c->getFragmentNumber(), 0, 0, c->queueByteLength(), c->queueLength(), more_bw);
+
+                c->updateFragmentation (FRAG_NOFRAG, 0, 0);
+
+            } else {
+                //need to fragment the packet again
+                p = p->copy(); //copy packet to send
+                ch = HDR_CMN(p);
+                wimaxHdr = HDR_MAC802_16(p);
+                //add fragmentation header
+                wimaxHdr->header.type_frag = true;
+                wimaxHdr->frag_subheader.fc = FRAG_CONT;
+                wimaxHdr->frag_subheader.fsn = c->getFragmentNumber ();
+                int more_bw = 0;
+                ch->size() = max_data; //new packet size
+
+                //update fragmentation
+
+                debug2 ("\nContinue fragmentation %d, CID :%d, (max_data :%d, bytes to send :%d, getFragmentBytes :%d, getFragNumber :%d, updated Frag :%d, update FragBytes :%d, con->qBytes :%d, con->qlen :%d, more_bw :%d)\n", wimaxHdr->frag_subheader.fsn, c->get_cid(), max_data, ch->size(),  c->getFragmentBytes(), c->getFragmentNumber(), (c->getFragmentNumber()+1)%8, c->getFragmentBytes()+max_data-(HDR_MAC802_16_SIZE+HDR_MAC802_16_FRAGSUB_SIZE), c->queueByteLength(), c->queueLength(), more_bw);
+
+                c->updateFragmentation (FRAG_CONT, (c->getFragmentNumber ()+1)%8, c->getFragmentBytes() + max_data-(HDR_MAC802_16_SIZE+HDR_MAC802_16_FRAGSUB_SIZE));
+            }
+        } else {//else no flag
+            if (max_data < ch->size() && c->isFragEnable()) {
+                //need to fragment the packet for the first time
+                p = p->copy(); //copy packet to send
+                ch = HDR_CMN(p);
+                int ori_ch = ch->size();
+                wimaxHdr = HDR_MAC802_16(p);
+                //add fragmentation header
+                wimaxHdr->header.type_frag = true;
+                wimaxHdr->frag_subheader.fc = FRAG_FIRST;
+                wimaxHdr->frag_subheader.fsn = c->getFragmentNumber ();
+                int more_bw = 0;
+                ch->size() = max_data; //new packet size
+
+                debug2 ("\nFirst fragmentation %d, CID :%d, (max_data :%d, bytes to send :%d, ori_size :%d, getFragmentBytes :%d, FRAGSUB :%d, getFragNumber :%d, updated Frag ;%d, update FragBytes :%d, con->qBytes :%d, con->qlen :%d, more_bw :%d)\n", wimaxHdr->frag_subheader.fsn, c->get_cid(), max_data, ch->size(), ori_ch, c->getFragmentBytes(), HDR_MAC802_16_FRAGSUB_SIZE, c->getFragmentNumber (), 1, c->getFragmentBytes()+max_data-(HDR_MAC802_16_SIZE+HDR_MAC802_16_FRAGSUB_SIZE),c->queueByteLength(), c->queueLength (), more_bw);
+
+                c->updateFragmentation (FRAG_FIRST, 1, c->getFragmentBytes()+max_data-(HDR_MAC802_16_SIZE+HDR_MAC802_16_FRAGSUB_SIZE));
+
+            } else if (max_data < ch->size() && !c->isFragEnable()) {
+                //the connection does not support fragmentation
+                //can't move packets anymore
+                return b_data;
+            } else {
+                //no fragmentation necessary
+                int more_bw = 0;
+
+                debug2 ("\nNo fragmentation %d, (max_data :%d, bytes to send :%d, con->qBytes :%d, con->qlen :%d, more_bw :%d\n", wimaxHdr->frag_subheader.fsn, max_data, ch->size(), c->queueByteLength(), c->queueLength(), more_bw);
+                c->dequeue();
+
+            }//end frag
+        }
+
+        int packetSize = ch->size();
+
+        int startSlot = phy->getNumSubchannels( b_data, mac_->getMap()->getDlSubframe()->getProfile (b->getIUC())->getEncoding(), DL_);
+        int endSlot = phy->getNumSubchannels( b_data + packetSize, mac_->getMap()->getDlSubframe()->getProfile (b->getIUC())->getEncoding(), DL_);
+
+        int numOfSubchannels = endSlot - startSlot;
+
+        int symbolOffset = b->getStarttime() + num_symbol_per_slot * int( floor( double(startSlot) / b->getnumSubchannels()));
+        int numOfSymbols = b->getStarttime() + num_symbol_per_slot * int( ceil( double(endSlot) / b->getnumSubchannels())) - symbolOffset;
+
+        debug2("Packet with Size %d, will be allocated from slot %d to slot %d using %d symbols \n", packetSize, startSlot, endSlot, numOfSymbols);
+
+
+        // sending time of this an other packets
+        ch->txtime() = numOfSymbols * phy->getSymbolTime ();
+
+
+        wimaxHdr = HDR_MAC802_16(p);
+        wimaxHdr->phy_info.num_subchannels = numOfSubchannels;
+        wimaxHdr->phy_info.subchannel_offset = startSlot;//subchannel_offset within burst;
+        wimaxHdr->phy_info.num_OFDMSymbol = numOfSymbols;
+        wimaxHdr->phy_info.OFDMSymbol_offset = symbolOffset; //initial_offset;
+        wimaxHdr->phy_info.subchannel_lbound = b->getSubchannelOffset();
+        wimaxHdr->phy_info.subcarrier_ubound = b->getSubchannelOffset() + b->getnumSubchannels();
+
+
+
+        debug10("In transfer_packets1-- packets info: symbol_off[%d]\t symbol_#[%d]\t subch_Off[%d]\t subch_#[%d]\n",
+                wimaxHdr->phy_info.OFDMSymbol_offset,wimaxHdr->phy_info.num_OFDMSymbol,
+                wimaxHdr->phy_info.subchannel_offset,wimaxHdr->phy_info.num_subchannels);
+
+        //wimaxHdr->phy_info.channel_index = c->getPeerNode()->getchannel();
+        wimaxHdr->phy_info.direction = 0;
+		// debug2("Peer Node is %d\n", c->getPeerNode());
+		if (c->getPeerNode()) {
+			wimaxHdr->phy_info.channel_index = c->getPeerNode()->getchannel();
+			/*Xingting added to support MCS. Here is used to change the MCS index.*/
+			debug2("In transfer function, BS [%d] set SS[%d], flag is %d\n",mac_->addr(), c->getPeerNode()->getAddr(), mac_->get_change_modulation_flag(c->getPeerNode()->getAddr()));
+			if (mac_->get_change_modulation_flag(c->getPeerNode()->getAddr()) == TRUE && mac_->amc_enable_ == 1) {
+				debug2("in transfer function, BS set SS[%d] gonna set mcs index to %d\n",c->getPeerNode()->getAddr(),c->getPeerNode()->getCurrentMcsIndex());
+				wimaxHdr->phy_info.mcs_index_ = c->getPeerNode()->getCurrentMcsIndex();
+				mac_->set_change_modulation_flag(c->getPeerNode()->getAddr(), FALSE);
+			} else {
+				debug2("in transfer function, no change modulation. amc_enable %d   But MCS index set to %d  SS [%d]  get_change_modulation_flag[%d] .\n",
+					   mac_->amc_enable_,  c->getPeerNode()->getCurrentMcsIndex(), c->getPeerNode()->getAddr(), mac_->get_change_modulation_flag(c->getPeerNode()->getAddr()));
+				wimaxHdr->phy_info.mcs_index_  = c->getPeerNode()->getCurrentMcsIndex(); //-1;
+			}
+		}
+
+
+
+        b->enqueue(p);      //enqueue into burst
+
+        b_data += ch->size(); //increment amount of data enqueued
+        debug2 ("In station %d packet enqueued b_data = %d \n", mac_->getNodeType(), b_data);
+
+        p = c->get_queue()->head(); //get new head
+    }
+    return b_data;
+}
