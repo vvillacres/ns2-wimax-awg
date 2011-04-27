@@ -804,573 +804,579 @@ void Mac802_16SS::receive (Packet *pktRx_)
             return;
         }
 
-        addPowerinfo(wimaxHdr, 0.0,true);
-
-        //commenting here to chk without collision  ends
-
-        // chk collision ends
-
-        //   SINR calcualtions
-
-        //removed for testing without Rxinpwr in packet header
-
-        int total_subcarriers=0;
-        //int num_data_subcarrier = getPhy()->getNumDataSubcarrier (DL_);
-        int num_data_subcarrier = getPhy()->getNumSubcarrier (DL_);
-        int num_subchannel      = getPhy()->getNumsubchannels (DL_);
-        int num_symbol_per_slot = getPhy()->getSlotLength (DL_);
-
-        // calculate the total subcarriers needed
-        if (wimaxHdr->phy_info.num_OFDMSymbol != 0) {
-
-            //total_subcarriers = wimaxHdr->phy_info.num_subchannels * wimaxHdr->phy_info.num_OFDMSymbol * num_data_subcarrier ;
-
-            if (wimaxHdr->phy_info.num_OFDMSymbol % num_symbol_per_slot == 0) { // chk this condition , chk whether broacastcid reqd ir not.
-                if (wimaxHdr->phy_info.num_OFDMSymbol > num_symbol_per_slot) {
-                    // for the first 3 symbols
-                    for (int i = wimaxHdr->phy_info.OFDMSymbol_offset ; i<  (wimaxHdr->phy_info.OFDMSymbol_offset + num_symbol_per_slot) ; i++)
-                        //   for(int j = (wimaxHdr->phy_info.subchannel_offset)*num_data_subcarrier ; j<num_subchannel*num_data_subcarrier ; j++ )
-                    {
-                        total_subcarriers += (num_subchannel*num_data_subcarrier) - ((wimaxHdr->phy_info.subchannel_offset)*num_data_subcarrier ) ;
-                    }
-                    // except the last 3 and first 3 whatever is thr
-
-                    for (int i = wimaxHdr->phy_info.OFDMSymbol_offset+num_symbol_per_slot ; i< (wimaxHdr->phy_info.OFDMSymbol_offset) + (wimaxHdr->phy_info.num_OFDMSymbol-num_symbol_per_slot) ; i++)
-                        //for(int j = 0 ; j<num_subchannel*num_data_subcarrier ; j++ )
-                    {
-                        total_subcarriers +=  num_subchannel*num_data_subcarrier;
-                    }
-
-                    // last 3
-                    for (int i = wimaxHdr->phy_info.OFDMSymbol_offset +wimaxHdr->phy_info.num_OFDMSymbol-num_symbol_per_slot ; i<  wimaxHdr->phy_info.OFDMSymbol_offset +wimaxHdr->phy_info.num_OFDMSymbol ; i++)
-                        //for(int j = 0 ; j<(wimaxHdr->phy_info.num_subchannels%num_subchannel)*num_data_subcarrier ; j++ )
-                    {
-                        total_subcarriers += ((wimaxHdr->phy_info.num_subchannels - (num_subchannel - (wimaxHdr->phy_info.subchannel_offset)) )%num_subchannel)*num_data_subcarrier;
-                    }
-                } else {
-
-                    for (int i = wimaxHdr->phy_info.OFDMSymbol_offset ; i<  (wimaxHdr->phy_info.OFDMSymbol_offset + num_symbol_per_slot) ; i++)
-                        //for(int j = (wimaxHdr->phy_info.subchannel_offset)*num_data_subcarrier ; j<wimaxHdr->phy_info.num_subchannels*num_data_subcarrier ; j++ )
-                    {
-                        total_subcarriers += wimaxHdr->phy_info.num_subchannels*num_data_subcarrier ;//-  (wimaxHdr->phy_info.subchannel_offset)*num_data_subcarrier ;
-                    }
-                }
-            } else {
-                // for the first 3 symbols
-                if (wimaxHdr->phy_info.num_OFDMSymbol > 1) {
-                    for (int i = wimaxHdr->phy_info.OFDMSymbol_offset ; i<  (wimaxHdr->phy_info.OFDMSymbol_offset + 1) ; i++)
-                        //   for(int j = (wimaxHdr->phy_info.subchannel_offset)*num_data_subcarrier ; j<num_subchannel*num_data_subcarrier ; j++ )
-                    {
-                        total_subcarriers += num_subchannel*num_data_subcarrier - (wimaxHdr->phy_info.subchannel_offset)*num_data_subcarrier ;
-                    }
-                    // except the last 3 and first 3 whatever is thr
-
-                    for (int i = wimaxHdr->phy_info.OFDMSymbol_offset+1 ; i< (wimaxHdr->phy_info.OFDMSymbol_offset) + (wimaxHdr->phy_info.num_OFDMSymbol-1) ; i++)
-                        //for(int j = 0 ; j<num_subchannel*num_data_subcarrier ; j++ )
-                    {
-                        total_subcarriers +=  num_subchannel*num_data_subcarrier ;
-                    }
-
-                    // last 3
-                    for (int i = wimaxHdr->phy_info.OFDMSymbol_offset +wimaxHdr->phy_info.num_OFDMSymbol-1 ; i< wimaxHdr->phy_info.OFDMSymbol_offset +wimaxHdr->phy_info.num_OFDMSymbol ; i++)
-                        // for(int j = 0 ; j<(wimaxHdr->phy_info.num_subchannels%num_subchannel)*num_data_subcarrier ; j++ )
-                    {
-                        total_subcarriers += ((wimaxHdr->phy_info.num_subchannels - (num_subchannel - (wimaxHdr->phy_info.subchannel_offset)) )%num_subchannel)*num_data_subcarrier ;
-                    }
-
-                } else {
-
-                    for (int i = wimaxHdr->phy_info.OFDMSymbol_offset ; i<  (wimaxHdr->phy_info.OFDMSymbol_offset + 1) ; i++)
-                        // for(int j = (wimaxHdr->phy_info.subchannel_offset)*num_data_subcarrier ; j<wimaxHdr->phy_info.num_subchannels*num_data_subcarrier ; j++ )
-                    {
-                        total_subcarriers +=    wimaxHdr->phy_info.num_subchannels*num_data_subcarrier;// - (wimaxHdr->phy_info.subchannel_offset)*num_data_subcarrier ;
-                    }
-                }
-            }
-        }
-        //     else
-        //      total_subcarriers = wimaxHdr->phy_info.num_subchannels * num_data_subcarrier ;
-
-        // total subcarrier calculation ends
-
-        debug2(" total_subcarriers = %d \n", total_subcarriers);
-
-        double *signalpower = (double *) new double [total_subcarriers] ;
-        double *interferencepower = (double *) new double [total_subcarriers];
-        double *SINR = (double *) new double [total_subcarriers];
-        for (int i = 0; i< total_subcarriers ; i++) {
-            SINR[i] = 0.0;
-            signalpower[i] = 0.0;
-            interferencepower[i] = 0.0;
-        }
-
-        int n=0,m=0;
-
-        if (wimaxHdr->phy_info.num_OFDMSymbol % num_symbol_per_slot == 0) { // chk this condition
-            if (wimaxHdr->phy_info.num_OFDMSymbol > num_symbol_per_slot) {
-                // for the first num_symbol_per_slot symbols
-                for (int i = wimaxHdr->phy_info.OFDMSymbol_offset ; i<  (wimaxHdr->phy_info.OFDMSymbol_offset + num_symbol_per_slot) ; i++)
-                    for (int j = (wimaxHdr->phy_info.subchannel_offset)*num_data_subcarrier ; j<num_subchannel*num_data_subcarrier ; j++ ) {
-                        interferencepower[n++]= intpower_[i][j] + BASE_POWER /*+ pktRx_->txinfo_.RxIntPr[i][j]*/;
-                        signalpower[m++]= pktRx_->txinfo_.RxPr_OFDMA[j];
-                    }
-                // except the last num_symbol_per_slot and first num_symbol_per_slot whatever is thr
-
-                for (int i = wimaxHdr->phy_info.OFDMSymbol_offset+num_symbol_per_slot ; i< (wimaxHdr->phy_info.OFDMSymbol_offset) + (wimaxHdr->phy_info.num_OFDMSymbol-num_symbol_per_slot) ; i++)
-                    for (int j = 0 ; j<num_subchannel*num_data_subcarrier ; j++ ) {
-                        interferencepower[n++]= intpower_[i][j] + BASE_POWER /*+ pktRx_->txinfo_.RxIntPr[i][j]*/;
-                        signalpower[m++]= pktRx_->txinfo_.RxPr_OFDMA[j];
-                    }
-
-                // last num_symbol_per_slot
-                for (int i = wimaxHdr->phy_info.OFDMSymbol_offset +wimaxHdr->phy_info.num_OFDMSymbol-num_symbol_per_slot ; i<  wimaxHdr->phy_info.OFDMSymbol_offset +wimaxHdr->phy_info.num_OFDMSymbol ; i++)
-                    for (int j = 0 ; j<((wimaxHdr->phy_info.num_subchannels - (num_subchannel - (wimaxHdr->phy_info.subchannel_offset)) )%num_subchannel)*num_data_subcarrier; j++ ) {
-                        interferencepower[n++]= intpower_[i][j] + BASE_POWER /*+ pktRx_->txinfo_.RxIntPr[i][j]*/;
-                        signalpower[m++]= pktRx_->txinfo_.RxPr_OFDMA[j];
-                    }
-            } else {
-
-                for (int i = wimaxHdr->phy_info.OFDMSymbol_offset ; 	i<  (wimaxHdr->phy_info.OFDMSymbol_offset + num_symbol_per_slot) ; i++)
-                    for (int j = (wimaxHdr->phy_info.subchannel_offset)*num_data_subcarrier ;
-                            j<(((wimaxHdr->phy_info.subchannel_offset)*num_data_subcarrier) + wimaxHdr->phy_info.num_subchannels*num_data_subcarrier);
-                            j++ ) {
-                        interferencepower[n++]= intpower_[i][j] + BASE_POWER /*+ pktRx_->txinfo_.RxIntPr[i][j]*/;
-                        signalpower[m++]= pktRx_->txinfo_.RxPr_OFDMA[j];
-                    }
-            }
-        }
-
-        else
-
-        {
-            //numsymbols = (int)  ceil((((wimaxHdr->phy_info.subchannel_offset + wimaxHdr->phy_info.num_subchannels -1) - 30) % 30));
-            //numsymbols *= num_symbol_per_slot;
-            // for the first num_symbol_per_slot symbols
-            if (wimaxHdr->phy_info.num_OFDMSymbol > 1) {
-                for (int i = wimaxHdr->phy_info.OFDMSymbol_offset ; i<  (wimaxHdr->phy_info.OFDMSymbol_offset + 1) ; i++)
-                    for (int j = (wimaxHdr->phy_info.subchannel_offset)*num_data_subcarrier ; j<num_subchannel*num_data_subcarrier ; j++ ) {
-                        interferencepower[n++]= intpower_[i][j] + BASE_POWER /*+ pktRx_->txinfo_.RxIntPr[i][j]*/;
-                        signalpower[m++]= pktRx_->txinfo_.RxPr_OFDMA[j];
-                    }
-                // except the last num_symbol_per_slot and first num_symbol_per_slot whatever is thr
-
-                for (int i = (wimaxHdr->phy_info.OFDMSymbol_offset+1) ; i<  (wimaxHdr->phy_info.OFDMSymbol_offset) + (wimaxHdr->phy_info.num_OFDMSymbol-1) ; i++)
-                    for (int j = 0 ; j<num_subchannel*num_data_subcarrier ; j++ ) {
-                        interferencepower[n++]= intpower_[i][j] + BASE_POWER /*+ pktRx_->txinfo_.RxIntPr[i][j]*/;
-                        signalpower[m++]= pktRx_->txinfo_.RxPr_OFDMA[j];
-                    }
-
-                // last num_symbol_per_slot
-                for (int i = wimaxHdr->phy_info.OFDMSymbol_offset +wimaxHdr->phy_info.num_OFDMSymbol-1 ; i< wimaxHdr->phy_info.OFDMSymbol_offset +wimaxHdr->phy_info.num_OFDMSymbol ; i++)
-                    for (int j = 0 ; j<(((wimaxHdr->phy_info.num_subchannels - (num_subchannel - (wimaxHdr->phy_info.subchannel_offset)) )%num_subchannel))*num_data_subcarrier ; j++ ) {
-                        interferencepower[n++]= intpower_[i][j] + BASE_POWER /*+ pktRx_->txinfo_.RxIntPr[i][j]*/;
-                        signalpower[m++]= pktRx_->txinfo_.RxPr_OFDMA[j];
-                    }
-
-            } else {
-                for (int i = wimaxHdr->phy_info.OFDMSymbol_offset ; i<  (wimaxHdr->phy_info.OFDMSymbol_offset + 1) ; i++)
-                    for (int j = (wimaxHdr->phy_info.subchannel_offset)*num_data_subcarrier ; j<(((wimaxHdr->phy_info.subchannel_offset)*num_data_subcarrier) + wimaxHdr->phy_info.num_subchannels*num_data_subcarrier) ; j++ ) {
-                        interferencepower[n++]= intpower_[i][j] + BASE_POWER /*+ pktRx_->txinfo_.RxIntPr[i][j]*/;
-                        signalpower[m++]= pktRx_->txinfo_.RxPr_OFDMA[j];
-                    }
-            }
-        }
-
-        int counter = 0;
-        for (int k = 0; k < total_subcarriers; k++) {
-            if ( signalpower[k] > DOUBLE_INT_ZERO) { // not equals to zero
-                SINR[k] =  signalpower[k]/interferencepower[k];
-                counter++;
-            }
-        }
-
-        debug2(" in MAC SS, [%d] subcarriers signal power are calculated.\n ", counter);
-
-
-        double SIR = 0.0;
-        //debug2("In MAC BS: the total number of subcarrier/3 is [%d]\n", total_subcarriers/3);
-
-
-        //process packet
-        gen_mac_header_t header = wimaxHdr->header;
-        OFDMAPhy *phy = getPhy();
-
-        //debug2(" checking for intereference power \n" );
-
-        // BLER calculation
-
-        GlobalParams_Wimax* global ;
-        global =  GlobalParams_Wimax::Instance();
-
-        int num_of_slots,num_of_complete_block,max_block_size,last_block_size , index, num_subcarrier_block ;
-        double BLER= 0.0, beta=0.0, eesm_sum = 0.0, rand1 =0.0;
-
-        num_of_slots = (int) ceil((double)ch->size() / (double)phy->getSlotCapacity(wimaxHdr->phy_info.modulation_, DL_));
-        max_block_size=phy->getMaxBlockSize(wimaxHdr->phy_info.modulation_);   // get max  block size in number of slots
-        last_block_size = num_of_slots % max_block_size;  //remain blocks
-        num_of_complete_block = (int) floor(num_of_slots / max_block_size);
-        int ITU_PDP = getITU_PDP ();
-        bool pkt_error = FALSE;
-
-        debug2(" num of complete blocks = %d , ITU_PDP = %d, num of slots = %d, max block size = %d, last block size = %d \n" , num_of_complete_block, ITU_PDP, num_of_slots, max_block_size, last_block_size );
-
-        int current_mcs_indx = 31;
-        if (wimaxHdr->header.cid >= 0x4001 && wimaxHdr->header.cid <=0xFEFE && amc_enable_ ==1) {
-            debug2("the incoming packet phy header mcs index is %d\n",wimaxHdr->phy_info.mcs_index_ );
-            debug2("the modulation field in Phy_header of this packet is %d\n", wimaxHdr->phy_info.modulation_);
-            index =  phy->getMCSIndex( wimaxHdr->phy_info.modulation_ ,  max_block_size);
-            debug2("before the amc index configure index is %d\n",index);
-
-
-            if (num_of_complete_block == 0) { //only have the remain blocks, not multiple
-                debug2("1.1 SS Begin to calculate the BLER for the uncomplete blocks.\n");
-
-                current_mcs_indx = wimaxHdr->phy_info.mcs_index_;
-                if (current_mcs_indx >=1 &&  current_mcs_indx <=30) {
-                    index = current_mcs_indx;
-                    debug2("Set to MCS index carried in the incoming packet %d.\n", index);
-                } else {
-                    if (get_ss_current_mcs_index() >=1 &&  get_ss_current_mcs_index()<=30) {
-                        index = get_ss_current_mcs_index();
-                        debug2("Set to the previous local MCS index %d\n", index);
-                    }
-                }
-                set_ss_current_mcs_index(current_mcs_indx);
-
-                beta = global->GetBeta( ITU_PDP, index);
-                debug2(" beta = %.2f = \n" , beta );
-
-                num_subcarrier_block = num_symbol_per_slot * getPhy()->getNumSubcarrier (DL_) * last_block_size;
-
-                if (num_subcarrier_block > total_subcarriers)
-                    num_subcarrier_block = total_subcarriers;
-
-                for (int i=0; i<counter; i++) {
-                    eesm_sum = eesm_sum + exp( -(SINR[i]/beta));
-                }
-
-                if (num_subcarrier_block==0) {
-                    debug2( "ERROR: #subcarrier_block :%d\n", num_subcarrier_block);
-                    //exit(1);
-                    drop(pktRx_, "WRN_SBCR");
-                    return;
-                }
-
-                if (eesm_sum >= BASE_POWER) {
-                    SIR =  (-beta) * log(eesm_sum/counter);
-                    //SIR =  (-beta) * log(eesm_sum/num_subcarrier_block);
-                    if (SIR < 0) {
-                        drop(pktRx_, "WRN_SIR");
-                        debug2("WARNING: SIR less than 0.\n");
-                        debug2("==============================SS receive End ===========================================\n");
-                        return;
-                    }
-                    SIR=10*log10(SIR);
-                    debug2(" SIR-SS in dB= %.2f = \n" , SIR );
-                    BLER = global->TableLookup(index, SIR);
-                } else {
-                    BLER = 0;
-                }
-
-                set_effective_sinr(SIR);
-                set_current_bler(BLER);
-                //set_ss_current_mcs_index(index);
-                debug2( "SS set the DL effective SIR to %f  set current BLER = %.5f, mcs index = %d\n", SIR, BLER, index);
-
-#ifdef FIX_PROPORTIONAL_ERROR
-                rand1 = ERROR_THRESHOLD;
-#else
-                int rand_num = ((rand() % 100) +1 ) ;
-                rand1 = rand_num/100.00;
-#endif
-
-                debug2(" BLER is %f --vs.----random threshold = %.2f = \n" ,BLER, rand1 );
-
-                if ( phymib_.enableInterference_ && BLER > rand1) {
-                    pkt_error = TRUE;
-                    debug2("set channel to true.\n");
-                    set_channel_error(TRUE);
-                } else {
-                    pkt_error = FALSE;
-                    debug2("set channel to false.\n");
-                    set_channel_error(FALSE);
-                }
-            } else {
-                debug2("1.2 Begin to calculate the BLER for the complete blocks.\n");
-                // First the complete blocks are checked fro error
-
-                current_mcs_indx = wimaxHdr->phy_info.mcs_index_;
-                if (current_mcs_indx >=1 && current_mcs_indx <=30) {
-                    index = current_mcs_indx;
-                    debug2("Set to MCS index carried in the incoming packet %d\n", index);
-                } else {
-                    if (get_ss_current_mcs_index() >=1 && get_ss_current_mcs_index()<=30) {
-                        index = get_ss_current_mcs_index();
-                        debug2("Set to the previous local MCS index %d\n", index);
-                    }
-                }
-
-                beta = global->GetBeta( ITU_PDP, index);
-
-                num_subcarrier_block = num_symbol_per_slot * getPhy()->getNumSubcarrier (DL_) * max_block_size;
-                if (num_subcarrier_block > total_subcarriers)
-                    num_subcarrier_block = total_subcarriers;
-
-                for (int i=0; i<counter; i++) {
-                    eesm_sum = eesm_sum + exp( -(SINR[i]/beta));
-                }
-
-                if (num_subcarrier_block==0) {
-                    debug2( "ERROR: #subcarrier_block :%d\n", num_subcarrier_block);
-                    //exit(1);
-                    drop(pktRx_, "WRN_SBCR");
-                    debug2("==============================SS receive End ===========================================\n");
-                    return;
-                }
-
-                if (eesm_sum >= BASE_POWER) {
-                    SIR =  (-beta) * log(eesm_sum/counter);
-                    //SIR =  (-beta) * log(eesm_sum/num_subcarrier_block);
-                    if (SIR < 0) {
-                        drop(pktRx_, "WRN_SIR");
-                        debug2("WARNING: SIR less than 0.\n");
-                        debug2("==============================SS receive End ===========================================\n");
-                        return;
-                    }
-                    SIR=10*log10(SIR);
-                    debug2(" SIR-SS = %.2f = \n" , SIR );
-                    BLER = global->TableLookup(index, SIR);
-                } else {
-                    BLER = 0;
-                }
-
-                set_effective_sinr(SIR);
-                set_current_bler(BLER);
-                set_ss_current_mcs_index(current_mcs_indx);
-                debug2("SS set the SIR to %f,  BLER for the complete burst is [%f], mcs index is [%d]\n",SIR, BLER, index);
-
-#ifdef FIX_PROPORTIONAL_ERROR
-                rand1 = ERROR_THRESHOLD;
-#else
-                int rand_num = ((rand() % 100) +1 ) ;
-                rand1 = rand_num/100.00;
-#endif
-
-                debug2(" BLER is %f --vs.----random threshold = %.2f = \n" ,BLER, rand1 );
-
-                if ( phymib_.enableInterference_ && BLER > rand1) {
-                    pkt_error = TRUE;
-                    debug2("set channel to true.\n");
-                    set_channel_error(TRUE);
-                } else {
-                    pkt_error = FALSE;
-                    debug2("set channel to false.\n");
-                    set_channel_error(FALSE);
-                }
-            }
-        } else {
-            /*For the data otherwise traffic, do not bother. let it be.*/
-            if (num_of_complete_block == 0) { //only have the remain blocks, not multiple
-                debug2("1.4 Begin to calculate the BLER for the uncomplete blocks.\n");
-
-                //num_of_complete_block =1;
-                index =  phy->getMCSIndex( wimaxHdr->phy_info.modulation_ ,  last_block_size);
-                beta = global->GetBeta( ITU_PDP, index);
-                debug2(" beta = %.2f = \n" , beta );
-
-                num_subcarrier_block = num_symbol_per_slot * getPhy()->getNumSubcarrier (DL_) * last_block_size;
-
-                if (num_subcarrier_block > total_subcarriers)
-                    num_subcarrier_block = total_subcarriers;
-
-                for (int i=0; i<counter; i++) {
-                    eesm_sum = eesm_sum + exp( -(SINR[i]/beta));
-                }
-
-                if (num_subcarrier_block==0) {
-                    debug2( "ERROR: #subcarrier_block :%d\n", num_subcarrier_block);
-                    //exit(1);
-                    drop(pktRx_, "WRN_SBCR");
-                    debug2("==============================SS receive End ===========================================\n");
-                    return;
-                }
-
-                if (eesm_sum >= BASE_POWER) {
-                    //SIR =  (-beta) * log(eesm_sum/counter);
-                    SIR =  (-beta) * log(eesm_sum/num_subcarrier_block);
-                    if (SIR < 0) {
-                        drop(pktRx_, "WRN_SIR");
-                        debug2("WARNING: SIR less than 0.\n");
-                        debug2("==============================SS receive End ===========================================\n");
-                        return;
-                    }
-                    SIR=10*log10(SIR);
-                    debug2(" SIR-SS in dB= %.2f = \n" , SIR );
-                    BLER = global->TableLookup(index, SIR);
-                } else {
-                    BLER = 0;
-                }
-
-#ifdef FIX_PROPORTIONAL_ERROR
-                rand1 = ERROR_THRESHOLD;
-#else
-                int rand_num = ((rand() % 100) +1 ) ;
-                rand1 = rand_num/100.00;
-#endif
-
-                debug2(" BLER is %f --vs.----random threshold = %.2f = \n" ,BLER, rand1 );
-
-                if ( phymib_.enableInterference_ && BLER > rand1) {
-                    pkt_error = TRUE;
-                    debug2("set channel to true.\n");
-                } else {
-                    pkt_error = FALSE;
-                    debug2("set channel to false.\n");
-                }
-            } else {
-                // First the complete blocks are checked fro error
-                debug2("1.5 Begin to calculate the BLER for the complete blocks.\n");
-                index =  phy->getMCSIndex( wimaxHdr->phy_info.modulation_ ,  max_block_size);
-                debug2("No AMC enabled here. The MCS index is %d\n", index);
-                beta = global->GetBeta( ITU_PDP, index);
-
-                num_subcarrier_block = num_symbol_per_slot * getPhy()->getNumSubcarrier (DL_) * max_block_size;
-                if (num_subcarrier_block > total_subcarriers)
-                    num_subcarrier_block = total_subcarriers;
-
-                for (int i=0; i<counter; i++) {
-                    eesm_sum = eesm_sum + exp( -(SINR[i]/beta));
-                }
-                debug2("I am here 1.\n");
-                if (num_subcarrier_block==0) {
-                    debug2( "ERROR: #subcarrier_block :%d\n", num_subcarrier_block);
-                    //exit(1);
-                    drop(pktRx_, "WRN_SBCR");
-                    debug2("==============================SS receive End ===========================================\n");
-                    return;
-                }
-                debug2("I am here 2.\n");
-                if (eesm_sum >= BASE_POWER) {
-                    SIR =  (-beta) * log(eesm_sum/counter);
-                    //SIR =  (-beta) * log(eesm_sum/num_subcarrier_block);
-                    if (SIR < 0) {
-                        drop(pktRx_, "WRN_SIR");
-                        debug2("WARNING: SIR less than 0.\n");
-                        debug2("==============================SS receive End ===========================================\n");
-                        return;
-                    }
-                    SIR=10*log10(SIR);
-                    debug2(" SIR-SS = %.2f = \n" , SIR );
-                    BLER = global->TableLookup(index, SIR);
-                } else {
-                    BLER = 0;
-                }
-
-                debug2(" BLER at SS of the complete blocks = %.2f  \n" , BLER );
-
-#ifdef FIX_PROPORTIONAL_ERROR
-                rand1 = ERROR_THRESHOLD;
-#else
-                int rand_num = ((rand() % 100) +1 ) ;
-                rand1 = rand_num/100.00;
-#endif
-
-                debug2(" BLER is %f --vs.----random threshold = %.2f = \n" ,BLER, rand1 );
-
-                if ( phymib_.enableInterference_ && BLER > rand1) {
-                    pkt_error = TRUE;
-                    debug2("set channel to true.\n");
-                } else {
-                    pkt_error = FALSE;
-                    debug2("set channel to false.\n");
-                }
-
-                // Chk if thr is any last block, compute whether it is in error or not.
-                if (last_block_size > 0) {
-                    debug2("1.6 Begin to calculate the BLER for the uncomplete blocks.\n");
-                    eesm_sum =0;
-
-                    index =  phy->getMCSIndex( wimaxHdr->phy_info.modulation_ ,  last_block_size);
-                    debug2("No AMC enabled here. The MCS index is %d\n", index);
-
-                    beta = global->GetBeta( ITU_PDP, index);
-
-                    num_subcarrier_block = num_symbol_per_slot * getPhy()->getNumSubcarrier (DL_) * last_block_size;
-
-                    if (num_subcarrier_block > total_subcarriers)
-                        num_subcarrier_block = total_subcarriers;
-
-                    for (int i=0; i<counter; i++) {
-                        eesm_sum = eesm_sum + exp( -(SINR[i]/beta));
-                    }
-                    debug2("I am here 3.\n");
-                    if (num_subcarrier_block==0) {
-                        fprintf(stderr, "ERROR: #subcarrier_block :%d\n", num_subcarrier_block);
-                        //exit(1);
-                        drop(pktRx_, "WRN_SBCR");
-                        debug2("==============================SS receive End ===========================================\n");
-                        return;
-                    }
-                    debug2("I am here 4.\n");
-                    if (eesm_sum >= BASE_POWER) {
-                        SIR =  (-beta) * log(eesm_sum/counter);
-                        //SIR =  (-beta) * log(eesm_sum/num_subcarrier_block);
-                        if (SIR < 0) {
-                            //exit (1);
-                            drop(pktRx_, "WRN_SIR");
-                            debug2("WARNING: SIR less than 0.\n");
-                            debug2("==============================SS receive End ===========================================\n");
-                            return;
-
-                        }
-                        SIR=10*log10(SIR);
-                        debug2(" SIR-SS = %.2f = \n" , SIR );
-                        BLER = global->TableLookup(index, SIR);
-                    } else {
-                        BLER = 0;
-                    }
-                    debug2(" BLER at SS for the last block = %.2f = \n" , BLER );
-
-#ifdef FIX_PROPORTIONAL_ERROR
-                    rand1 = ERROR_THRESHOLD;
-#else
-                    int rand_num = ((rand() % 100) +1 ) ;
-                    rand1 = rand_num/100.00;
-#endif
-
-                    debug2(" BLER is %f --vs.----random threshold = %.2f = \n" ,BLER, rand1 );
-                    if ( phymib_.enableInterference_ && BLER > rand1) {
-                        pkt_error = TRUE;
-                    } else {
-                        pkt_error = FALSE;
-                    }
-                }
-            }
-        }
-
-        // deleting dynamic allocations  //removed for testing without Rxinpwr in packet header
-        delete [] SINR;
-        delete [] signalpower;
-        delete [] interferencepower;
-
-
-        if ( pkt_error == TRUE) {
-            addPowerinfo(wimaxHdr, 0.0,true);
-
-            debug2(" 6 error in the packet, drop this packet. the Mac does not process\n");
-            drop(pktRx_, "NOPWR");
-            Packet::free(pktRx_);
-            pkt_error = FALSE;
-            //update drop stat
-            update_watch (&loss_watch_, 1);
-            pktRx_ = NULL;
-            debug2("==============================SS receive End ===========================================\n");
-            return;
-        }
-
-        addPowerinfo(wimaxHdr, 0.0,true);
-        //BLER calcualtion ends
-    } //bwreq packet treatment else ends here.  replace { when testing ends
+       // switch interference calculation of if it is not needed
+       if ( phymib_.enableInterference_ == 1 ) {
+
+
+			addPowerinfo(wimaxHdr, 0.0,true);
+
+			//commenting here to chk without collision  ends
+
+			// chk collision ends
+
+			//   SINR calcualtions
+
+			//removed for testing without Rxinpwr in packet header
+
+			int total_subcarriers=0;
+			//int num_data_subcarrier = getPhy()->getNumDataSubcarrier (DL_);
+			int num_data_subcarrier = getPhy()->getNumSubcarrier (DL_);
+			int num_subchannel      = getPhy()->getNumsubchannels (DL_);
+			int num_symbol_per_slot = getPhy()->getSlotLength (DL_);
+
+			// calculate the total subcarriers needed
+			if (wimaxHdr->phy_info.num_OFDMSymbol != 0) {
+
+				//total_subcarriers = wimaxHdr->phy_info.num_subchannels * wimaxHdr->phy_info.num_OFDMSymbol * num_data_subcarrier ;
+
+				if (wimaxHdr->phy_info.num_OFDMSymbol % num_symbol_per_slot == 0) { // chk this condition , chk whether broacastcid reqd ir not.
+					if (wimaxHdr->phy_info.num_OFDMSymbol > num_symbol_per_slot) {
+						// for the first 3 symbols
+						for (int i = wimaxHdr->phy_info.OFDMSymbol_offset ; i<  (wimaxHdr->phy_info.OFDMSymbol_offset + num_symbol_per_slot) ; i++)
+							//   for(int j = (wimaxHdr->phy_info.subchannel_offset)*num_data_subcarrier ; j<num_subchannel*num_data_subcarrier ; j++ )
+						{
+							total_subcarriers += (num_subchannel*num_data_subcarrier) - ((wimaxHdr->phy_info.subchannel_offset)*num_data_subcarrier ) ;
+						}
+						// except the last 3 and first 3 whatever is thr
+
+						for (int i = wimaxHdr->phy_info.OFDMSymbol_offset+num_symbol_per_slot ; i< (wimaxHdr->phy_info.OFDMSymbol_offset) + (wimaxHdr->phy_info.num_OFDMSymbol-num_symbol_per_slot) ; i++)
+							//for(int j = 0 ; j<num_subchannel*num_data_subcarrier ; j++ )
+						{
+							total_subcarriers +=  num_subchannel*num_data_subcarrier;
+						}
+
+						// last 3
+						for (int i = wimaxHdr->phy_info.OFDMSymbol_offset +wimaxHdr->phy_info.num_OFDMSymbol-num_symbol_per_slot ; i<  wimaxHdr->phy_info.OFDMSymbol_offset +wimaxHdr->phy_info.num_OFDMSymbol ; i++)
+							//for(int j = 0 ; j<(wimaxHdr->phy_info.num_subchannels%num_subchannel)*num_data_subcarrier ; j++ )
+						{
+							total_subcarriers += ((wimaxHdr->phy_info.num_subchannels - (num_subchannel - (wimaxHdr->phy_info.subchannel_offset)) )%num_subchannel)*num_data_subcarrier;
+						}
+					} else {
+
+						for (int i = wimaxHdr->phy_info.OFDMSymbol_offset ; i<  (wimaxHdr->phy_info.OFDMSymbol_offset + num_symbol_per_slot) ; i++)
+							//for(int j = (wimaxHdr->phy_info.subchannel_offset)*num_data_subcarrier ; j<wimaxHdr->phy_info.num_subchannels*num_data_subcarrier ; j++ )
+						{
+							total_subcarriers += wimaxHdr->phy_info.num_subchannels*num_data_subcarrier ;//-  (wimaxHdr->phy_info.subchannel_offset)*num_data_subcarrier ;
+						}
+					}
+				} else {
+					// for the first 3 symbols
+					if (wimaxHdr->phy_info.num_OFDMSymbol > 1) {
+						for (int i = wimaxHdr->phy_info.OFDMSymbol_offset ; i<  (wimaxHdr->phy_info.OFDMSymbol_offset + 1) ; i++)
+							//   for(int j = (wimaxHdr->phy_info.subchannel_offset)*num_data_subcarrier ; j<num_subchannel*num_data_subcarrier ; j++ )
+						{
+							total_subcarriers += num_subchannel*num_data_subcarrier - (wimaxHdr->phy_info.subchannel_offset)*num_data_subcarrier ;
+						}
+						// except the last 3 and first 3 whatever is thr
+
+						for (int i = wimaxHdr->phy_info.OFDMSymbol_offset+1 ; i< (wimaxHdr->phy_info.OFDMSymbol_offset) + (wimaxHdr->phy_info.num_OFDMSymbol-1) ; i++)
+							//for(int j = 0 ; j<num_subchannel*num_data_subcarrier ; j++ )
+						{
+							total_subcarriers +=  num_subchannel*num_data_subcarrier ;
+						}
+
+						// last 3
+						for (int i = wimaxHdr->phy_info.OFDMSymbol_offset +wimaxHdr->phy_info.num_OFDMSymbol-1 ; i< wimaxHdr->phy_info.OFDMSymbol_offset +wimaxHdr->phy_info.num_OFDMSymbol ; i++)
+							// for(int j = 0 ; j<(wimaxHdr->phy_info.num_subchannels%num_subchannel)*num_data_subcarrier ; j++ )
+						{
+							total_subcarriers += ((wimaxHdr->phy_info.num_subchannels - (num_subchannel - (wimaxHdr->phy_info.subchannel_offset)) )%num_subchannel)*num_data_subcarrier ;
+						}
+
+					} else {
+
+						for (int i = wimaxHdr->phy_info.OFDMSymbol_offset ; i<  (wimaxHdr->phy_info.OFDMSymbol_offset + 1) ; i++)
+							// for(int j = (wimaxHdr->phy_info.subchannel_offset)*num_data_subcarrier ; j<wimaxHdr->phy_info.num_subchannels*num_data_subcarrier ; j++ )
+						{
+							total_subcarriers +=    wimaxHdr->phy_info.num_subchannels*num_data_subcarrier;// - (wimaxHdr->phy_info.subchannel_offset)*num_data_subcarrier ;
+						}
+					}
+				}
+			}
+			//     else
+			//      total_subcarriers = wimaxHdr->phy_info.num_subchannels * num_data_subcarrier ;
+
+			// total subcarrier calculation ends
+
+			debug2(" total_subcarriers = %d \n", total_subcarriers);
+
+			double *signalpower = (double *) new double [total_subcarriers] ;
+			double *interferencepower = (double *) new double [total_subcarriers];
+			double *SINR = (double *) new double [total_subcarriers];
+			for (int i = 0; i< total_subcarriers ; i++) {
+				SINR[i] = 0.0;
+				signalpower[i] = 0.0;
+				interferencepower[i] = 0.0;
+			}
+
+			int n=0,m=0;
+
+			if (wimaxHdr->phy_info.num_OFDMSymbol % num_symbol_per_slot == 0) { // chk this condition
+				if (wimaxHdr->phy_info.num_OFDMSymbol > num_symbol_per_slot) {
+					// for the first num_symbol_per_slot symbols
+					for (int i = wimaxHdr->phy_info.OFDMSymbol_offset ; i<  (wimaxHdr->phy_info.OFDMSymbol_offset + num_symbol_per_slot) ; i++)
+						for (int j = (wimaxHdr->phy_info.subchannel_offset)*num_data_subcarrier ; j<num_subchannel*num_data_subcarrier ; j++ ) {
+							interferencepower[n++]= intpower_[i][j] + BASE_POWER /*+ pktRx_->txinfo_.RxIntPr[i][j]*/;
+							signalpower[m++]= pktRx_->txinfo_.RxPr_OFDMA[j];
+						}
+					// except the last num_symbol_per_slot and first num_symbol_per_slot whatever is thr
+
+					for (int i = wimaxHdr->phy_info.OFDMSymbol_offset+num_symbol_per_slot ; i< (wimaxHdr->phy_info.OFDMSymbol_offset) + (wimaxHdr->phy_info.num_OFDMSymbol-num_symbol_per_slot) ; i++)
+						for (int j = 0 ; j<num_subchannel*num_data_subcarrier ; j++ ) {
+							interferencepower[n++]= intpower_[i][j] + BASE_POWER /*+ pktRx_->txinfo_.RxIntPr[i][j]*/;
+							signalpower[m++]= pktRx_->txinfo_.RxPr_OFDMA[j];
+						}
+
+					// last num_symbol_per_slot
+					for (int i = wimaxHdr->phy_info.OFDMSymbol_offset +wimaxHdr->phy_info.num_OFDMSymbol-num_symbol_per_slot ; i<  wimaxHdr->phy_info.OFDMSymbol_offset +wimaxHdr->phy_info.num_OFDMSymbol ; i++)
+						for (int j = 0 ; j<((wimaxHdr->phy_info.num_subchannels - (num_subchannel - (wimaxHdr->phy_info.subchannel_offset)) )%num_subchannel)*num_data_subcarrier; j++ ) {
+							interferencepower[n++]= intpower_[i][j] + BASE_POWER /*+ pktRx_->txinfo_.RxIntPr[i][j]*/;
+							signalpower[m++]= pktRx_->txinfo_.RxPr_OFDMA[j];
+						}
+				} else {
+
+					for (int i = wimaxHdr->phy_info.OFDMSymbol_offset ; 	i<  (wimaxHdr->phy_info.OFDMSymbol_offset + num_symbol_per_slot) ; i++)
+						for (int j = (wimaxHdr->phy_info.subchannel_offset)*num_data_subcarrier ;
+								j<(((wimaxHdr->phy_info.subchannel_offset)*num_data_subcarrier) + wimaxHdr->phy_info.num_subchannels*num_data_subcarrier);
+								j++ ) {
+							interferencepower[n++]= intpower_[i][j] + BASE_POWER /*+ pktRx_->txinfo_.RxIntPr[i][j]*/;
+							signalpower[m++]= pktRx_->txinfo_.RxPr_OFDMA[j];
+						}
+				}
+			}
+
+			else
+
+			{
+				//numsymbols = (int)  ceil((((wimaxHdr->phy_info.subchannel_offset + wimaxHdr->phy_info.num_subchannels -1) - 30) % 30));
+				//numsymbols *= num_symbol_per_slot;
+				// for the first num_symbol_per_slot symbols
+				if (wimaxHdr->phy_info.num_OFDMSymbol > 1) {
+					for (int i = wimaxHdr->phy_info.OFDMSymbol_offset ; i<  (wimaxHdr->phy_info.OFDMSymbol_offset + 1) ; i++)
+						for (int j = (wimaxHdr->phy_info.subchannel_offset)*num_data_subcarrier ; j<num_subchannel*num_data_subcarrier ; j++ ) {
+							interferencepower[n++]= intpower_[i][j] + BASE_POWER /*+ pktRx_->txinfo_.RxIntPr[i][j]*/;
+							signalpower[m++]= pktRx_->txinfo_.RxPr_OFDMA[j];
+						}
+					// except the last num_symbol_per_slot and first num_symbol_per_slot whatever is thr
+
+					for (int i = (wimaxHdr->phy_info.OFDMSymbol_offset+1) ; i<  (wimaxHdr->phy_info.OFDMSymbol_offset) + (wimaxHdr->phy_info.num_OFDMSymbol-1) ; i++)
+						for (int j = 0 ; j<num_subchannel*num_data_subcarrier ; j++ ) {
+							interferencepower[n++]= intpower_[i][j] + BASE_POWER /*+ pktRx_->txinfo_.RxIntPr[i][j]*/;
+							signalpower[m++]= pktRx_->txinfo_.RxPr_OFDMA[j];
+						}
+
+					// last num_symbol_per_slot
+					for (int i = wimaxHdr->phy_info.OFDMSymbol_offset +wimaxHdr->phy_info.num_OFDMSymbol-1 ; i< wimaxHdr->phy_info.OFDMSymbol_offset +wimaxHdr->phy_info.num_OFDMSymbol ; i++)
+						for (int j = 0 ; j<(((wimaxHdr->phy_info.num_subchannels - (num_subchannel - (wimaxHdr->phy_info.subchannel_offset)) )%num_subchannel))*num_data_subcarrier ; j++ ) {
+							interferencepower[n++]= intpower_[i][j] + BASE_POWER /*+ pktRx_->txinfo_.RxIntPr[i][j]*/;
+							signalpower[m++]= pktRx_->txinfo_.RxPr_OFDMA[j];
+						}
+
+				} else {
+					for (int i = wimaxHdr->phy_info.OFDMSymbol_offset ; i<  (wimaxHdr->phy_info.OFDMSymbol_offset + 1) ; i++)
+						for (int j = (wimaxHdr->phy_info.subchannel_offset)*num_data_subcarrier ; j<(((wimaxHdr->phy_info.subchannel_offset)*num_data_subcarrier) + wimaxHdr->phy_info.num_subchannels*num_data_subcarrier) ; j++ ) {
+							interferencepower[n++]= intpower_[i][j] + BASE_POWER /*+ pktRx_->txinfo_.RxIntPr[i][j]*/;
+							signalpower[m++]= pktRx_->txinfo_.RxPr_OFDMA[j];
+						}
+				}
+			}
+
+			int counter = 0;
+			for (int k = 0; k < total_subcarriers; k++) {
+				if ( signalpower[k] > DOUBLE_INT_ZERO) { // not equals to zero
+					SINR[k] =  signalpower[k]/interferencepower[k];
+					counter++;
+				}
+			}
+
+			debug2(" in MAC SS, [%d] subcarriers signal power are calculated.\n ", counter);
+
+
+			double SIR = 0.0;
+			//debug2("In MAC BS: the total number of subcarrier/3 is [%d]\n", total_subcarriers/3);
+
+
+			//process packet
+			gen_mac_header_t header = wimaxHdr->header;
+			OFDMAPhy *phy = getPhy();
+
+			//debug2(" checking for intereference power \n" );
+
+			// BLER calculation
+
+			GlobalParams_Wimax* global ;
+			global =  GlobalParams_Wimax::Instance();
+
+			int num_of_slots,num_of_complete_block,max_block_size,last_block_size , index, num_subcarrier_block ;
+			double BLER= 0.0, beta=0.0, eesm_sum = 0.0, rand1 =0.0;
+
+			num_of_slots = (int) ceil((double)ch->size() / (double)phy->getSlotCapacity(wimaxHdr->phy_info.modulation_, DL_));
+			max_block_size=phy->getMaxBlockSize(wimaxHdr->phy_info.modulation_);   // get max  block size in number of slots
+			last_block_size = num_of_slots % max_block_size;  //remain blocks
+			num_of_complete_block = (int) floor(num_of_slots / max_block_size);
+			int ITU_PDP = getITU_PDP ();
+			bool pkt_error = FALSE;
+
+			debug2(" num of complete blocks = %d , ITU_PDP = %d, num of slots = %d, max block size = %d, last block size = %d \n" , num_of_complete_block, ITU_PDP, num_of_slots, max_block_size, last_block_size );
+
+			int current_mcs_indx = 31;
+			if (wimaxHdr->header.cid >= 0x4001 && wimaxHdr->header.cid <=0xFEFE && amc_enable_ ==1) {
+				debug2("the incoming packet phy header mcs index is %d\n",wimaxHdr->phy_info.mcs_index_ );
+				debug2("the modulation field in Phy_header of this packet is %d\n", wimaxHdr->phy_info.modulation_);
+				index =  phy->getMCSIndex( wimaxHdr->phy_info.modulation_ ,  max_block_size);
+				debug2("before the amc index configure index is %d\n",index);
+
+
+				if (num_of_complete_block == 0) { //only have the remain blocks, not multiple
+					debug2("1.1 SS Begin to calculate the BLER for the uncomplete blocks.\n");
+
+					current_mcs_indx = wimaxHdr->phy_info.mcs_index_;
+					if (current_mcs_indx >=1 &&  current_mcs_indx <=30) {
+						index = current_mcs_indx;
+						debug2("Set to MCS index carried in the incoming packet %d.\n", index);
+					} else {
+						if (get_ss_current_mcs_index() >=1 &&  get_ss_current_mcs_index()<=30) {
+							index = get_ss_current_mcs_index();
+							debug2("Set to the previous local MCS index %d\n", index);
+						}
+					}
+					set_ss_current_mcs_index(current_mcs_indx);
+
+					beta = global->GetBeta( ITU_PDP, index);
+					debug2(" beta = %.2f = \n" , beta );
+
+					num_subcarrier_block = num_symbol_per_slot * getPhy()->getNumSubcarrier (DL_) * last_block_size;
+
+					if (num_subcarrier_block > total_subcarriers)
+						num_subcarrier_block = total_subcarriers;
+
+					for (int i=0; i<counter; i++) {
+						eesm_sum = eesm_sum + exp( -(SINR[i]/beta));
+					}
+
+					if (num_subcarrier_block==0) {
+						debug2( "ERROR: #subcarrier_block :%d\n", num_subcarrier_block);
+						//exit(1);
+						drop(pktRx_, "WRN_SBCR");
+						return;
+					}
+
+					if (eesm_sum >= BASE_POWER) {
+						SIR =  (-beta) * log(eesm_sum/counter);
+						//SIR =  (-beta) * log(eesm_sum/num_subcarrier_block);
+						if (SIR < 0) {
+							drop(pktRx_, "WRN_SIR");
+							debug2("WARNING: SIR less than 0.\n");
+							debug2("==============================SS receive End ===========================================\n");
+							return;
+						}
+						SIR=10*log10(SIR);
+						debug2(" SIR-SS in dB= %.2f = \n" , SIR );
+						BLER = global->TableLookup(index, SIR);
+					} else {
+						BLER = 0;
+					}
+
+					set_effective_sinr(SIR);
+					set_current_bler(BLER);
+					//set_ss_current_mcs_index(index);
+					debug2( "SS set the DL effective SIR to %f  set current BLER = %.5f, mcs index = %d\n", SIR, BLER, index);
+
+	#ifdef FIX_PROPORTIONAL_ERROR
+					rand1 = ERROR_THRESHOLD;
+	#else
+					int rand_num = ((rand() % 100) +1 ) ;
+					rand1 = rand_num/100.00;
+	#endif
+
+					debug2(" BLER is %f --vs.----random threshold = %.2f = \n" ,BLER, rand1 );
+
+					if ( phymib_.enableInterference_ && BLER > rand1) {
+						pkt_error = TRUE;
+						debug2("set channel to true.\n");
+						set_channel_error(TRUE);
+					} else {
+						pkt_error = FALSE;
+						debug2("set channel to false.\n");
+						set_channel_error(FALSE);
+					}
+				} else {
+					debug2("1.2 Begin to calculate the BLER for the complete blocks.\n");
+					// First the complete blocks are checked fro error
+
+					current_mcs_indx = wimaxHdr->phy_info.mcs_index_;
+					if (current_mcs_indx >=1 && current_mcs_indx <=30) {
+						index = current_mcs_indx;
+						debug2("Set to MCS index carried in the incoming packet %d\n", index);
+					} else {
+						if (get_ss_current_mcs_index() >=1 && get_ss_current_mcs_index()<=30) {
+							index = get_ss_current_mcs_index();
+							debug2("Set to the previous local MCS index %d\n", index);
+						}
+					}
+
+					beta = global->GetBeta( ITU_PDP, index);
+
+					num_subcarrier_block = num_symbol_per_slot * getPhy()->getNumSubcarrier (DL_) * max_block_size;
+					if (num_subcarrier_block > total_subcarriers)
+						num_subcarrier_block = total_subcarriers;
+
+					for (int i=0; i<counter; i++) {
+						eesm_sum = eesm_sum + exp( -(SINR[i]/beta));
+					}
+
+					if (num_subcarrier_block==0) {
+						debug2( "ERROR: #subcarrier_block :%d\n", num_subcarrier_block);
+						//exit(1);
+						drop(pktRx_, "WRN_SBCR");
+						debug2("==============================SS receive End ===========================================\n");
+						return;
+					}
+
+					if (eesm_sum >= BASE_POWER) {
+						SIR =  (-beta) * log(eesm_sum/counter);
+						//SIR =  (-beta) * log(eesm_sum/num_subcarrier_block);
+						if (SIR < 0) {
+							drop(pktRx_, "WRN_SIR");
+							debug2("WARNING: SIR less than 0.\n");
+							debug2("==============================SS receive End ===========================================\n");
+							return;
+						}
+						SIR=10*log10(SIR);
+						debug2(" SIR-SS = %.2f = \n" , SIR );
+						BLER = global->TableLookup(index, SIR);
+					} else {
+						BLER = 0;
+					}
+
+					set_effective_sinr(SIR);
+					set_current_bler(BLER);
+					set_ss_current_mcs_index(current_mcs_indx);
+					debug2("SS set the SIR to %f,  BLER for the complete burst is [%f], mcs index is [%d]\n",SIR, BLER, index);
+
+	#ifdef FIX_PROPORTIONAL_ERROR
+					rand1 = ERROR_THRESHOLD;
+	#else
+					int rand_num = ((rand() % 100) +1 ) ;
+					rand1 = rand_num/100.00;
+	#endif
+
+					debug2(" BLER is %f --vs.----random threshold = %.2f = \n" ,BLER, rand1 );
+
+					if ( phymib_.enableInterference_ && BLER > rand1) {
+						pkt_error = TRUE;
+						debug2("set channel to true.\n");
+						set_channel_error(TRUE);
+					} else {
+						pkt_error = FALSE;
+						debug2("set channel to false.\n");
+						set_channel_error(FALSE);
+					}
+				}
+			} else {
+				/*For the data otherwise traffic, do not bother. let it be.*/
+				if (num_of_complete_block == 0) { //only have the remain blocks, not multiple
+					debug2("1.4 Begin to calculate the BLER for the uncomplete blocks.\n");
+
+					//num_of_complete_block =1;
+					index =  phy->getMCSIndex( wimaxHdr->phy_info.modulation_ ,  last_block_size);
+					beta = global->GetBeta( ITU_PDP, index);
+					debug2(" beta = %.2f = \n" , beta );
+
+					num_subcarrier_block = num_symbol_per_slot * getPhy()->getNumSubcarrier (DL_) * last_block_size;
+
+					if (num_subcarrier_block > total_subcarriers)
+						num_subcarrier_block = total_subcarriers;
+
+					for (int i=0; i<counter; i++) {
+						eesm_sum = eesm_sum + exp( -(SINR[i]/beta));
+					}
+
+					if (num_subcarrier_block==0) {
+						debug2( "ERROR: #subcarrier_block :%d\n", num_subcarrier_block);
+						//exit(1);
+						drop(pktRx_, "WRN_SBCR");
+						debug2("==============================SS receive End ===========================================\n");
+						return;
+					}
+
+					if (eesm_sum >= BASE_POWER) {
+						//SIR =  (-beta) * log(eesm_sum/counter);
+						SIR =  (-beta) * log(eesm_sum/num_subcarrier_block);
+						if (SIR < 0) {
+							drop(pktRx_, "WRN_SIR");
+							debug2("WARNING: SIR less than 0.\n");
+							debug2("==============================SS receive End ===========================================\n");
+							return;
+						}
+						SIR=10*log10(SIR);
+						debug2(" SIR-SS in dB= %.2f = \n" , SIR );
+						BLER = global->TableLookup(index, SIR);
+					} else {
+						BLER = 0;
+					}
+
+	#ifdef FIX_PROPORTIONAL_ERROR
+					rand1 = ERROR_THRESHOLD;
+	#else
+					int rand_num = ((rand() % 100) +1 ) ;
+					rand1 = rand_num/100.00;
+	#endif
+
+					debug2(" BLER is %f --vs.----random threshold = %.2f = \n" ,BLER, rand1 );
+
+					if ( phymib_.enableInterference_ && BLER > rand1) {
+						pkt_error = TRUE;
+						debug2("set channel to true.\n");
+					} else {
+						pkt_error = FALSE;
+						debug2("set channel to false.\n");
+					}
+				} else {
+					// First the complete blocks are checked fro error
+					debug2("1.5 Begin to calculate the BLER for the complete blocks.\n");
+					index =  phy->getMCSIndex( wimaxHdr->phy_info.modulation_ ,  max_block_size);
+					debug2("No AMC enabled here. The MCS index is %d\n", index);
+					beta = global->GetBeta( ITU_PDP, index);
+
+					num_subcarrier_block = num_symbol_per_slot * getPhy()->getNumSubcarrier (DL_) * max_block_size;
+					if (num_subcarrier_block > total_subcarriers)
+						num_subcarrier_block = total_subcarriers;
+
+					for (int i=0; i<counter; i++) {
+						eesm_sum = eesm_sum + exp( -(SINR[i]/beta));
+					}
+					debug2("I am here 1.\n");
+					if (num_subcarrier_block==0) {
+						debug2( "ERROR: #subcarrier_block :%d\n", num_subcarrier_block);
+						//exit(1);
+						drop(pktRx_, "WRN_SBCR");
+						debug2("==============================SS receive End ===========================================\n");
+						return;
+					}
+					debug2("I am here 2.\n");
+					if (eesm_sum >= BASE_POWER) {
+						SIR =  (-beta) * log(eesm_sum/counter);
+						//SIR =  (-beta) * log(eesm_sum/num_subcarrier_block);
+						if (SIR < 0) {
+							drop(pktRx_, "WRN_SIR");
+							debug2("WARNING: SIR less than 0.\n");
+							debug2("==============================SS receive End ===========================================\n");
+							return;
+						}
+						SIR=10*log10(SIR);
+						debug2(" SIR-SS = %.2f = \n" , SIR );
+						BLER = global->TableLookup(index, SIR);
+					} else {
+						BLER = 0;
+					}
+
+					debug2(" BLER at SS of the complete blocks = %.2f  \n" , BLER );
+
+	#ifdef FIX_PROPORTIONAL_ERROR
+					rand1 = ERROR_THRESHOLD;
+	#else
+					int rand_num = ((rand() % 100) +1 ) ;
+					rand1 = rand_num/100.00;
+	#endif
+
+					debug2(" BLER is %f --vs.----random threshold = %.2f = \n" ,BLER, rand1 );
+
+					if ( phymib_.enableInterference_ && BLER > rand1) {
+						pkt_error = TRUE;
+						debug2("set channel to true.\n");
+					} else {
+						pkt_error = FALSE;
+						debug2("set channel to false.\n");
+					}
+
+					// Chk if thr is any last block, compute whether it is in error or not.
+					if (last_block_size > 0) {
+						debug2("1.6 Begin to calculate the BLER for the uncomplete blocks.\n");
+						eesm_sum =0;
+
+						index =  phy->getMCSIndex( wimaxHdr->phy_info.modulation_ ,  last_block_size);
+						debug2("No AMC enabled here. The MCS index is %d\n", index);
+
+						beta = global->GetBeta( ITU_PDP, index);
+
+						num_subcarrier_block = num_symbol_per_slot * getPhy()->getNumSubcarrier (DL_) * last_block_size;
+
+						if (num_subcarrier_block > total_subcarriers)
+							num_subcarrier_block = total_subcarriers;
+
+						for (int i=0; i<counter; i++) {
+							eesm_sum = eesm_sum + exp( -(SINR[i]/beta));
+						}
+						debug2("I am here 3.\n");
+						if (num_subcarrier_block==0) {
+							fprintf(stderr, "ERROR: #subcarrier_block :%d\n", num_subcarrier_block);
+							//exit(1);
+							drop(pktRx_, "WRN_SBCR");
+							debug2("==============================SS receive End ===========================================\n");
+							return;
+						}
+						debug2("I am here 4.\n");
+						if (eesm_sum >= BASE_POWER) {
+							SIR =  (-beta) * log(eesm_sum/counter);
+							//SIR =  (-beta) * log(eesm_sum/num_subcarrier_block);
+							if (SIR < 0) {
+								//exit (1);
+								drop(pktRx_, "WRN_SIR");
+								debug2("WARNING: SIR less than 0.\n");
+								debug2("==============================SS receive End ===========================================\n");
+								return;
+
+							}
+							SIR=10*log10(SIR);
+							debug2(" SIR-SS = %.2f = \n" , SIR );
+							BLER = global->TableLookup(index, SIR);
+						} else {
+							BLER = 0;
+						}
+						debug2(" BLER at SS for the last block = %.2f = \n" , BLER );
+
+	#ifdef FIX_PROPORTIONAL_ERROR
+						rand1 = ERROR_THRESHOLD;
+	#else
+						int rand_num = ((rand() % 100) +1 ) ;
+						rand1 = rand_num/100.00;
+	#endif
+
+						debug2(" BLER is %f --vs.----random threshold = %.2f = \n" ,BLER, rand1 );
+						if ( phymib_.enableInterference_ && BLER > rand1) {
+							pkt_error = TRUE;
+						} else {
+							pkt_error = FALSE;
+						}
+					}
+				}
+			}
+
+			// deleting dynamic allocations  //removed for testing without Rxinpwr in packet header
+			delete [] SINR;
+			delete [] signalpower;
+			delete [] interferencepower;
+
+
+			if ( pkt_error == TRUE) {
+				addPowerinfo(wimaxHdr, 0.0,true);
+
+				debug2(" 6 error in the packet, drop this packet. the Mac does not process\n");
+				drop(pktRx_, "NOPWR");
+				Packet::free(pktRx_);
+				pkt_error = FALSE;
+				//update drop stat
+				update_watch (&loss_watch_, 1);
+				pktRx_ = NULL;
+				debug2("==============================SS receive End ===========================================\n");
+				return;
+			}
+
+			addPowerinfo(wimaxHdr, 0.0,true);
+			//BLER calcualtion ends
+		} //bwreq packet treatment else ends here.  replace { when testing ends
+
+    } // END if ( phymib_.enableInterference_ == 1 )
 
     if (ch->ptype()==PT_MAC) {
         if (HDR_MAC802_16(pktRx_)->header.ht == 1 && HDR_MAC802_16(pktRx_)->header.ec ==1
