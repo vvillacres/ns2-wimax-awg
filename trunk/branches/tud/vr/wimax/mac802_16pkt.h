@@ -86,6 +86,8 @@ struct phy_info_t {
     double time_ubound;
     int num_subchannels;
     int subchannel_offset;
+    int subchannel_lbound;
+    int subchannel_ubound;
     int num_OFDMSymbol;
     int OFDMSymbol_offset;
     int channel_index;
