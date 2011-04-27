@@ -45,6 +45,7 @@
 
 // downlink burst mapping algorithm
 #include "dlburstmappingsimple.h"
+#include "dlburstmappingocsa.h"
 
 
 // Ranging Region (cp. Table 376 IEEE 802.16-2009)
@@ -311,7 +312,10 @@ void BSScheduler::init ()
 
     // Downlink Burst Mapping Algorithm
     if ( !dlBurstMappingAlgorithm_) {
-    	dlBurstMappingAlgorithm_ = new DlBurstMappingSimple( mac_, this);
+    	 // dlBurstMappingAlgorithm_ = new DlBurstMappingOcsa( mac_, this); // OSCA
+    	 dlBurstMappingAlgorithm_ = new DlBurstMappingSimple( mac_, this); // Simple
+
+    	 // Change Line 1226 according to the choosen algorithm
     }
 
     printf("Algorithm Objects created \n");
@@ -1200,12 +1204,13 @@ void BSScheduler::schedule ()
         Burst *burst = map->getDlSubframe()->getPdu ()->getBurst (index);
         int b_data = 0;
 
+
         Connection *con=mac_->getCManager ()->get_connection (burst->getCid(),OUT_CONNECTION);
         debug_ext("BSScheduler is going to handle CID [%d]\n", burst->getCid());
 #ifdef DEBUG_WIMAX
         assert (con);
 #endif
-        // UPDATE ALLOCATION MISSING !!!!!!!!!!!!!!!!
+
 
 
         //Begin RPI
@@ -1218,11 +1223,15 @@ void BSScheduler::schedule ()
                 b_data = transfer_packets_with_fragpackarq (con, burst, b_data); /*RPI*/
             } else {
 
+                // b_data = transferPacketsDownlinkBurst(con, burst, b_data); // for OSCA algorithm
                 b_data = transfer_packets1(con, burst, b_data);
             }
         }
-        debug_ext ("\nDL.2.2.After transfer_packets1 (other data) to burst_i :%d, CID :%d, b_data :%d\n", index, b->getCid(), b_data);
-        debug2("The length of the queue of burst is [%d]\n",b->getQueueLength_packets());
+
+        // UPDATE ALLOCATION MISSING !!!!!!!!!!!!!!!!
+
+        debug_ext ("\nDL.2.2.After transfer_packets1 (other data) to burst_i :%d, CID :%d, b_data :%d\n", index, burst->getCid(), b_data);
+        debug2("The length of the queue of burst is [%d]\n",burst->getQueueLength_packets());
     }//end loop ===> transfer bursts
 
 
@@ -1402,7 +1411,7 @@ mac802_16_dl_map_frame * BSScheduler::buildDownlinkMap( VirtualAllocation * virt
                     } else {
                         // connection has no assigned ressources
                         // add new entry
-                        virtualAlloc->addAllocation( currentCon, 0, 0, slotCapacity, nbOfSlots , allocationSize);
+                        virtualAlloc->addAllocation( currentCon, 0, 0, slotCapacity, allocationSize, nbOfSlots , 0);
                     }
                 }
             }
