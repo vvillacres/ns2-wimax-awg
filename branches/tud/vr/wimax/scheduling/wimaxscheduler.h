@@ -88,6 +88,15 @@ public:
     int transfer_packets1 (Connection *c, Burst *b, int b_data);
 
 
+    /**
+     * Transfert the packets from the given connection to the given burst
+     * @param con The connection
+     * @param b The burst
+     * @param b_data The amount of data in burst
+     * @param allocatedPayload ( transfered payload size )
+     * @return the new burst occupation
+     */
+    int transferPacketsDownlinkBurst (Connection * c, Burst * b, int b_data);
 
     /**
      * This function is used to schedule bursts/packets
