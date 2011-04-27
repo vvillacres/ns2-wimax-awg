@@ -335,8 +335,8 @@ OBJ_CC = \
 	wpan/p802_15_4trace.o wpan/p802_15_4transac.o \
 	wimax/ofdmphy.o wimax/mac802_16pkt.o \
     wimax/scheduling/wimaxscheduler.o \
-    wimax/scheduling/bsscheduler26.o \
     wimax/scheduling/bsscheduler.o \
+    wimax/scheduling/bsscheduler26.o \
     wimax/scheduling/virtualallocationelement.o \
     wimax/scheduling/virtualallocation.o \
     wimax/scheduling/trafficshapinginterface.o \
@@ -349,6 +349,14 @@ OBJ_CC = \
     wimax/scheduling/schedulingproportionalfairul.o \
     wimax/scheduling/edfqueueelement.o \
     wimax/scheduling/schedulingalgodualedf.o \
+    wimax/scheduling/dlburstmappinginterface.o \
+    wimax/scheduling/dlburstmappingsimple.o \
+    wimax/scheduling/dlburstmappingocsa.o \
+    wimax/scheduling/ocsaalgorithm.o \
+    wimax/scheduling/frame.o \
+    wimax/scheduling/anfrage.o \
+    wimax/scheduling/freearea.o \
+    wimax/scheduling/oscaburst.o \
     wimax/admissioncontrolinterface.o \
     wimax/thresholdbasedcac.o \
     wimax/faircac.o \
