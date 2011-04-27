@@ -47,7 +47,7 @@ void SchedulingAlgoProportionalFair::scheduleConnections( VirtualAllocation* vir
 				if ( virtualAllocation->getWantedMstrSize()  > 0) {
 
 					nbOfMstrConnections++;
-					sumOfWantedMstrBytes += ( virtualAllocation->getWantedMstrSize() - virtualAllocation->getWantedMrtrSize());
+					sumOfWantedMstrBytes +=  virtualAllocation->getWantedMstrSize();
 				}
 				printf("Connection CID %d Demand MSTR %d \n", virtualAllocation->getConnection()->get_cid(), virtualAllocation->getWantedMstrSize());
 			}
@@ -88,9 +88,9 @@ void SchedulingAlgoProportionalFair::scheduleConnections( VirtualAllocation* vir
 
 			while ( ( conThisRound > 0) && ( freeSlots > 0) ) {
 
-				// go to connection which has unfulfilled  Mrtr demands
+				// go to connection which has unfulfilled  Mstr demands
 				while ( ( virtualAllocation->getConnection()->getType() != CONN_DATA ) ||
-						( virtualAllocation->getWantedMrtrSize() <= u_int32_t( virtualAllocation->getCurrentMrtrPayload() ) ) )  {
+						( virtualAllocation->getWantedMstrSize() <= u_int32_t( virtualAllocation->getCurrentMstrPayload() ) ) )  {
 					// next connection
 
 					// TODO: may cause problems ugly
@@ -114,7 +114,7 @@ void SchedulingAlgoProportionalFair::scheduleConnections( VirtualAllocation* vir
 				int wantedMrtrSize = virtualAllocation->getWantedMrtrSize();
 				int wantedMstrSize = virtualAllocation->getWantedMstrSize();
 
-				while ( ( currentPacket != NULL) && ( (allocatedBytes < maximumBytes) && ( allocatedPayload < wantedMrtrSize) ) ) {
+				while ( ( currentPacket != NULL) && ( (allocatedBytes < maximumBytes) && ( allocatedPayload < wantedMstrSize) ) ) {
 
 					int packetSize = HDR_CMN(currentPacket)->size();
 
@@ -148,7 +148,7 @@ void SchedulingAlgoProportionalFair::scheduleConnections( VirtualAllocation* vir
 							allocatedBytes -= ( (allocatedPayload - wantedMstrSize) - HDR_MAC802_16_FRAGSUB_SIZE);
 						}
 						allocatedPayload = wantedMstrSize;
-						// reduce number of connection with mrtr demand
+						// reduce number of connection with mstr demand
 						nbOfMstrConnections--;
 						// avoids, that connection is called again
 						virtualAllocation->updateWantedMrtrMstr( 0, 0);
@@ -156,7 +156,7 @@ void SchedulingAlgoProportionalFair::scheduleConnections( VirtualAllocation* vir
 				} else {
 					// is demand fulfilled due to allocated bytes or all packets
 					if (( allocatedPayload >= wantedMstrSize) || ( currentPacket == NULL)) {
-						// reduce number of connection with mrtr demand
+						// reduce number of connection with mstr demand
 						nbOfMstrConnections--;
 						// avoids, that connection is called again
 						virtualAllocation->updateWantedMrtrMstr( 0, 0);
