@@ -197,11 +197,14 @@ int OcsaAlgorithm::initialFirstBurst(vector<anfrage *>* anfrageList,frame * fram
 {
 //	cout<<" 1=  ";
 	int tmp = frameObject->get_overheadX();
-	if(checkCollision_first (anfrageList,frameObject,max_burst_slot))
+
+
+ 	if(checkCollision_first (anfrageList,frameObject,max_burst_slot))
 	{
 		frameObject->set_restwidth(frameObject->get_restwidth() - 1);
 	}
-//	cout<<" 2=  ";
+
+	//	cout<<" 2=  ";
 //	cout<<"restwidth after collision = "<<frameObject->get_restwidth()<<endl;
 
 	if ( frameObject->get_restwidth() > 0 ) {
@@ -325,31 +328,40 @@ return 0;
 void OcsaAlgorithm::finishToPackingInAColumn(vector<anfrage *>* anfrageList,frame * frameObject,int max_burst_slot)
 {
 
-	for (int i=0;i< frameObject->get_heightOfFrame();i++)
-		{
-		if(frameObject->get_overheadX()<frameObject->get_burstList().back()->get_xCorr()&&!anfrageList->empty())
-		    {
-		    sortFreeareaList(& frameObject->freeareaList);
+//	for (int i=0;i < frameObject->get_heightOfFrame(); i++) {
+	if ( !anfrageList->empty() ) {
+
+		int xCoor;
+		if ( !frameObject->get_burstList().empty() ) {
+			xCoor = frameObject->get_burstList().back()->get_xCorr();
+		} else {
+			xCoor = frameObject->get_widthOfFrame();
+		}
+
+
+		if( frameObject->get_overheadX() < xCoor) {
+
+			sortFreeareaList(& frameObject->freeareaList);
+
 			int smallstAnfrageArea = findSmallstAnfrage(anfrageList)->get_slot();
-     //          cout<<"collision?   "<<checkCollision_after (anfrageList,frameObject,max_burst_slot)<<endl;
-			  if(frameObject->freeareaList.size() !=0 && frameObject->freeareaList.back()->get_area()>= smallstAnfrageArea){
-				 if(!checkCollision_after (anfrageList,frameObject,max_burst_slot))
-			  {
-			         OscaBurst * burstObject;
-			         burstObject = build_a_burst(anfrageList,max_burst_slot,frameObject->freeareaList.back()->get_area());
-			         packOneBurst(frameObject,burstObject);
-			  }
-				 else
-				 {
-					 int tmp_overhead = frameObject->get_estimate_overhead();
-					 int tmp_overhead_y = tmp_overhead%frameObject->get_heightOfFrame();
-					 OscaBurst * burstObject;
-					 burstObject = build_a_burst(anfrageList,max_burst_slot,
-					 frameObject->freeareaList.back()->get_area()-tmp_overhead_y*frameObject->freeareaList.back()->get_width());
-					 packOneBurst(frameObject,burstObject);
-				 }
+     //     cout<<"collision?   "<<checkCollision_after (anfrageList,frameObject,max_burst_slot)<<endl;
+
+			if(frameObject->freeareaList.size() !=0 && frameObject->freeareaList.back()->get_area()>= smallstAnfrageArea){
+
+				if ( !checkCollision_after (anfrageList,frameObject,max_burst_slot)) {
+			        OscaBurst * burstObject;
+			        burstObject = build_a_burst(anfrageList,max_burst_slot,frameObject->freeareaList.back()->get_area());
+			        packOneBurst(frameObject,burstObject);
+				} else {
+					int tmp_overhead = frameObject->get_estimate_overhead();
+					int tmp_overhead_y = tmp_overhead % frameObject->get_heightOfFrame();
+					OscaBurst * burstObject;
+					burstObject = build_a_burst(anfrageList,max_burst_slot,
+					frameObject->freeareaList.back()->get_area()-tmp_overhead_y*frameObject->freeareaList.back()->get_width());
+					packOneBurst(frameObject,burstObject);
+				}
 		    }
-		    }
+		}
     }
 
 
@@ -453,7 +465,10 @@ void OcsaAlgorithm::finishToPackingFrame(vector<anfrage *>* anfrageList,frame * 
    	//    cout<<"-------------------------finish finishToPackingInAColumn ---------------------------------"<<endl;
    	//    cout<<"restwidth  "<<frameObject->get_restwidth()<<endl;
    	//   cout<<"aktuelle anfrage size =   "<< anfrageList->size()<<endl;
-   	} while(frameObject->get_restwidth() > 0 && haveOneAnfragePackingIntoFrame(anfrageList,frameObject));
+
+   	//} while(frameObject->get_restwidth() > 0 && haveOneAnfragePackingIntoFrame(anfrageList,frameObject));
+	} while(frameObject->get_restwidth() > 0 && ( !anfrageList->empty()));
+
    	//	cout<<"---------------------begin PackingBrustInOverheadColumn ----------------------------------------"<<endl;
    	finishTOPackingBrustInOverheadColumn(anfrageList,frameObject,max_burst_slot);
    	// 	cout<<"--------------------finish PackingBrustInOverheadColumn ----------------------------------------"<<endl;
@@ -513,7 +528,8 @@ int OcsaAlgorithm::check_include(frame * frameObject)
 bool OcsaAlgorithm::checkCollision_first (vector<anfrage *>* anfrageList,frame * frameObject,int max_burst_slot)
 {
 //	cout<<" 3=  ";
-    int tmp =0; // slot of next burst
+
+	int tmp =0; // slot of next burst
     int N_anfrage = 0;
 
 
