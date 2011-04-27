@@ -177,7 +177,7 @@ void SchedulingAlgoProportionalFair::scheduleConnections( VirtualAllocation* vir
 				int newSlots = ( allocatedSlots - virtualAllocation->getCurrentNbOfSlots());
 
 				// debug
-				debug2(" %d new Mstr Slots for Connection CID %d \n", newSlots, virtualAllocation->getConnection()->get_cid() );
+				printf(" %d new Mstr Slots for Connection CID %d \n", newSlots, virtualAllocation->getConnection()->get_cid() );
 
 
 				// update freeSlots
