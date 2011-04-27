@@ -192,6 +192,9 @@ void SchedulingAlgoDualEdf::scheduleConnections( VirtualAllocation* virtualAlloc
 				// debug
 				// printf("Packet from Connection %d with %d Bytes and %f ms deadline served using %d new slots \n", edfMrtrQueue.top().getConnection()->get_cid(), edfMrtrQueue.top().getSize(), edfMrtrQueue.top().getDeadline() * 1e3, newSlots);
 
+				// debug
+				assert( wantedMrtrSize <= (newAllocPayload + allocPayload));
+
 				// update virtual allocation container
 				virtualAllocation->updateAllocation( newSlots + virtualAllocation->getCurrentNbOfSlots(), newAllocBytes + allocBytes, newAllocPayload + allocPayload, newAllocPayload + allocPayload);
 
@@ -264,8 +267,11 @@ void SchedulingAlgoDualEdf::scheduleConnections( VirtualAllocation* virtualAlloc
 				// update mstrSlots
 				mstrSlots += newSlots;
 
+				// debug
+				assert( wantedMstrSize <= (newAllocPayload + allocPayload));
+
 				// update virtual allocation container
-				virtualAllocation->updateAllocation( newSlots + virtualAllocation->getCurrentNbOfSlots(), newAllocBytes + allocBytes, virtualAllocation->getCurrentMrtrPayload(), newAllocBytes + allocPayload);
+				virtualAllocation->updateAllocation( newSlots + virtualAllocation->getCurrentNbOfSlots(), newAllocBytes + allocBytes, virtualAllocation->getCurrentMrtrPayload(), newAllocPayload + allocPayload);
 
 
 			}
