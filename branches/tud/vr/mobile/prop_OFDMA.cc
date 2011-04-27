@@ -207,8 +207,9 @@ PropOFDMA::Pr(PacketStamp *tx, PacketStamp *rx, WirelessPhy *ifp, Packet *p)
 
     cout << endl << "Pr after Cost231: " << Pr_bulk << endl;
 
-    for (int i=0; i<NUM_SUBCARRIERS; i++)
+    for (int i=0; i<NUM_SUBCARRIERS; i++) {
         Pr_per_subcarrier[i]=0.0;
+    }
 
     int n =0;
 
