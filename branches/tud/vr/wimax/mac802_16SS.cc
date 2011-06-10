@@ -3433,20 +3433,27 @@ void Mac802_16SS::lost_synch ()
 #endif
 
     //reset timers
-    if (t1timer_->busy()!=0)
+    if (t1timer_->busy()!=0) {
         t1timer_->stop();
-    if (t12timer_->busy()!=0)
+    }
+    if (t12timer_->busy()!=0) {
         t12timer_->stop();
-    if (t21timer_->busy()!=0)
+    }
+    if (t21timer_->busy()!=0) {
         t21timer_->stop();
-    if (lostDLMAPtimer_->busy()!=0)
-        lostDLMAPtimer_->stop();
-    if (lostULMAPtimer_->busy()!=0)
+    }
+    if (lostDLMAPtimer_->busy()!=0) {
+    	lostDLMAPtimer_->stop();
+    }
+    if (lostULMAPtimer_->busy()!=0) {
         lostULMAPtimer_->stop();
-    if (t2timer_->busy()!=0)
+    }
+    if (t2timer_->busy()!=0) {
         t2timer_->stop();
-    if (t44timer_ && t44timer_->busy()!=0)
+    }
+    if (t44timer_ && t44timer_->busy()!=0) {
         t44timer_->stop();
+    }
 
     //we need to go to receiving mode
     //printf ("Set phy to recv %x\n", getPhy());
@@ -3462,8 +3469,9 @@ void Mac802_16SS::lost_synch ()
     }
 
     //remove information about peer node
-    if (getPeerNode_head())
+    if (getPeerNode_head()) {
         removePeerNode (getPeerNode_head());
+    }
 
     //start waiting for DL synch
     setMacState (MAC802_16_WAIT_DL_SYNCH);

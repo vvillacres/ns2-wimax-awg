@@ -109,8 +109,8 @@ void PeerNode::addOutDataCon (Connection* connection )
  * Return the connection used for incoming data messages
  */
 Connection*  PeerNode::getInDataCon (int index) {
-    if ( index < int( outdata_.size()) ) {
-    	return outdata_.at( index);
+    if ( index < int( indata_.size()) ) {
+    	return indata_.at( index);
     } else {
     	return NULL;
     }
@@ -122,6 +122,34 @@ Connection*  PeerNode::getInDataCon (int index) {
 Connection*  PeerNode::getOutDataCon (int index) {
     if ( index < int( outdata_.size()) ) {
     	return outdata_.at( index);
+    } else {
+    	return NULL;
+    }
+}
+
+/**
+ * Remove connection for incoming data messages from the vector and return the corresponding pointer
+ */
+Connection*   PeerNode::removeInDataCon () {
+	Connection * currentCon;
+    if ( ! indata_.empty() )  {
+    	currentCon = indata_.back();
+    	indata_.pop_back();
+    	return currentCon;
+    } else {
+    	return NULL;
+    }
+}
+
+/**
+ * Remove an connection for incoming data messages from the vector and return the corresponding pointer
+ */
+Connection*  PeerNode::removeOutDataCon () {
+	Connection * currentCon;
+    if ( ! outdata_.empty() ) {
+    	currentCon = outdata_.back();
+    	outdata_.pop_back();
+    	return currentCon;
     } else {
     	return NULL;
     }

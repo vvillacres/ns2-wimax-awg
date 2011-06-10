@@ -82,7 +82,7 @@ int ServiceFlowHandler::command(int argc, const char*const* argv)
         			printf("Text \n");
         			delete admissionControl_;
         			// establish new Admission Control Object
-        			admissionControl_ = new FairCAC( mac_, 0.2, 2e+6, 1e+6, 5);
+        			admissionControl_ = new FairCAC( mac_, 0.2, 2e+6, 1e+6, 0);
         			return TCL_OK;
         		} else {
         			return TCL_ERROR;
