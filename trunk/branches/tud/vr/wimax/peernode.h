@@ -114,6 +114,16 @@ public:
     Connection*  getInDataCon (int index);
 
     /**
+     * Remove the last connection for incoming data messages from the vector and return the corresponding pointer
+     */
+    Connection*  removeInDataCon ();
+
+    /**
+     * Remove the last connection for incoming data messages from the vector and return the corresponding pointer
+     */
+    Connection*  removeOutDataCon ();
+
+    /**
      * Set the time the last packet was received
      * @param time The time the last packet was received
      */

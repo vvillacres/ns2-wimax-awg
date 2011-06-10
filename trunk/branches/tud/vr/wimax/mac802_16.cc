@@ -443,18 +443,24 @@ void Mac802_16::removePeerNode (PeerNode *peer)
         delete (peer->getSecondary(IN_CONNECTION));
         delete (peer->getSecondary(OUT_CONNECTION));
     }
-    int i = 0;
-    while( peer->getInDataCon( i)) {
-    	getCManager()->remove_connection( peer->getInDataCon( i)->get_cid());
-    	delete ( peer->getInDataCon( i));
-    	i++;
-    }
-    i = 0;
-    while( peer->getOutDataCon( i)) {
-    	getCManager()->remove_connection( peer->getOutDataCon( i)->get_cid());
-    	delete ( peer->getOutDataCon( i));
-    	i++;
-    }
+    Connection * currentCon;
+    // delete all incoming connections
+    do {
+    	currentCon = peer->removeInDataCon();
+    	if ( currentCon) {
+    		getCManager()->remove_connection( currentCon);
+    		delete( currentCon);
+    	}
+    } while ( currentCon);
+    // delete all outgoing connections
+    do {
+    	currentCon = peer->removeOutDataCon();
+    	if ( currentCon) {
+    		getCManager()->remove_connection( currentCon);
+    		delete( currentCon);
+    	}
+    } while ( currentCon);
+
 
    /*
     if (peer->getInDataCon()) {
