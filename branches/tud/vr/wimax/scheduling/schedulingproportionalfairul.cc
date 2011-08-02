@@ -88,7 +88,7 @@ void SchedulingProportionalFairUl::scheduleConnections( VirtualAllocation* virtu
 				int maximumBytes = allocatedSlots * virtualAllocation->getSlotCapacity();
 
 				// get currently requested bytes
-				int requestedAllocation = virtualAllocation->getConnection()->getBw();
+				int requestedAllocation = virtualAllocation->getWantedMstrSize();
 				int allocatedBytes = requestedAllocation;
 
 
@@ -113,7 +113,7 @@ void SchedulingProportionalFairUl::scheduleConnections( VirtualAllocation* virtu
 				assert( freeSlots >= 0);
 
 				// update container
-				virtualAllocation->updateAllocation( allocatedSlots, allocatedBytes, 0, allocatedBytes );
+				virtualAllocation->updateAllocation( allocatedSlots, allocatedBytes, 0, u_int32_t( allocatedBytes));
 
 				// decrease loop counter
 				conThisRound--;
