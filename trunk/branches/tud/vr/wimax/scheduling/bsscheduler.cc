@@ -2031,7 +2031,7 @@ mac802_16_ul_map_frame * BSScheduler::buildUplinkMap( Connection *head, int tota
     			 if ( nbOfSlots > 0) {
 
     				 // debug
-    				 debug_ext("CID %d, Basic CID %d, allocationSize %4.2f , nbOfSlots %d \n", currentCon->get_cid(), currentCon->getPeerNode()->getBasic( IN_CONNECTION)->get_cid(), allocationSize, nbOfSlots);
+    				 debug_ext("CID %d, Basic CID %d, allocationSize %d , nbOfSlots %d \n", currentCon->get_cid(), currentCon->getPeerNode()->getBasic( IN_CONNECTION)->get_cid(), allocationSize, nbOfSlots);
 
 
     				 // search for allocation
@@ -2076,6 +2076,8 @@ mac802_16_ul_map_frame * BSScheduler::buildUplinkMap( Connection *head, int tota
     // Resource allocation for data connections
     currentCon = head;
     MrtrMstrPair_t mrtrMstrPair;
+    ServiceFlowQosSet * sfQosSet;
+
     while ( currentCon != NULL) {
         // get type of connection
         conType = currentCon->get_category();
@@ -2085,34 +2087,80 @@ mac802_16_ul_map_frame * BSScheduler::buildUplinkMap( Connection *head, int tota
 
         	// consider that the queue size is unknown to the BS
 
-            u_int32_t requestedAllocationSize;
-            requestedAllocationSize = currentCon->getBw();
-            if ( requestedAllocationSize > 0 ) {
-                // get mrtr und mstr for this connection
+            // check if this connection is active
+        	if ( currentCon->getServiceFlow()->getServiceFlowState() == ACTIVE ) {
 
-            	mrtrMstrPair = trafficShapingAlgorithm_->getDataSizes( currentCon, requestedAllocationSize);
+				u_int32_t requestedAllocationSize;
 
-            	//u_int32_t wantedMrtrSize = u_int32_t( ceil( double(requestedAllocationSize) * ( double(currentCon->get_serviceflow()->getQosSet()->getMinReservedTrafficRate()) / currentCon->get_serviceflow()->getQosSet()->getMaxSustainedTrafficRate() )));
-                //u_int32_t wantedMstrSize = requestedAllocationSize;
+				// debug
+				requestedAllocationSize =  u_int32_t( currentCon->getBw());
 
-            	if ( (mrtrMstrPair.first > 0) || (mrtrMstrPair.second > 0 )) {
-            		if ( virtualAlloc->findConnectionEntry( currentCon) ) {
+				sfQosSet = currentCon->getServiceFlow()->getQosSet();
 
-            			// connection should have no entries
-            			assert(false);
+				// handle grants and polling intervals
+				switch ( sfQosSet->getUlGrantSchedulingType() ) {
 
-            			// update wanted Sizes
-            			//virtualAlloc->updateWantedMrtrMstr( virtualAlloc->getWantedMrtrSize() + mrtrMstrPair.first, virtualAlloc->getWantedMstrSize() + mrtrMstrPair.second);
-            		} else {
+				case UL_UGS:
+					if (( NOW - ( sfQosSet->getGrantInterval() * 1e-3)) >= currentCon->getLastAllocationTime()) {
+						requestedAllocationSize = int( ceil( double(sfQosSet->getMinReservedTrafficRate()) / sfQosSet->getGrantInterval() / 8));
+					} else {
+						requestedAllocationSize = 0;
+					}
+				break;
+				case UL_ertPS:
+					if (( NOW - ( sfQosSet->getGrantInterval() * 1e-3)) >= currentCon->getLastAllocationTime()) {
+						requestedAllocationSize = u_int32_t( ceil( double(sfQosSet->getMinReservedTrafficRate()) / sfQosSet->getGrantInterval() / 8));
+					} else {
+						requestedAllocationSize = 0;
+					}
+					// TODO: check
+					requestedAllocationSize = MIN( requestedAllocationSize, u_int32_t(currentCon->getBw()));
+				break;
+				case UL_rtPS:
+				case UL_nrtPS:
+					requestedAllocationSize = u_int32_t(currentCon->getBw());
+					if (( NOW - (sfQosSet->getPollingInterval() * 1e-3)) >= currentCon->getLastAllocationTime()) {
+						requestedAllocationSize += HDR_MAC802_16_SIZE;
+					}
+				break;
+				case UL_BE:
+					requestedAllocationSize = u_int32_t(currentCon->getBw());
+				break;
+				default:
 
-                		// create new entry
-                		Ofdm_mod_rate burstProfile = mac_->getMap()->getUlSubframe()->getProfile(currentCon->getPeerNode()->getUIUC())->getEncoding();
-                		int slotCapacity = mac_->getPhy()->getSlotCapacity( burstProfile, UL_);
-                		virtualAlloc->addAllocation( currentCon, mrtrMstrPair.first , mrtrMstrPair.second, slotCapacity);
-                	}
-                }
-            }
+					// all all data connection should have an Up Grant Scheduling Type
+					assert(false);
+					break;
 
+				}
+
+				if ( requestedAllocationSize > 0 ) {
+					// get mrtr und mstr for this connection
+
+					mrtrMstrPair = trafficShapingAlgorithm_->getDataSizes( currentCon, requestedAllocationSize);
+
+					//u_int32_t wantedMrtrSize = u_int32_t( ceil( double(requestedAllocationSize) * ( double(currentCon->get_serviceflow()->getQosSet()->getMinReservedTrafficRate()) / currentCon->get_serviceflow()->getQosSet()->getMaxSustainedTrafficRate() )));
+					//u_int32_t wantedMstrSize = requestedAllocationSize;
+
+					if ( (mrtrMstrPair.first > 0) || (mrtrMstrPair.second > 0 )) {
+
+						if ( virtualAlloc->findConnectionEntry( currentCon) ) {
+
+							// connection should have no entries
+							// assert(false);
+
+							// update wanted Sizes
+							virtualAlloc->updateWantedMrtrMstr( virtualAlloc->getWantedMrtrSize() + mrtrMstrPair.first, virtualAlloc->getWantedMstrSize() + mrtrMstrPair.second);
+						} else {
+
+							// create new entry
+							Ofdm_mod_rate burstProfile = mac_->getMap()->getUlSubframe()->getProfile(currentCon->getPeerNode()->getUIUC())->getEncoding();
+							int slotCapacity = mac_->getPhy()->getSlotCapacity( burstProfile, UL_);
+							virtualAlloc->addAllocation( currentCon, mrtrMstrPair.first , mrtrMstrPair.second, slotCapacity);
+						}
+					}
+				}
+        	}
             break;
 
         default:
@@ -2203,13 +2251,18 @@ mac802_16_ul_map_frame * BSScheduler::buildUplinkMap( Connection *head, int tota
             		int requestedBandwidth = currentCon->getBw();
             		requestedBandwidth -= virtualAlloc->getCurrentNbOfBytes();
             		if ( requestedBandwidth < 0 ) {
-            			printf("Requested Bandwidth below 0 \n");
             			requestedBandwidth = 0;
             		}
             		currentCon->setBw(requestedBandwidth);
 
             		// update traffic shaping
             		trafficShapingAlgorithm_->updateAllocation( currentCon, virtualAlloc->getCurrentMrtrPayload(), virtualAlloc->getCurrentMstrPayload());
+
+            		// UlGrantSchedulingType_t schedulingType = currentCon->getServiceFlow()->getQosSet()->getUlGrantSchedulingType();
+            		// update last allocation time
+            		if ( virtualAlloc->getCurrentNbOfBytes() > 0)  {
+            			currentCon->setLastAllocationTime( NOW);
+            		}
             	}
 
 

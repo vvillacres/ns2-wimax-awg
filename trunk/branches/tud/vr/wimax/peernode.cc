@@ -123,6 +123,7 @@ Connection*  PeerNode::getOutDataCon (int index) {
     if ( index < int( outdata_.size()) ) {
     	return outdata_.at( index);
     } else {
+    	printf("Number of outgoing connections %d \n", outdata_.size());
     	return NULL;
     }
 }

@@ -90,12 +90,22 @@ int IPDestClassifier::classify (Packet * p)
 
             default:
 
-            	int portNumber =  HDR_IP(p)->dport();
+            	int portNumber = 0;
+            	// TODO: Check for different scenarios
+            	if (mac_->getNodeType () == STA_BS) {
+            		// downlink connection -> take destination port
+            		portNumber = HDR_IP(p)->dport();
+            	} else {
+            		// uplink connection -> take source port
+            		portNumber = HDR_IP(p)->sport();
+            	}
+
             	// debug
-                printf("IPDestClassifier Dport %d \n",portNumber);
+                // printf("IPDestClassifier Src Addr %d, Src Port %d, Dest Addr %d, Dest Port %d \n", HDR_IP(p)->saddr(), HDR_IP(p)->sport(), HDR_IP(p)->daddr(), HDR_IP(p)->dport());
+                // printf("MAC Instants %d NbPeers %d \n", mac_->getNodeType(), mac_->getNbPeerNodes());
 
                 if (n->getOutDataCon( portNumber)) {
-                    debug2("find the outcoming data connection.\n");
+                    debug2("find the outcoming data connection %d.\n", n->getOutDataCon( portNumber)->get_cid());
                     return n->getOutDataCon( portNumber)->get_cid();
                 } else { //this node is not ready to send data
                     debug2("cannt find the outcoming data connection.\n");

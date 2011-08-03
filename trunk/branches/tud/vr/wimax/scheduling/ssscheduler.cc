@@ -455,9 +455,8 @@ void SSscheduler::schedule ()
                 if (con_tmp->get_category()==CONN_BASIC || con_tmp->get_category()==CONN_PRIMARY
                         || con_tmp->get_category()==CONN_SECONDARY || con_tmp->get_category()==CONN_DATA) {
                     if (con_tmp->get_category()==CONN_DATA) {
-                    	// TOTO: Check if ertPS shall be included vr@tud
-                        if ( (con_tmp->get_serviceflow()->getQosSet()->getUlGrantSchedulingType()==UL_UGS) || (con_tmp->get_serviceflow()->getQosSet()->getUlGrantSchedulingType()==UL_rtPS) ) {
-                        } else {
+                    	// Only nrtPS or BE uses CDMA Bandwidth Requests
+                        if ( (con_tmp->get_serviceflow()->getQosSet()->getUlGrantSchedulingType()==UL_nrtPS) || (con_tmp->get_serviceflow()->getQosSet()->getUlGrantSchedulingType()==UL_BE) ) {
                             create_cdma_request(con_tmp);
                         }
                     } else {
@@ -466,6 +465,7 @@ void SSscheduler::schedule ()
                 }
                 debug10 ("CDMA-BW_REQ REGION %d CID(BC) :%d, con_CID :%d, con_category :%d, con_qlength :%d\n", t_i, my_burst_rng->getCid(), con_tmp->get_cid(), con_tmp->get_category(), con_tmp->queueByteLength());
 
+                // TODO: UGS does not use Bandwidth requests
                 if (con_tmp->queueLength()>0 || (con_tmp->getArqStatus () != NULL && con_tmp->getArqStatus ()->arq_retrans_queue_->length() > 0) ) {
                     int tmp_backoff = mac_->getMap()->getUlSubframe()->getBw_req()->getBACKOFF (tmp_cid);
                     int tmp_timeout = mac_->getMap()->getUlSubframe()->getBw_req()->getTIMEOUT (tmp_cid);
@@ -630,6 +630,9 @@ void SSscheduler::schedule ()
                 c = c->next_entry();
             }//end while
         }//end for
+
+
+
     }
     debug2("\n==========================SSScheduler::schedule () End ==================================\n");
 }
