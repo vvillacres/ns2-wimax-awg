@@ -38,6 +38,7 @@ Connection::Connection (ConnectionType_t type) : peer_(0),
         requested_bw_(0),
         bw_req_queue_(0),
         pollingInterval_(0),
+        lastAllocationTime_(0.0),
         requested_cdma_(0),
         requested_cdma_code_(0),
         requested_cdma_top_(0)

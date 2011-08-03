@@ -318,6 +318,9 @@ public:
      */
     int getBw ();
 
+
+    // Polling Interval is for compatibility to scheduler of version 2.6
+
     /**
      * Get polling interval in milliseconds
      */
@@ -326,10 +329,24 @@ public:
     }
 
     /**
-     * Get polling interval in milliseconds
+     * Set polling interval in milliseconds
      */
     void setPollingInterval (int pollingInterval) {
     	pollingInterval_ = pollingInterval;
+    }
+
+    /**
+     * Get the time stamp of the last resource assignment
+     */
+    inline double getLastAllocationTime () {
+    	return lastAllocationTime_;
+    }
+
+    /**
+     * Set the time stamp of the last resource assignment
+     */
+    void setLastAllocationTime (double lastAllocationTime_) {
+    	lastAllocationTime_ = lastAllocationTime_;
     }
 
     /**
@@ -504,6 +521,11 @@ private:
      * Indicates polling interval for each connection
      */
     int pollingInterval_;
+
+    /**
+     * Saves the time stamp of the last resource assignment
+     */
+    double lastAllocationTime_;
 
     /**
      * Indicates cdma-bw-req variables
