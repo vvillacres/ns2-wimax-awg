@@ -1266,7 +1266,7 @@ void Mac802_16BS::receive (Packet *pktRx_)
         }
         peer->getStatWatch()->update(10*log10(pktRx_->txinfo_.RxPr*1e3));
         //debug ("At %f in Mac %d weighted RXThresh: %e rxp average %e\n", NOW, index_, macmib_.lgd_factor_*macmib_.RXThreshold_, pow(10,peer->getStatWatch()->average()/10)/1e3);
-        double avg_w = pow(10,(peer->getStatWatch()->average()/10))/1e3;
+        double avg_w = pow( 10.0,(peer->getStatWatch()->average()/10))/1e3;
 
         if ( avg_w < (macmib_.lgd_factor_*macmib_.RXThreshold_)) {
 #ifdef USE_802_21
