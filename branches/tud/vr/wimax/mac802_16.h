@@ -22,6 +22,8 @@
 #define DEBUG_WIMAX
 #define DEBUG_WIMAX_EXT
 
+#include <math.h>
+#include <libio.h>
 #include "sduclassifier.h"
 #include "connectionmanager.h"
 #include "serviceflowhandler.h"

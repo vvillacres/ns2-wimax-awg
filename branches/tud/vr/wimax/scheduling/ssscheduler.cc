@@ -19,6 +19,14 @@
 #include "ssscheduler.h"
 #include "burst.h"
 #include "mac802_16SS.h"
+#include "trafficshapinginterface.h"
+#include "trafficshapingaccurate.h"
+
+// scheduling algorithm downlink
+#include "schedulingalgointerface.h"
+#include "schedulingalgodualequalfill.h"
+#include "schedulingalgodualedf.h"
+#include "schedulingalgoproportionalfair.h"
 
 int frame_no = 0;
 /**
@@ -39,7 +47,19 @@ public:
  */
 SSscheduler::SSscheduler () : WimaxScheduler ()
 {
-    debug2 ("SSscheduler created\n");
+    trafficShapingAlgo_ = NULL;
+    schedulingAlgo_ = NULL;
+
+	debug2 ("SSscheduler created\n");
+}
+
+/**
+ * Destructor
+ */
+SSscheduler::~SSscheduler ()
+{
+	delete trafficShapingAlgo_;
+	delete schedulingAlgo_;
 }
 
 /**
@@ -48,6 +68,9 @@ SSscheduler::SSscheduler () : WimaxScheduler ()
 void SSscheduler::init ()
 {
     WimaxScheduler::init();
+
+    trafficShapingAlgo_ = new TrafficShapingAccurate( mac_->getFrameDuration());
+    schedulingAlgo_ = new SchedulingAlgoDualEqualFill;
 }
 
 /**
@@ -456,7 +479,7 @@ void SSscheduler::schedule ()
                         || con_tmp->get_category()==CONN_SECONDARY || con_tmp->get_category()==CONN_DATA) {
                     if (con_tmp->get_category()==CONN_DATA) {
                     	// Only nrtPS or BE uses CDMA Bandwidth Requests
-                        if ( (con_tmp->get_serviceflow()->getQosSet()->getUlGrantSchedulingType()==UL_nrtPS) || (con_tmp->get_serviceflow()->getQosSet()->getUlGrantSchedulingType()==UL_BE) ) {
+                        if ( (con_tmp->get_serviceflow()->getQosSet()->getUlGrantSchedulingType()==UL_nrtPS) || (con_tmp->get_serviceflow()->getQosSet()->getUlGrantSchedulingType()==UL_BE) || (con_tmp->get_serviceflow()->getQosSet()->getUlGrantSchedulingType()==UL_rtPS)) {
                             create_cdma_request(con_tmp);
                         }
                     } else {
@@ -606,15 +629,15 @@ void SSscheduler::schedule ()
         debug10 ("In SS, Found data opportunity, Burst start time %d, Burst duration %d, IUC %d, subchannel offset %d, num of subchannels %d, CID %d\n", my_burst->getStarttime(), my_burst->getDuration(), my_burst->getIUC(),  my_burst->getSubchannelOffset(),  my_burst->getnumSubchannels(), my_burst->getCid());
         ConnectionType_t contype;
 
-        for (int i=0; i<4; ++i) {
+        // handle management connections
+        for (int i = 0; i < 3 ; ++i) {
             c = head;
             if (i==0) 	    contype = CONN_BASIC;
             else if (i==1) contype = CONN_PRIMARY;
-            else if (i==2) contype = CONN_SECONDARY;
-            else 	    contype = CONN_DATA;
+            else contype = CONN_SECONDARY;
 
             while (c!=NULL) {
-                if (c->get_category()==contype) {
+                if (c->getType()==contype) {
                     if (c->queueLength()>0 || (con->getArqStatus () != NULL && con->getArqStatus ()->arq_retrans_queue_->length() > 0)) {
                         debug10 ("In SS, Entering transfer_packets1, CID :%d, c->queueBytes :%d, c->queueLength :%d\n", c->get_cid(), con->queueByteLength(), c->queueLength());
                         debug10 ("Check FRAG/PACK/ARG: Frag : %d, Pack :%d, ARQ: %p\n",c->isFragEnable(),c->isPackingEnable(), c->getArqStatus ());
@@ -631,8 +654,72 @@ void SSscheduler::schedule ()
             }//end while
         }//end for
 
+        VirtualAllocation * virtualAlloc = new VirtualAllocation;
 
+        // get first connection
+        c = head;
 
+        while ( c != NULL ) {
+        	if ( c->getType() == CONN_DATA) {
+        		MrtrMstrPair_t mrtrMstrPair = trafficShapingAlgo_->getDataSizes( c, c->queuePayloadLength());
+
+                // Add to virtual allocation if data to send
+                if (( mrtrMstrPair.first > 0 ) || (mrtrMstrPair.second > 0 )) {
+                    // this connection should not have an entry
+                    assert( !virtualAlloc->findConnectionEntry( c));
+
+                    // better way ???
+                    Ofdm_mod_rate burstProfile = mac_->getMap()->getUlSubframe()->getProfile( my_burst->getIUC())->getEncoding();
+                    int slotCapacity = mac_->getPhy()->getSlotCapacity( burstProfile, UL_);
+
+                    // add new virtual alloction
+                    virtualAlloc->addAllocation( c, mrtrMstrPair.first , mrtrMstrPair.second, slotCapacity);
+
+                }
+        	}
+        	// get next connection
+        	c = c->next_entry();
+        }
+
+        // count allocated slots
+        if ( virtualAlloc->firstConnectionEntry() ) {
+
+            // better way ???
+            Ofdm_mod_rate burstProfile = mac_->getMap()->getUlSubframe()->getProfile( my_burst->getIUC())->getEncoding();
+            int slotCapacity = mac_->getPhy()->getSlotCapacity( burstProfile, UL_);
+
+            int burstSize = my_burst->getnumSubchannels() * slotCapacity;
+
+            int freeSlots = my_burst->getnumSubchannels() - int( ceil( double( b_data) / slotCapacity));
+
+            schedulingAlgo_->scheduleConnections( virtualAlloc, freeSlots);
+
+            // debug
+            int allocatedSize = b_data;
+
+        	do {
+        		 c = virtualAlloc->getConnection();
+        		 if (c->isFragEnable() && c->isPackingEnable() &&  (c->getArqStatus () != NULL) && (c->getArqStatus ()->isArqEnabled() == 1)) {
+        		     b_data = transfer_packets_with_fragpackarq (c, my_burst, burstSize - virtualAlloc->getCurrentNbOfBytes()); /*RPI*/
+        		 } else {
+        			 debug2 ("In SS, before transfer_packets1, c->queueBytes :%d, c->queueLength :%d, b_data :%d\n", c->queueByteLength(), c->queueLength(), b_data);
+
+        			 // debug
+        			 allocatedSize += virtualAlloc->getCurrentNbOfBytes();
+
+        			 b_data = transfer_packets1(c, my_burst, burstSize - virtualAlloc->getCurrentNbOfBytes());
+        		 }
+
+        		 // update traffic shaping
+        		 trafficShapingAlgo_->updateAllocation( c, virtualAlloc->getCurrentMrtrPayload(), virtualAlloc->getCurrentMstrPayload());
+
+        		// go to next connection
+        	} while ( virtualAlloc->nextConnectionEntry());
+
+            printf("Uplink Burst Size %d Used %d \n", burstSize, allocatedSize);
+        }
+
+        delete virtualAlloc;
     }
     debug2("\n==========================SSScheduler::schedule () End ==================================\n");
 }

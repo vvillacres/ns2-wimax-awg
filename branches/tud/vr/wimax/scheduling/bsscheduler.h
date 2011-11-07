@@ -30,7 +30,7 @@
 
 class Mac802_16BS;
 class WimaxCtrlAgent;
-class TrafficPolicingInterface;
+class TrafficShapingInterface;
 class SchedulingAlgoInterface;
 class DlBurstMappingInterface;
 class VirtualAllocation;

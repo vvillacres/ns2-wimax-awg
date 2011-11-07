@@ -25,6 +25,12 @@
 #define MIN_CONTENTION_SIZE 5
 #define CDMA_TIMEOUT 2
 
+
+// forward declaration
+class TrafficShapingInterface;
+class SchedulingAlgoInterface;
+
+
 /**
  * Class SSscheduler
  * Scheduler for SSs
@@ -37,6 +43,11 @@ public:
      * Create a scheduler
      */
     SSscheduler ();
+
+    /**
+     * Destructor
+     */
+    ~SSscheduler ();
 
     /**
      * Interface with the TCL script
@@ -69,6 +80,9 @@ protected:
 
 
 private:
+
+    TrafficShapingInterface * trafficShapingAlgo_;
+    SchedulingAlgoInterface * schedulingAlgo_;
 
 };
 

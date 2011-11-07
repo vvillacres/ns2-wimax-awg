@@ -345,8 +345,8 @@ public:
     /**
      * Set the time stamp of the last resource assignment
      */
-    void setLastAllocationTime (double lastAllocationTime_) {
-    	lastAllocationTime_ = lastAllocationTime_;
+    void setLastAllocationTime (double lastAllocationTime) {
+    	lastAllocationTime_ = lastAllocationTime;
     }
 
     /**
