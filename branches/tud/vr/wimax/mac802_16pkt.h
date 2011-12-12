@@ -771,9 +771,9 @@ struct mac802_16_mob_scn_rep_frame {
 /** Code BS using index in association result report */
 struct mac802_16_mob_asc_rep_bs_index {
     u_char neighbor_bs_index;
-    uint32_t timing_adjust;
+    u_int32_t timing_adjust;
     u_char power_level_adjust;
-    uint32_t offset_freq_adjust;
+    u_int32_t offset_freq_adjust;
     u_char rng_status;
     u_char service_level_prediction;
 };
@@ -781,9 +781,9 @@ struct mac802_16_mob_asc_rep_bs_index {
 /** Code BS using address in association result report */
 struct mac802_16_mob_asc_rep_bs_full {
     int neighbor_bs_id; /* 6 bytes */
-    uint32_t timing_adjust;
+    u_int32_t timing_adjust;
     u_char power_level_adjust;
-    uint32_t offset_freq_adjust;
+    u_int32_t offset_freq_adjust;
     u_char rng_status;
     u_char service_level_prediction;
 };
@@ -825,8 +825,8 @@ struct mac802_16_mob_bsho_req_mode_new_bs {
 struct mac802_16_mob_bsho_req_mode_new_bs2 {
     int neighbor_bsid; /* 6 bytes */
     u_char temp_bsid: 3;
-    uint16_t new_cid[MAX_NBR];
-    uint16_t new_said[MAX_NBR];
+    u_int16_t new_cid[MAX_NBR];
+    u_int16_t new_said[MAX_NBR];
 
 };
 
@@ -834,8 +834,8 @@ struct mac802_16_mob_bsho_req_mode_new_bs2 {
 struct mac802_16_mob_bsho_req_mode_new_bs3 {
     int neighbor_bsid; /* 6 bytes */
     u_char temp_bsid: 3;
-    uint16_t new_cid[MAX_NBR];
-    uint16_t new_said[MAX_NBR];
+    u_int16_t new_cid[MAX_NBR];
+    u_int16_t new_said[MAX_NBR];
     int cqich_id; //variable
     u_char feedback_channel_off: 6;
     u_char period: 2;
@@ -863,9 +863,9 @@ struct mac802_16_mob_bsho_req_frame {
     u_char tmp_bsid: 3;
     u_char ak_change_indicator: 1;
     u_char n_cids;
-    uint16_t cids[MAX_NBR];
+    u_int16_t cids[MAX_NBR];
     u_char n_saids;
-    uint16_t saids[MAX_NBR];
+    u_int16_t saids[MAX_NBR];
 
     //if mode == 0b010: attribute defined in mode 0b001
     //u_char tmp_bsid: 3;
@@ -976,7 +976,7 @@ struct mac802_16_mob_bsho_rsp_rec {
 struct mac802_16_mob_bsho_rsp_mode_new_bs2 {
     int neighbor_bsid; /* 6 bytes */
     u_char temp_bsid: 3;
-    uint16_t new_cid[];
+    u_int16_t new_cid[];
 };
 
 /** BSHO response frame */
@@ -994,9 +994,9 @@ struct mac802_16_mob_bsho_rsp_frame {
     u_char tmp_bsid: 3;
     u_char ak_change_indicator: 1;
     u_char n_cids;
-    uint16_t cids[MAX_NBR];
+    u_int16_t cids[MAX_NBR];
     u_char n_saids;
-    uint16_t saids[MAX_NBR];
+    u_int16_t saids[MAX_NBR];
 
     //if mode == 0b010
     //u_char tmp_bsid: 3;

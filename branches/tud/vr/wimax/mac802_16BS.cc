@@ -1542,7 +1542,7 @@ void Mac802_16BS::process_mac_pdu_witharqfragpack (Connection *con, Packet * pkt
        according to if they are in-order or not.*/
     if (con->getArqStatus () != NULL && con->getArqStatus ()->isArqEnabled() == 1) {
         isInOrder = 1;
-        con->getArqStatus ()->arqReceive(mac_pdu,con,&isInOrder);
+        con->getArqStatus ()->arqReceive( mac_pdu, con, &isInOrder);
         debug2("Receive: ARQ BS :ORDER is:%d\n",isInOrder);
         if (isInOrder == 0) { /*In middle part*/
             // packet is out of order, so queue it in retransmission queue at receiver end since it is not being used
@@ -1783,7 +1783,7 @@ end:
 void Mac802_16BS::UL_AMC_algorithm(float BLER, int mac_index)
 {
 
-    debug2("Ul smother factor %d, dl smooth factor %d\n", ul_amc_smooth_factor_, dl_amc_smooth_factor_);
+    debug2("Ul smother factor %f, dl smooth factor %f\n", ul_amc_smooth_factor_, dl_amc_smooth_factor_);
     debug2("UL AMC: smooth factor now is %d BLER is %f incresse_ul_mod %d\n", get_ul_smooth_factor(mac_index), BLER,get_increase_ul_modulation(mac_index));
 
     if (BLER <  amc_lower_bound_) { //amc_lower_bound_) /*Radio condition is good. Use more advanced modulation.*/ // Open loop Algorithm
