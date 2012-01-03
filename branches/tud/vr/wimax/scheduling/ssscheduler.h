@@ -47,7 +47,7 @@ public:
     /**
      * Destructor
      */
-    ~SSscheduler ();
+    virtual ~SSscheduler ();
 
     /**
      * Interface with the TCL script

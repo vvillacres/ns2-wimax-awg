@@ -140,6 +140,10 @@ void SchedulingAlgoProportionalFair::scheduleConnections( VirtualAllocation* vir
 				if ( allocatedBytes > maximumBytes) {
 					// one additional fragmentation subheader has to be considered
 					allocatedPayload -= ( (allocatedBytes - maximumBytes) + HDR_MAC802_16_FRAGSUB_SIZE);
+					if ( allocatedPayload < 0) {
+						// avoid rounding errors
+						allocatedPayload = 0;
+					}
 					allocatedBytes = maximumBytes;
 					// is demand fulfilled ?
 					if ( allocatedPayload >= wantedMstrSize) {

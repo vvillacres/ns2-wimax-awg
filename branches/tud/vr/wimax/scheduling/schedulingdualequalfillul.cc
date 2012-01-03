@@ -17,7 +17,7 @@ SchedulingDualEqualFillUl::SchedulingDualEqualFillUl() {
 }
 
 SchedulingDualEqualFillUl::~SchedulingDualEqualFillUl() {
-	// TODO Auto-generated destructor stub
+
 }
 
 void SchedulingDualEqualFillUl::scheduleConnections( VirtualAllocation* virtualAllocation, int freeSlots)

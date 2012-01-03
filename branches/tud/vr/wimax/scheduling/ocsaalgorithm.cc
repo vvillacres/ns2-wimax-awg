@@ -105,7 +105,7 @@ OscaBurst* OcsaAlgorithm::build_a_burst(vector<anfrage *>* anfrageList,int max_b
 		return burstObject;
     }
   }
-
+	return NULL;
 }
 
 void OcsaAlgorithm::getFreearea(frame * frameObject)
