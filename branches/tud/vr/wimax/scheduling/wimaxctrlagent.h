@@ -51,7 +51,7 @@ enum wimaxbs_type {
 struct hdr_wimaxbs {
     wimaxbs_type subtype_; //type of message
 
-    uint32_t macaddr_;     //address of the MAC of interest in this message
+    u_int32_t macaddr_;     //address of the MAC of interest in this message
 
     //data for BS association request
     int cid; //to know for which connection the message is
@@ -70,7 +70,7 @@ struct hdr_wimaxbs {
     inline wimaxbs_type& getType() {
         return subtype_;
     }
-    inline uint32_t& macAddr() {
+    inline u_int32_t& macAddr() {
         return macaddr_;
     }
 };
