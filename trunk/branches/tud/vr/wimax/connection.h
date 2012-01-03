@@ -91,7 +91,7 @@ public:
     Connection (ConnectionType_t);
 
     /** constructor */
-    Connection (ConnectionType_t, u_int16_t cid);
+    Connection (ConnectionType_t, int cid);
 
     /** destructor */
     ~Connection ();
@@ -131,7 +131,7 @@ public:
      * The connection id
      * @return the value of cid
      */
-    inline u_int16_t get_cid ( ) {
+    inline int get_cid ( ) {
         return cid_;
     }
 
@@ -455,7 +455,7 @@ private:
     /**
      * The connection id
      */
-    u_int16_t cid_;
+    int cid_;
 
     /**
      * The service flow associated with the connection

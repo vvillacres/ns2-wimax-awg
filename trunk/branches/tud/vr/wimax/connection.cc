@@ -20,14 +20,14 @@
 #include "connectionmanager.h"
 #include "mac802_16.h"
 
-static u_int16_t basicIndex = BASIC_CID_START;
-static u_int16_t primaryIndex = PRIMARY_CID_START;
-static u_int16_t transportIndex = TRANSPORT_SEC_CID_START;
-static u_int16_t multicastIndex = MULTICAST_CID_START;
+static int basicIndex = BASIC_CID_START;
+static int primaryIndex = PRIMARY_CID_START;
+static int transportIndex = TRANSPORT_SEC_CID_START;
+static int multicastIndex = MULTICAST_CID_START;
 /*RPI for PACK*/
 /**
  * Constructor used by BS to automatically assign CIDs
- * @param type The connection type.
+ * @param type The connection type
  */
 Connection::Connection (ConnectionType_t type) : peer_(0),
         frag_status_(FRAG_NOFRAG),
@@ -88,7 +88,7 @@ Connection::Connection (ConnectionType_t type) : peer_(0),
  * @param type The connection type
  * @param cid The connection cid
  */
-Connection::Connection (ConnectionType_t type, u_int16_t cid) : peer_(0),
+Connection::Connection (ConnectionType_t type, int cid) : peer_(0),
         frag_status_(FRAG_NOFRAG),
         frag_nb_(0),
         frag_byte_proc_(0),
