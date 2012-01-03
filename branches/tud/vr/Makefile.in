@@ -345,10 +345,12 @@ OBJ_CC = \
     wimax/scheduling/trafficshapingnone.o \
     wimax/scheduling/schedulingalgointerface.o \
     wimax/scheduling/schedulingalgodualequalfill.o \
+    wimax/scheduling/schedulingdualequalfillul.o \
     wimax/scheduling/schedulingalgoproportionalfair.o \
     wimax/scheduling/schedulingproportionalfairul.o \
     wimax/scheduling/edfqueueelement.o \
     wimax/scheduling/schedulingalgodualedf.o \
+    wimax/scheduling/schedulingalgowedf.o \
     wimax/scheduling/dlburstmappinginterface.o \
     wimax/scheduling/dlburstmappingsimple.o \
     wimax/scheduling/dlburstmappingocsa.o \
