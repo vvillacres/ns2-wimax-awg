@@ -448,9 +448,6 @@ int WimaxScheduler::transfer_packets1 (Connection *c, Burst *b, int b_data)
     peer = mac_->getPeerNode_head();
     p = c->get_queue()->head();
 
-    bool TOTO = false;
-    if (p!=NULL) TOTO  = TRUE;
-    debug2("p is empty or not [%d]\n", TOTO );
     int max_data;
 
     if (mac_->getNodeType()==STA_BS) {
@@ -468,18 +465,17 @@ int WimaxScheduler::transfer_packets1 (Connection *c, Burst *b, int b_data)
         debug10 ("\tSS_transfer1.1, CID :%d with bdata :%d, but MaxData (MaxSize-bdata) :%d, MaxSize :%d, bw-header-size :%d, q->bytes :%d\n", c->get_cid(), b_data, max_data, phy->getMaxPktSize (b->getnumSubchannels(), mac_->getMap()->getUlSubframe()->getProfile (b->getIUC())->getEncoding(), UL_), bw_req_packet, c->queueByteLength() );
         debug10 ("\t   Bduration :%d, Biuc :%d, B#subchannel :%d CqichSlotFlag %d\n",b->getDuration(), b->getIUC(), b->getnumSubchannels(), b->getCqichSlotFlag());
 
-        if ( (max_data >= HDR_MAC802_16_SIZE) && (mac_->getMap()->getUlSubframe()->getBw_req()->getRequest (c->get_cid())!=NULL)
-                && (c->queueByteLength() > 0) ) {
+        if ( (max_data >= HDR_MAC802_16_SIZE) && (mac_->getMap()->getUlSubframe()->getBw_req()->getRequest (c->get_cid())!=NULL) && (c->queueByteLength() > 0) ) {
             // unused vr@tud int slot_br = 0;
             Connection *c_tmp;
             c_tmp = c;
             int i_packet = 0;
-            int  already_frag = 0;
-            int real_bytes = 0;
+            int already_frag = 0;
+            int realQueueSize = 0;
 
             Packet *np;
             debug10 ("Retrive connection :%d, qlen :%d\n", c_tmp->get_cid(), c_tmp->queueLength());
-            for (int j_p = 0; j_p<c_tmp->queueLength(); j_p++) {
+            for (int j_p = 0; j_p < c_tmp->queueLength(); j_p ++) {
                 if ( (np = c_tmp->queueLookup(i_packet)) != NULL ) {
                     int p_size = hdr_cmn::access(np)->size();
                     i_packet++;
@@ -489,16 +485,24 @@ int WimaxScheduler::transfer_packets1 (Connection *c, Burst *b, int b_data)
                         already_frag = 1;
                     }
 
+                    realQueueSize += p_size;
+
                     Ofdm_mod_rate dlul_map_mod = mac_->getMap()->getUlSubframe()->getProfile (b->getIUC())->getEncoding();
-                    int num_of_slots = (int) ceil((double)p_size/(double)phy->getSlotCapacity(dlul_map_mod,UL_));
-                    real_bytes = real_bytes + (int) ceil((double)num_of_slots*(double)(phy->getSlotCapacity(dlul_map_mod,UL_)));
+
+                    // several PDUs share one burst vr@tud
+                    //int num_of_slots = (int) ceil((double)p_size/(double)phy->getSlotCapacity(dlul_map_mod,UL_));
+                    //real_bytes = real_bytes + (int) ceil((double)num_of_slots*(double)(phy->getSlotCapacity(dlul_map_mod,UL_)));
                 }
             }
+            double slotCapacity =  phy->getSlotCapacity( mac_->getMap()->getUlSubframe()->getProfile (b->getIUC())->getEncoding(), UL_);
+            int nbOfSlots = int( ceil( double( realQueueSize + b_data)/ slotCapacity));
+            realQueueSize = int( nbOfSlots * slotCapacity);
 
-            if (c_tmp->getBW_REQ_QUEUE() == 0)
+            if (c_tmp->getBW_REQ_QUEUE() == 0) {
                 flag_bw_req = 0;
+            }
 
-            if (max_data >= real_bytes) {
+            if ( (max_data + b_data) >= realQueueSize) {
                 flag_bw_req = 0;
             } else {
 
@@ -547,7 +551,7 @@ int WimaxScheduler::transfer_packets1 (Connection *c, Burst *b, int b_data)
         header->type = 0x1; //aggregate
         //    header->br = c->queueByteLength();
         header->cid = c->get_cid();
-        int real_bytes = 0;
+        int realQueueSize = 0;
 
         int slot_br = 0;
         // int max_tmp_data_t1 = phy->getMaxPktSize (b->getnumSubchannels(), mac_->getMap()->getUlSubframe()->getProfile (b->getIUC())->getEncoding(), UL_) - b_data;
@@ -559,7 +563,7 @@ int WimaxScheduler::transfer_packets1 (Connection *c, Burst *b, int b_data)
         c_tmp = c;
 
         int i_packet = 0;
-        int  already_frag = 0;
+        int already_frag = 0;
 
         Packet *np_tmp;
         debug10 ("Retrive connection :%d, qlen :%d\n", c_tmp->get_cid(), c_tmp->queueLength());
@@ -572,24 +576,30 @@ int WimaxScheduler::transfer_packets1 (Connection *c, Burst *b, int b_data)
                     p_size = p_size - c_tmp->getFragmentBytes() + 4;
                     already_frag = 1;
                 }
+                realQueueSize += p_size;
 
-                int num_of_slots = (int) ceil((double)p_size/(double)phy->getSlotCapacity(dlul_map_mod,UL_));
-                real_bytes = real_bytes + (int) ceil((double)num_of_slots*(double)(phy->getSlotCapacity(dlul_map_mod,UL_)));
+                // several PDUs share one burst vr@tud
+                //int num_of_slots = (int) ceil((double)p_size/(double)phy->getSlotCapacity(dlul_map_mod,UL_));
+                //real_bytes = real_bytes + (int) ceil((double)num_of_slots*(double)(phy->getSlotCapacity(dlul_map_mod,UL_)));
             }
         }
 
-        slot_br = real_bytes - max_tmp_data;
+        double slotCapacity =  phy->getSlotCapacity( mac_->getMap()->getUlSubframe()->getProfile (b->getIUC())->getEncoding(), UL_);
+        int nbOfSlots = int( ceil( double( realQueueSize)/ slotCapacity));
+        realQueueSize = int( nbOfSlots * slotCapacity);
+
+        slot_br = realQueueSize - max_tmp_data;
         if (slot_br <0) {
             slot_br = 0;
-	}
+        }
 	    
         if (max_tmp_data < HDR_MAC802_16_SIZE+HDR_MAC802_16_FRAGSUB_SIZE) {
-            slot_br = real_bytes;
+            slot_br = realQueueSize;
         }
         header->br = slot_br;
 
         header->cid = c->get_cid();
-        debug10 ("\t   Sending BW-REQ, cid :%d, qBytes :%d, qLen :%d, bw-req :%d, real_bytes :%d\n", header->cid, c->queueByteLength(), c->queueLength(), header->br, real_bytes);
+        debug10 ("\t   Sending BW-REQ, cid :%d, qBytes :%d, qLen :%d, bw-req :%d, realQueueSize :%d\n", header->cid, c->queueByteLength(), c->queueLength(), header->br, realQueueSize);
 
         wimaxHdr->header.type_frag = 0;
         wimaxHdr->header.type_fbgm = 0;
@@ -702,9 +712,11 @@ int WimaxScheduler::transfer_packets1 (Connection *c, Burst *b, int b_data)
     }
 
     int gm_flag = 0;
-    // int more_bw = 0;
+
 #ifdef IF_PIG
     //Piggybacking 1-May
+    int more_bw = 0;
+
     if (flag_pig > 0 ) {
         more_bw = c->queueByteLength() - max_data;
         if (mac_->getNodeType()!=STA_BS&&p) {

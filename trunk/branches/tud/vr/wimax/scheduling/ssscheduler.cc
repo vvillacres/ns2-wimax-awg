@@ -19,6 +19,7 @@
 #include "ssscheduler.h"
 #include "burst.h"
 #include "mac802_16SS.h"
+#include "random.h"
 #include "trafficshapinginterface.h"
 #include "trafficshapingaccurate.h"
 
@@ -331,8 +332,7 @@ void SSscheduler::schedule ()
         }
 
         if (b->getIUC()==UIUC_INITIAL_RANGING) {
-            bool t_bool = false;
-            Connection *c_tmp = mac_->getCManager()->get_connection(0, t_bool );
+            Connection *c_tmp = mac_->getCManager()->get_connection( INITIAL_RANGING_CID, IN_CONNECTION );
 
             my_burst_rng = b;
             int tmp_mac = mac_->addr();
@@ -387,9 +387,13 @@ void SSscheduler::schedule ()
                             int result = rand() % ((int)(pow (2, update_w)+1));
                             newbackoff = result;
                             newtop     = result % s_init_contention_size;
-                            int code_range = getMac()->macmib_.cdma_code_bw_start - getMac()->macmib_.cdma_code_bw_stop + 1;
+
+                            /* vr@tud
+                            int code_range = getMac()->macmib_.cdma_code_bw_stop - getMac()->macmib_.cdma_code_bw_start + 1;
                             int c_rand = rand() % code_range;
-                            newcode  = (u_char)getMac()->macmib_.cdma_code_bw_start + (u_char)c_rand;
+                            newcode  = u_char( getMac()->macmib_.cdma_code_bw_start + c_rand);
+                            */
+                            u_char newcode = u_char( Random::uniform( getMac()->macmib_.cdma_code_init_start, getMac()->macmib_.cdma_code_init_stop +1));
 
                             newtimeout = CDMA_TIMEOUT-1;
                             mac_->getMap()->getUlSubframe()->getRanging()->setBACKOFF (tmp_mac, newbackoff);
@@ -479,7 +483,7 @@ void SSscheduler::schedule ()
                         || con_tmp->get_category()==CONN_SECONDARY || con_tmp->get_category()==CONN_DATA) {
                     if (con_tmp->get_category()==CONN_DATA) {
                     	// Only nrtPS or BE uses CDMA Bandwidth Requests
-                        if ( (con_tmp->get_serviceflow()->getQosSet()->getUlGrantSchedulingType()==UL_nrtPS) || (con_tmp->get_serviceflow()->getQosSet()->getUlGrantSchedulingType()==UL_BE) || (con_tmp->get_serviceflow()->getQosSet()->getUlGrantSchedulingType()==UL_rtPS)) {
+                        if ( (con_tmp->get_serviceflow()->getQosSet()->getUlGrantSchedulingType()==UL_nrtPS) || (con_tmp->get_serviceflow()->getQosSet()->getUlGrantSchedulingType()==UL_BE)) {
                             create_cdma_request(con_tmp);
                         }
                     } else {
@@ -543,9 +547,12 @@ void SSscheduler::schedule ()
                                 newtop     = result % s_bw_contention_size;
                                 newtimeout = CDMA_TIMEOUT-1;
 
+                                /* vr@tud
                                 int code_range = getMac()->macmib_.cdma_code_bw_start - getMac()->macmib_.cdma_code_bw_stop + 1;
                                 int c_rand = rand() % code_range;
                                 newcode  = (u_char)getMac()->macmib_.cdma_code_bw_start + (u_char)c_rand;
+                                */
+                                u_char newcode = u_char( Random::uniform( getMac()->macmib_.cdma_code_bw_start, getMac()->macmib_.cdma_code_bw_stop +1));
 
                                 mac_->getMap()->getUlSubframe()->getBw_req()->setBACKOFF (tmp_cid, newbackoff);
                                 mac_->getMap()->getUlSubframe()->getBw_req()->setTOP (tmp_cid, newtop);
@@ -577,8 +584,9 @@ void SSscheduler::schedule ()
 
                         int newbackoff_bak = newbackoff;
                         newbackoff = newbackoff - s_bw_contention_size;
-                        if (newbackoff <0)
+                        if (newbackoff < 0 ) {
                             newbackoff = 0;
+                        }
                         mac_->getMap()->getUlSubframe()->getBw_req()->setBACKOFF (tmp_cid, newbackoff);
                         debug10 ("\tBW-REQ.4.updatebackoff_perframe CID :%d, oldbackoff :%d, newbackoff :%d (ori_newbackoff :%d), newtimeout :%d, newnbretry :%d, newwin :%d, top :%d, code :%d\n", tmp_cid, tmp_backoff, newbackoff, newbackoff_bak, newtimeout, update_retry, update_w, newtop, newcode);
 
@@ -610,7 +618,7 @@ void SSscheduler::schedule ()
 
         //get the packets from the connection with the same CID
         //debug2 ("\tBurst CID=%d\n", b->getCid());
-        c = mac_->getCManager ()->get_connection (b->getCid(), true);
+        c = mac_->getCManager ()->get_connection (b->getCid(), OUT_CONNECTION);
 
         if (!c) {
             continue;
@@ -700,14 +708,16 @@ void SSscheduler::schedule ()
         	do {
         		 c = virtualAlloc->getConnection();
         		 if (c->isFragEnable() && c->isPackingEnable() &&  (c->getArqStatus () != NULL) && (c->getArqStatus ()->isArqEnabled() == 1)) {
-        		     b_data = transfer_packets_with_fragpackarq (c, my_burst, burstSize - virtualAlloc->getCurrentNbOfBytes()); /*RPI*/
+        		     //b_data = transfer_packets_with_fragpackarq (c, my_burst, burstSize - virtualAlloc->getCurrentNbOfBytes()); /*RPI*/
+        			 b_data = transfer_packets1(c, my_burst, b_data);
         		 } else {
         			 debug2 ("In SS, before transfer_packets1, c->queueBytes :%d, c->queueLength :%d, b_data :%d\n", c->queueByteLength(), c->queueLength(), b_data);
 
         			 // debug
         			 allocatedSize += virtualAlloc->getCurrentNbOfBytes();
 
-        			 b_data = transfer_packets1(c, my_burst, burstSize - virtualAlloc->getCurrentNbOfBytes());
+        			 //b_data = transfer_packets1(c, my_burst, burstSize - virtualAlloc->getCurrentNbOfBytes());
+        			 b_data = transfer_packets1(c, my_burst, b_data);
         		 }
 
         		 // update traffic shaping
@@ -753,7 +763,10 @@ void SSscheduler::create_cdma_request (Connection *con)
     int s_window = s_backoff_start;
     int fix_six_subchannel = 6;
 //  int result = rand() % ((int)(pow (2, s_window)+1));
-    int result = rand() % s_bw_contention_size;
+
+    //int result = rand() % s_bw_contention_size;
+    // vr@tud
+    int result = int( Random::uniform(0, s_bw_contention_size));
 //  int s_backoff = floor(result / s_bw_contention_size);
 //BW_REQ; no backoff
     int s_backoff = 0;
@@ -776,10 +789,16 @@ void SSscheduler::create_cdma_request (Connection *con)
     u_char header_top = sub_channel_off;
 //  u_char header_code = rand() % (MAXCODE-1);
 
-    int code_range = getMac()->macmib_.cdma_code_bw_start - getMac()->macmib_.cdma_code_bw_stop + 1;
-    int c_rand = rand() % code_range;
-    u_char header_code = (u_char)getMac()->macmib_.cdma_code_bw_start + (u_char)c_rand;
-    debug10 (" CODE init start :%d, stop :%d, rand :%d, final code :%d\n", getMac()->macmib_.cdma_code_bw_start, getMac()->macmib_.cdma_code_bw_stop, c_rand, header_code);
+    // negative values strange behavior
+    // int code_range = getMac()->macmib_.cdma_code_bw_start - getMac()->macmib_.cdma_code_bw_stop + 1;
+    //int code_range = getMac()->macmib_.cdma_code_bw_stop - getMac()->macmib_.cdma_code_bw_start + 1;
+    //int c_rand = rand() % code_range;
+    //u_char header_code = u_char( getMac()->macmib_.cdma_code_bw_start + c_rand);
+
+    // vr@tud
+    u_char header_code = u_char( Random::uniform( getMac()->macmib_.cdma_code_bw_start, getMac()->macmib_.cdma_code_bw_stop +1));
+
+    debug10 (" CODE init start :%d, stop :%d, final code :%d\n", getMac()->macmib_.cdma_code_bw_start, getMac()->macmib_.cdma_code_bw_stop, header_code);
 
     cdma_req_header_t *header = (cdma_req_header_t *)&(HDR_MAC802_16(p)->header);
     header->ht=1;

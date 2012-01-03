@@ -27,8 +27,8 @@ void SchedulingAlgoDualEqualFill::scheduleConnections( VirtualAllocation* virtua
 	 * would break the algorithm independent interface.
 	 */
 
-	if ( NOW > 46.0187) {
-		printf("debug \n");
+	if ( NOW > 11.0067) {
+		printf("debug %f \n", NOW);
 	}
 
 	// update totalNbOfSlots_ for statistic
@@ -164,6 +164,10 @@ void SchedulingAlgoDualEqualFill::scheduleConnections( VirtualAllocation* virtua
 				if ( allocatedBytes > maximumBytes) {
 					// one additional fragmentation subheader has to be considered
 					allocatedPayload -= ( (allocatedBytes - maximumBytes) + HDR_MAC802_16_FRAGSUB_SIZE);
+					if ( allocatedPayload < 0) {
+						// avoid rounding errors
+						allocatedPayload = 0;
+					}
 					allocatedBytes = maximumBytes;
 					// is demand fulfilled ?
 					if ( allocatedPayload >= wantedMrtrSize) {
@@ -332,6 +336,10 @@ void SchedulingAlgoDualEqualFill::scheduleConnections( VirtualAllocation* virtua
 					if ( allocatedBytes > maximumBytes) {
 						// one additional fragmentation subheader has to be considered
 						allocatedPayload -= ( (allocatedBytes - maximumBytes) + HDR_MAC802_16_FRAGSUB_SIZE);
+						if ( allocatedPayload < 0) {
+							// avoid rounding errors
+							allocatedPayload = 0;
+						}
 						allocatedBytes = maximumBytes;
 						// has demand fulfilled
 						if ( allocatedPayload >= wantedMstrSize) {
@@ -376,13 +384,13 @@ void SchedulingAlgoDualEqualFill::scheduleConnections( VirtualAllocation* virtua
 					// update mstrSlots
 					mstrSlots += newSlots;
 
+					u_int32_t allocatedMrtrPayload = virtualAllocation->getCurrentMrtrPayload();
 					// check for debug
 					assert( freeSlots >= 0);
-
-					u_int32_t allocatedMrtrPayload = virtualAllocation->getCurrentMrtrPayload();
+					assert( allocatedPayload >= 0);
 
 					// update container
-					virtualAllocation->updateAllocation( allocatedSlots, allocatedBytes, allocatedMrtrPayload, allocatedPayload);
+					virtualAllocation->updateAllocation( allocatedSlots, allocatedBytes, allocatedMrtrPayload, u_int32_t(allocatedPayload));
 
 					// decrease loop counter
 					conThisRound--;

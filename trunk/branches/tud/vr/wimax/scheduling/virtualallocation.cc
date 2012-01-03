@@ -39,32 +39,30 @@ int VirtualAllocation::increaseBroadcastBurst( int addedBytes)
 	return newSlots;
 }
 
-
 /*
  * Adds a new Virtual Allocation in the Map
  */
-void VirtualAllocation::addAllocation( Connection* connection, u_int32_t wantedMrtrSize, u_int32_t wantedMstrSize, int slotCapacity, int nbOfBytes, int nbOfSlots, int nbOfCdmaSlots)
+void VirtualAllocation::addAllocation( Connection* connectionPtr, u_int32_t wantedMrtrSize, u_int32_t wantedMstrSize, int slotCapacity, int nbOfBytes, int nbOfSlots)
 {
 
     // Create new Virtual Allocation Element
-    VirtualAllocationElement newAllocationElement( connection, wantedMrtrSize, wantedMstrSize, slotCapacity, nbOfBytes, nbOfSlots, nbOfCdmaSlots);
+    VirtualAllocationElement newAllocationElement( connectionPtr, wantedMrtrSize, wantedMstrSize, slotCapacity, nbOfBytes, nbOfSlots, false, 0, 0);
 
     // Insert new Element into the map
-    virtualAllocationMap_.insert ( pair< Connection*, VirtualAllocationElement>( connection, newAllocationElement) );
+    virtualAllocationMap_.insert ( pair< Connection*, VirtualAllocationElement>( connectionPtr, newAllocationElement) );
 }
 
 /*
  * Adds a new Virtrual Allocation for Cdma request in the Map
  */
-void VirtualAllocation::addCdmaAllocation( Connection* connection, int slotCapacity, int nbOfCdmaSlots)
+void VirtualAllocation::addCdmaAllocation( Connection* connectionPtr, int slotCapacity, int nbOfSlots, int cdmaTop, int cdmaCode)
 {
     // Create new Virtual Allocation Element
-	VirtualAllocationElement newAllocationElement( connection, 0, 0, slotCapacity, 0, 0, nbOfCdmaSlots);
+	VirtualAllocationElement newAllocationElement( connectionPtr, 0, 0, slotCapacity, 0, nbOfSlots, true, cdmaTop, cdmaCode);
 
     // Insert new Element into the map
-    virtualAllocationMap_.insert ( pair< Connection*, VirtualAllocationElement>( connection, newAllocationElement) );
+    virtualAllocationMap_.insert ( pair< Connection*, VirtualAllocationElement>( connectionPtr, newAllocationElement) );
 }
-
 /*
  * Returns true if an Entry of this CID exits and set the current Iterator
  */
@@ -234,28 +232,33 @@ void VirtualAllocation::setCurrentNbOfSlots( int nbOfSlots)
     }
 }
 
-/*
- * Returns the number of allocated slots for the current connection
- */
-int VirtualAllocation::getCurrentNbOfCdmaSlots()
+bool VirtualAllocation::isCdmaAllocation()
 {
 
     if ( virtualAllocationMap_.end() != mapIterator_ ) {
-        return mapIterator_->second.getNbOfAllocatedCdmaSlots();
+        return mapIterator_->second.isCdmaAlloc();
     } else {
         fprintf(stderr,"ERROR: Iterator not valid use findCidEntry() before");
         exit(5);
     }
 }
 
-/*
- * Set the number of allocated slots for the current connection
- */
-void VirtualAllocation::setCurrentNbOfCdmaSlots( int nbOfCdmaSlots)
+int VirtualAllocation::getCurrentCdmaTop()
 {
 
     if ( virtualAllocationMap_.end() != mapIterator_ ) {
-        mapIterator_->second.setNbOfAllocatedCdmaSlots( nbOfCdmaSlots);
+        return mapIterator_->second.getCdmaTop();
+    } else {
+        fprintf(stderr,"ERROR: Iterator not valid use findCidEntry() before");
+        exit(5);
+    }
+}
+
+int VirtualAllocation::getCurrentCdmaCode()
+{
+
+    if ( virtualAllocationMap_.end() != mapIterator_ ) {
+        return mapIterator_->second.getCdmaCode();
     } else {
         fprintf(stderr,"ERROR: Iterator not valid use findCidEntry() before");
         exit(5);

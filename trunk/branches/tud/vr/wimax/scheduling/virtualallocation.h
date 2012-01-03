@@ -76,13 +76,13 @@ public:
     /*
      * Adds a new Virtual Allocation in the Map
      */
-    void addAllocation( Connection* connectionPtr, u_int32_t wantedMrtrSize, u_int32_t wantedMstrSize, int slotCapacity, int nbOfBytes = 0, int nbOfSlots = 0, int nbOfCdmaSlots = 0);
+    void addAllocation( Connection* connectionPtr, u_int32_t wantedMrtrSize, u_int32_t wantedMstrSize, int slotCapacity, int nbOfBytes = 0, int nbOfSlots = 0);
 
 
     /*
      * Adds a new Virtrual Allocation for Cdma request in the Map
      */
-    void addCdmaAllocation( Connection* connectionPtr, int slotCapacity, int nbOfCdmaSlots);
+    void addCdmaAllocation( Connection* connectionPtr, int slotCapacity, int nbOfSlots, int cdmaTop, int cdmaCode);
 
     /*
      * Returns true if an Entry of this connection exits and set the current Iterator
@@ -150,15 +150,13 @@ public:
      */
     void setCurrentNbOfSlots( int nbOfSlots);
 
-    /*
-     * Returns the number of allocated slots for the current connection
-     */
-    int getCurrentNbOfCdmaSlots();
 
-    /*
-     * Set the number of allocated slots for the current connection
-     */
-    void setCurrentNbOfCdmaSlots( int nbOfCdmaSlots);
+    bool isCdmaAllocation();
+
+    int getCurrentCdmaTop();
+
+    int getCurrentCdmaCode();
+
 
     u_int32_t getCurrentMrtrPayload ();
     void setCurrentMrtrPayload( u_int32_t allocatedMrtrPayload);
