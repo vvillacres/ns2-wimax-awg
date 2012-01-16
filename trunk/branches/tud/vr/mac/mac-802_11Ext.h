@@ -57,6 +57,7 @@
  
 #ifndef ns_mac_80211Ext_h
 #define ns_mac_80211Ext_h
+#include <stddef.h>
 #include "marshall.h"
 #include "timer-handler.h"
 #define GET_ETHER_TYPE(x)		GET2BYTE((x))
@@ -566,9 +567,7 @@ private:
 	double txtime(Packet *p);
 	double txtime(double psz, double drt);
 	double txtime(double psz, int mod_scheme);
-	double txtime(int bytes) { /* clobber inherited txtime() */
-		abort();
-	}
+	double txtime(int bytes);
 
 	inline void inc_cw() {
 		cw_ = (cw_ << 1) + 1;
