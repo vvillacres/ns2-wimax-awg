@@ -33,13 +33,13 @@ Mac/802_16 set reg_req_retry_        3      ;# number of retries on registration
 Mac/802_16 set tproc_                0.001  ;# time between arrival of last bit of a UL_MAP and effectiveness. Not used
 Mac/802_16 set dsx_req_retry_        3      ;# number of retries on DSx requests
 Mac/802_16 set dsx_rsp_retry_        3      ;# number of retries on DSx responses
-Mac/802_16 set cdma_code_bw_start_   		0      ;# cdma code for bw request (start)
-Mac/802_16 set cdma_code_bw_stop_   		63      ;# cdma code for bw request (stop)
-Mac/802_16 set cdma_code_init_start_   		64      ;# cdma code for initial request (start)
-Mac/802_16 set cdma_code_init_stop_   		127      ;# cdma code for initial request (stop)
-Mac/802_16 set cdma_code_cqich_start_   	128     ;# cdma code for cqich request (start)
-Mac/802_16 set cdma_code_cqich_stop_   		195      ;# cdma code for cqich request (stop)
-Mac/802_16 set cdma_code_handover_start_	196     ;# cdma code for handover request (start)
+Mac/802_16 set cdma_code_bw_start_   		1      ;# cdma code for bw request (start)
+Mac/802_16 set cdma_code_bw_stop_   		127      ;# cdma code for bw request (stop)
+Mac/802_16 set cdma_code_init_start_   		128      ;# cdma code for initial request (start)
+Mac/802_16 set cdma_code_init_stop_   		191      ;# cdma code for initial request (stop)
+Mac/802_16 set cdma_code_cqich_start_   	192     ;# cdma code for cqich request (start)
+Mac/802_16 set cdma_code_cqich_stop_   		223      ;# cdma code for cqich request (stop)
+Mac/802_16 set cdma_code_handover_start_	224     ;# cdma code for handover request (start)
 Mac/802_16 set cdma_code_handover_stop_ 	255      ;# cdma code for handover request (stop)
 
 Mac/802_16 set rng_backoff_start_    2      ;# initial backoff window size for ranging requests
