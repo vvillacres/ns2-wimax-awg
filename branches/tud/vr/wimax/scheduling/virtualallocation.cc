@@ -10,6 +10,8 @@
 #include <math.h>
 #include "virtualallocation.h"
 
+#define BWREQHEADERSIZE 6
+
 VirtualAllocation::VirtualAllocation()
 {
 
@@ -46,8 +48,7 @@ void VirtualAllocation::addAllocation( Connection* connectionPtr, u_int32_t want
 {
 
     // Create new Virtual Allocation Element
-    VirtualAllocationElement newAllocationElement( connectionPtr, wantedMrtrSize, wantedMstrSize, slotCapacity, nbOfBytes, nbOfSlots, false, 0, 0);
-
+    VirtualAllocationElement newAllocationElement( connectionPtr, wantedMrtrSize, wantedMstrSize, slotCapacity, nbOfBytes, nbOfSlots, -1, -1);
     // Insert new Element into the map
     virtualAllocationMap_.insert ( pair< Connection*, VirtualAllocationElement>( connectionPtr, newAllocationElement) );
 }
@@ -55,10 +56,10 @@ void VirtualAllocation::addAllocation( Connection* connectionPtr, u_int32_t want
 /*
  * Adds a new Virtrual Allocation for Cdma request in the Map
  */
-void VirtualAllocation::addCdmaAllocation( Connection* connectionPtr, int slotCapacity, int nbOfSlots, int cdmaTop, int cdmaCode)
+void VirtualAllocation::addCdmaAllocation( Connection* connectionPtr, int slotCapacity, int nbOfSlots, short int cdmaTop, short int cdmaCode)
 {
     // Create new Virtual Allocation Element
-	VirtualAllocationElement newAllocationElement( connectionPtr, 0, 0, slotCapacity, 0, nbOfSlots, true, cdmaTop, cdmaCode);
+	VirtualAllocationElement newAllocationElement( connectionPtr, 0, 0, slotCapacity, BWREQHEADERSIZE, nbOfSlots, cdmaTop, cdmaCode);
 
     // Insert new Element into the map
     virtualAllocationMap_.insert ( pair< Connection*, VirtualAllocationElement>( connectionPtr, newAllocationElement) );
@@ -236,14 +237,18 @@ bool VirtualAllocation::isCdmaAllocation()
 {
 
     if ( virtualAllocationMap_.end() != mapIterator_ ) {
-        return mapIterator_->second.isCdmaAlloc();
+        if ( mapIterator_->second.getCdmaTop() == -1 ) {
+        	return false;
+        } else {
+        	return true;
+        }
     } else {
         fprintf(stderr,"ERROR: Iterator not valid use findCidEntry() before");
         exit(5);
     }
 }
 
-int VirtualAllocation::getCurrentCdmaTop()
+short int VirtualAllocation::getCurrentCdmaTop()
 {
 
     if ( virtualAllocationMap_.end() != mapIterator_ ) {
@@ -254,7 +259,7 @@ int VirtualAllocation::getCurrentCdmaTop()
     }
 }
 
-int VirtualAllocation::getCurrentCdmaCode()
+short int VirtualAllocation::getCurrentCdmaCode()
 {
 
     if ( virtualAllocationMap_.end() != mapIterator_ ) {
@@ -268,12 +273,12 @@ int VirtualAllocation::getCurrentCdmaCode()
 /*
  * Update values of the current virtual allocation
  */
-void VirtualAllocation::updateAllocation( int nbOfSlots, int nbOfBytes, u_int32_t allocatedMrtrPayload, u_int32_t allocatedMstrPayload)
+void VirtualAllocation::updateAllocation( int nbOfBytes, int nbOfSlots, u_int32_t allocatedMrtrPayload, u_int32_t allocatedMstrPayload)
 {
 
     if ( virtualAllocationMap_.end() != mapIterator_ ) {
-        mapIterator_->second.setNbOfAllocatedSlots( nbOfSlots);
         mapIterator_->second.setNbOfAllocatedBytes( nbOfBytes);
+        mapIterator_->second.setNbOfAllocatedSlots( nbOfSlots);
         mapIterator_->second.setAllocatedMrtrPayload( allocatedMrtrPayload);
         mapIterator_->second.setAllocatedMstrPayload( allocatedMstrPayload);
     } else {
@@ -283,6 +288,19 @@ void VirtualAllocation::updateAllocation( int nbOfSlots, int nbOfBytes, u_int32_
 
 }
 
+/*
+ * Reset Cdma Flags and Code
+ */
+void VirtualAllocation::resetCdma()
+{
+    if ( virtualAllocationMap_.end() != mapIterator_ ) {
+        mapIterator_->second.setCdmaCode( -1);
+        mapIterator_->second.setCdmaTop( -1);
+    } else {
+        fprintf(stderr,"ERROR: Iterator not valid use findCidEntry() before");
+        exit(5);
+    }
+}
 
 /*
  * Get the number of allocated mrtr payload for the current connection

@@ -216,7 +216,7 @@ void SchedulingAlgoDualEqualFill::scheduleConnections( VirtualAllocation* virtua
 				assert( freeSlots >= 0);
 
 				// update container
-				virtualAllocation->updateAllocation( allocatedSlots, allocatedBytes, allocatedPayload, allocatedPayload);
+				virtualAllocation->updateAllocation( allocatedBytes, allocatedSlots,  u_int32_t( allocatedPayload), u_int32_t( allocatedPayload));
 
 				// decrease loop counter
 				conThisRound--;
@@ -390,7 +390,7 @@ void SchedulingAlgoDualEqualFill::scheduleConnections( VirtualAllocation* virtua
 					assert( allocatedPayload >= 0);
 
 					// update container
-					virtualAllocation->updateAllocation( allocatedSlots, allocatedBytes, allocatedMrtrPayload, u_int32_t(allocatedPayload));
+					virtualAllocation->updateAllocation( allocatedBytes, allocatedSlots,  allocatedMrtrPayload, u_int32_t(allocatedPayload));
 
 					// decrease loop counter
 					conThisRound--;

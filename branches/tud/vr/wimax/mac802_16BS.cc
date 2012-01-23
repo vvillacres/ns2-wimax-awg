@@ -74,8 +74,15 @@ Mac802_16BS::Mac802_16BS() : Mac802_16 (), cl_head_(0), cl_tail_(0), ctrlagent_(
         cqich_alloc_info_buffer[i].has_sent = TRUE;
     }
     cqich_slot_allocation_offset_ = 0;
+
+    // debug
+    // debugfile_.open("debugoutput.txt", ios_base::out);
 }
 
+Mac802_16BS::~Mac802_16BS()
+{
+	debugfile_.close();
+}
 /*
  * Interface with the TCL script
  * @param argc The number of parameter
@@ -831,7 +838,8 @@ void Mac802_16BS::receive (Packet *pktRx_)
 
         int counter = 0;
         for (int k = 0; k < total_subcarriers; k++) {
-            if ( signalpower[k] > DOUBLE_INT_ZERO) { // not equals to zero
+        	// TODO: ugly hack
+            if ( ( signalpower[k] > DOUBLE_INT_ZERO) && ( signalpower[k] < 1e18 )) { // not equals to zero
                 SINR[counter] =  signalpower[k]/interferencepower[counter];
                 counter++;
             }
@@ -2134,7 +2142,19 @@ void Mac802_16BS::process_bw_req (Packet *p)
     bw_req_header_t *req;
     req = (bw_req_header_t *)&header;
 
-    debug ("received bandwidth request of %d bytes from %d\n", req->br, req->cid);
+    debug2 (" At %f received bandwidth request of %d bytes from %d\n", NOW, req->br, req->cid);
+
+    // debug vr@tud
+    /*
+    if ( NOW >= 40.0224 ) {
+    	debug2(" Debug \n");
+    }
+
+    if (debugfile_.is_open())
+     {
+    	debugfile_ << "At "<< NOW << " received bandwidth request of "<< req->br <<" bytes from "<< req->cid << endl;
+     }
+     */
 
     //retrieve the CID and update bandwidth request information
     Connection *c =  getCManager()->get_connection (req->cid, IN_CONNECTION);

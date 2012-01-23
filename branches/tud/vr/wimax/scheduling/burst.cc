@@ -24,7 +24,7 @@
  * @param phypdu The PhyPdu where it is located
  */
 Burst::Burst (PhyPdu *phypdu) : cid_(-1), duration_(0),
-        starttime_(0),iuc_(-1),subchannelOffset_(0),numsubchannels_(0), b_cdma_code_(0), b_cdma_top_(0)
+        starttime_(0),iuc_(-1),subchannelOffset_(0),numsubchannels_(0), burstCdmaCode_(-1), burstCdmaTop_(-1)
 
 {
     assert (phypdu);

@@ -20,8 +20,12 @@
 #include "burst.h"
 #include "mac802_16SS.h"
 #include "random.h"
-#include "trafficshapinginterface.h"
+
+// algorithm implementations
+// traffic shaping
 #include "trafficshapingaccurate.h"
+#include "trafficshapingtswtcm.h"
+#include "trafficshapingnone.h"
 
 // scheduling algorithm downlink
 #include "schedulingalgointerface.h"
@@ -81,8 +85,60 @@ void SSscheduler::init ()
  */
 int SSscheduler::command(int argc, const char*const* argv)
 {
-    //no command. Remove this function if not used.
-    return TCL_ERROR;
+	if (argc == 3) {
+		if (strcmp(argv[1], "set-traffic-shaping") == 0) {
+			if (strcmp(argv[2], "accurate") == 0) {
+				// delete previous algorithm
+				delete trafficShapingAlgo_;
+				// create new alogrithm object
+				trafficShapingAlgo_ =  new TrafficShapingAccurate( mac_->getFrameDuration());
+				printf("New Traffic Shaping Algorithm: Traffic Shaping Accurate \n");
+			} else if (strcmp(argv[2], "tswtcm") == 0) {
+				// delete previous algorithm
+				delete trafficShapingAlgo_;
+				// create new alogrithm object
+				trafficShapingAlgo_ =  new TrafficShapingTswTcm( mac_->getFrameDuration());
+				printf("New Traffic Shaping Algorithm: Time Sliding Window Three Color Marker \n");
+			} else if (strcmp(argv[2], "none") == 0) {
+				// delete previous algorithm
+				delete trafficShapingAlgo_;
+				// create new alogrithm object
+				trafficShapingAlgo_ =  new TrafficShapingNone( mac_->getFrameDuration());
+				printf("New Traffic Shaping Algorithm: None \n");
+			} else {
+				fprintf(stderr, "Specified Traffic Shaping Algorithm NOT found ! \n");
+				return TCL_ERROR;
+			}
+			return TCL_OK;
+		} else if (strcmp(argv[1], "set-local-uplink-scheduling") == 0) {
+			if (strcmp(argv[2], "dual-equal-fill") == 0) {
+				// delete previous algorithm
+				delete schedulingAlgo_;
+				// create new alogrithm object
+				schedulingAlgo_ =  new SchedulingAlgoDualEqualFill();
+				printf("New Downlink Scheduling Algorithm: Dual Equal Fill \n");
+			} else if (strcmp(argv[2], "dual-edf") == 0) {
+				// delete previous algorithm
+				delete schedulingAlgo_;
+				// create new alogrithm object
+				schedulingAlgo_ =  new SchedulingAlgoDualEdf();
+				printf("New Downlink Scheduling Algorithm: Dual Earliest Deadline First \n");
+			} else if (strcmp(argv[2], "proportional-fair") == 0) {
+				// delete previous algorithm
+				delete schedulingAlgo_;
+				// create new alogrithm object
+				schedulingAlgo_ =  new SchedulingAlgoProportionalFair();
+				printf("New Downlink Scheduling Algorithm: ProportionalFair \n");
+			} else {
+				fprintf(stderr, "Specified Downlink Scheduling Policing Algorithm NOT found ! \n");
+				return TCL_ERROR;
+			}
+			return TCL_OK;
+		}
+
+	}
+	return TCL_ERROR;
+
 }
 
 /**
@@ -90,7 +146,7 @@ int SSscheduler::command(int argc, const char*const* argv)
  */
 void SSscheduler::schedule ()
 {
-    debug2("\n\n==============================SSScheduler::schedule () Begin ==========================\n");
+    debug2("\n\n At %f MAC Addr %d ============================SSScheduler::schedule () Begin ==========================\n", NOW, mac_->addr());
     int b_data;
     Connection *c;
     Burst *b, *b_tmp, *my_burst, *my_burst_rng;
@@ -240,78 +296,154 @@ void SSscheduler::schedule ()
     debug2("=========================================\n");
 
 
-//Print the map
-#ifdef SAM_DEBUG
-    mac_->getMap()->print_frame();
-#endif
+////Print the map
+//#ifdef SAM_DEBUG
+//    mac_->getMap()->print_frame();
+//#endif
+//
+//    for (int index = 0 ; index < map->getUlSubframe()->getNbPdu (); index++) {
+//        b_tmp = map->getUlSubframe()->getPhyPdu (index)->getBurst (0);
+//        if (b_tmp->getIUC()==UIUC_END_OF_MAP)
+//            continue;
+//        else if (b_tmp->getIUC()==UIUC_INITIAL_RANGING)
+//            continue;
+//        else if (b_tmp->getIUC()==UIUC_REQ_REGION_FULL)
+//            continue;
+//        else {
+//            int allocationfound = 0;
+//            Connection *c_burst;
+//            c_burst = mac_->getCManager ()->get_connection (b_tmp->getCid(), OUT_CONNECTION);
+//
+//            if (!c_burst) {
+//                continue;
+//            } else {
+//                my_burst = b_tmp;
+//                allocationfound = 1;
+//            }
+//
+//            b_data = 0;
+//            if (allocationfound == 1) {
+//                u_char b_code = b_tmp->getB_CDMA_CODE ();
+//                u_char b_top = b_tmp->getB_CDMA_TOP ();
+//                int init_code = mac_->getMap()->getUlSubframe()->getRanging()->getCODE (mac_->addr());
+//                int init_top = mac_->getMap()->getUlSubframe()->getRanging()->getTOP (mac_->addr());
+//
+//                int bw_code = mac_->getMap()->getUlSubframe()->getBw_req()->getCODE (b_tmp->getCid());
+//                int bw_top = mac_->getMap()->getUlSubframe()->getBw_req()->getTOP (b_tmp->getCid());
+//
+//                debug10 ("\tStart SS addr: %d, CID :%d, b_code :%d, b_top :%d, ssid_code :%d, ssid_top :%d, bw_code :%d, bw_top :%d\n", mac_->addr(), b_tmp->getCid(), b_code, b_top, init_code, init_top, bw_code, bw_top);
+//                debug10 ("\tBurst start time %d, Burst duration %d, IUC %d, subchannel offset %d, num of subchannels %d, CID %d\n", my_burst->getStarttime(), my_burst->getDuration(), my_burst->getIUC(),  my_burst->getSubchannelOffset(),  my_burst->getnumSubchannels(), my_burst->getCid());
+//                if (b_tmp->getCid() == 0) {
+//                    if ( (b_code == init_code) && (b_top == init_top) ) {
+//                        debug10 ("\tFound initial_ranging_msg opportunity (remove enqueued cdma_init_req), Burst start time %d, Burst duration %d, IUC %d, subchannel offset %d, num of subchannels %d, CID %d\n", my_burst->getStarttime(), my_burst->getDuration(), my_burst->getIUC(),  my_burst->getSubchannelOffset(),  my_burst->getnumSubchannels(), my_burst->getCid());
+//                        b_data = transfer_packets1(c_burst, my_burst, b_data);
+//                    }
+//                } else {
+//                    ConnectionType_t contype;
+//                    Connection *head = mac_->getCManager()->get_out_connection();
+//                    Connection *c_tmp1;
+//
+//                    for (int i=0; i<4; ++i) {
+//                        c_tmp1 = head;
+//                        if (i==0) 	    contype = CONN_BASIC;
+//                        else if (i==1)   contype = CONN_PRIMARY;
+//                        else if (i==2)   contype = CONN_SECONDARY;
+//                        else 	    contype = CONN_DATA;
+//
+//                        b_data = 0;
+//                        while (c_tmp1!=NULL) {
+//                            if (c_tmp1->get_category()==contype) {
+//                                int bw_code = mac_->getMap()->getUlSubframe()->getBw_req()->getCODE (c_tmp1->get_cid());
+//                                int bw_top = mac_->getMap()->getUlSubframe()->getBw_req()->getTOP (c_tmp1->get_cid());
+//                                if ( (b_code == bw_code) && (b_top == bw_top) ) {
+//                                    debug10 ("\tFound bw_req opportunity (remove enqueued cdma_bw_req), Burst start time %d, Burst duration %d, IUC %d, subchannel offset %d, num of subchannels %d, CID %d\n", my_burst->getStarttime(), my_burst->getDuration(), my_burst->getIUC(),  my_burst->getSubchannelOffset(),  my_burst->getnumSubchannels(), my_burst->getCid());
+//                                    debug10 ("\tCID :%d, b_code :%d, b_top :%d, bw_code :%d, bw_top :%d\n", c_tmp1->get_cid(), b_code, b_top, bw_code, bw_top);
+//                                    b_data = transfer_packets1(c_tmp1, my_burst, b_data);
+//                                }
+//                            }
+//                            c_tmp1 = c_tmp1->next_entry();
+//                        }//end while
+//                    }//end for
+//                }
+//            }
+//        }//end else all IUC
+//    }//end for all NbPU
+
+
+
 
     for (int index = 0 ; index < map->getUlSubframe()->getNbPdu (); index++) {
-        b_tmp = map->getUlSubframe()->getPhyPdu (index)->getBurst (0);
-        if (b_tmp->getIUC()==UIUC_END_OF_MAP)
-            continue;
-        else if (b_tmp->getIUC()==UIUC_INITIAL_RANGING)
-            continue;
-        else if (b_tmp->getIUC()==UIUC_REQ_REGION_FULL)
-            continue;
-        else {
-            int allocationfound = 0;
-            Connection *c_burst;
-            c_burst = mac_->getCManager ()->get_connection (b_tmp->getCid(), OUT_CONNECTION);
 
-            if (!c_burst) {
-                continue;
-            } else {
-                my_burst = b_tmp;
-                allocationfound = 1;
-            }
+    	Burst * currentBurst = map->getUlSubframe()->getPhyPdu (index)->getBurst (0);
+    	int uiuc = currentBurst->getIUC();
 
-            b_data = 0;
-            if (allocationfound == 1) {
-                u_char b_code = b_tmp->getB_CDMA_CODE ();
-                u_char b_top = b_tmp->getB_CDMA_TOP ();
-                int init_code = mac_->getMap()->getUlSubframe()->getRanging()->getCODE (mac_->addr());
-                int init_top = mac_->getMap()->getUlSubframe()->getRanging()->getTOP (mac_->addr());
+    	// check if it is an cdma burst
+    	if (( uiuc != UIUC_END_OF_MAP) && (uiuc != UIUC_INITIAL_RANGING) && (uiuc != UIUC_REQ_REGION_FULL) && ( currentBurst->getBurstCdmaCode() != -1 )) {
 
-                int bw_code = mac_->getMap()->getUlSubframe()->getBw_req()->getCODE (b_tmp->getCid());
-                int bw_top = mac_->getMap()->getUlSubframe()->getBw_req()->getTOP (b_tmp->getCid());
+    		Connection * burstCon = mac_->getCManager ()->get_connection ( currentBurst->getCid(), OUT_CONNECTION);
 
-                debug10 ("\tStart SS addr: %d, CID :%d, b_code :%d, b_top :%d, ssid_code :%d, ssid_top :%d, bw_code :%d, bw_top :%d\n", mac_->addr(), b_tmp->getCid(), b_code, b_top, init_code, init_top, bw_code, bw_top);
-                debug10 ("\tBurst start time %d, Burst duration %d, IUC %d, subchannel offset %d, num of subchannels %d, CID %d\n", my_burst->getStarttime(), my_burst->getDuration(), my_burst->getIUC(),  my_burst->getSubchannelOffset(),  my_burst->getnumSubchannels(), my_burst->getCid());
-                if (b_tmp->getCid() == 0) {
-                    if ( (b_code == init_code) && (b_top == init_top) ) {
-                        debug10 ("\tFound initial_ranging_msg opportunity (remove enqueued cdma_init_req), Burst start time %d, Burst duration %d, IUC %d, subchannel offset %d, num of subchannels %d, CID %d\n", my_burst->getStarttime(), my_burst->getDuration(), my_burst->getIUC(),  my_burst->getSubchannelOffset(),  my_burst->getnumSubchannels(), my_burst->getCid());
-                        b_data = transfer_packets1(c_burst, my_burst, b_data);
-                    }
-                } else {
-                    ConnectionType_t contype;
-                    Connection *head = mac_->getCManager()->get_out_connection();
-                    Connection *c_tmp1;
+    		int burstData = 0;
 
-                    for (int i=0; i<4; ++i) {
-                        c_tmp1 = head;
-                        if (i==0) 	    contype = CONN_BASIC;
-                        else if (i==1)   contype = CONN_PRIMARY;
-                        else if (i==2)   contype = CONN_SECONDARY;
-                        else 	    contype = CONN_DATA;
+    		if ( burstCon ) {
+    			// Burst may belong to this Subscriber Station
+    			int burstCdmaTop = currentBurst->getBurstCdmaTop();
+    			int burstCdmaCode = currentBurst->getBurstCdmaCode();
 
-                        b_data = 0;
-                        while (c_tmp1!=NULL) {
-                            if (c_tmp1->get_category()==contype) {
-                                int bw_code = mac_->getMap()->getUlSubframe()->getBw_req()->getCODE (c_tmp1->get_cid());
-                                int bw_top = mac_->getMap()->getUlSubframe()->getBw_req()->getTOP (c_tmp1->get_cid());
-                                if ( (b_code == bw_code) && (b_top == bw_top) ) {
-                                    debug10 ("\tFound bw_req opportunity (remove enqueued cdma_bw_req), Burst start time %d, Burst duration %d, IUC %d, subchannel offset %d, num of subchannels %d, CID %d\n", my_burst->getStarttime(), my_burst->getDuration(), my_burst->getIUC(),  my_burst->getSubchannelOffset(),  my_burst->getnumSubchannels(), my_burst->getCid());
-                                    debug10 ("\tCID :%d, b_code :%d, b_top :%d, bw_code :%d, bw_top :%d\n", c_tmp1->get_cid(), b_code, b_top, bw_code, bw_top);
-                                    b_data = transfer_packets1(c_tmp1, my_burst, b_data);
-                                }
-                            }
-                            c_tmp1 = c_tmp1->next_entry();
-                        }//end while
-                    }//end for
-                }
-            }
-        }//end else all IUC
-    }//end for all NbPU
+				if ( currentBurst->getCid() == 0) {
+					// Initial Ranging Allocation
+					int initRangingTop = mac_->getMap()->getUlSubframe()->getRanging()->getTOP ( mac_->addr());
+					int initRangingCode = mac_->getMap()->getUlSubframe()->getRanging()->getCODE ( mac_->addr());
+
+					// Check if this initial ranging allocation is for this station
+					if ( ( burstCdmaTop == initRangingTop) && ( burstCdmaCode == initRangingCode)) {
+						debug10 ("\tFound initial_ranging_msg opportunity (remove enqueued cdma_init_req), Burst start time %d, Burst duration %d, IUC %d, subchannel offset %d, num of subchannels %d, CID %d\n",
+								currentBurst->getStarttime(), currentBurst->getDuration(), currentBurst->getIUC(),  currentBurst->getSubchannelOffset(),  currentBurst->getnumSubchannels(), currentBurst->getCid());
+						// transfer initial ranging request
+						b_data = transfer_packets1( burstCon, currentBurst, burstData);
+
+					}
+
+
+				} else {
+					// bandwidth request or data allocation
+					Connection * currentCon = mac_->getCManager()->get_out_connection();
+
+
+					// loop through all outgoing connection of this station
+					while ( currentCon != NULL) {
+
+						ConnectionType_t connectionType = currentCon->get_category();
+
+						if (( connectionType == CONN_BASIC) || ( connectionType == CONN_PRIMARY) || ( connectionType == CONN_SECONDARY) || ( connectionType == CONN_DATA)) {
+							// Get code and cdma slot (top) of the current connection
+							int bwRequestTop = mac_->getMap()->getUlSubframe()->getBw_req()->getTOP ( currentCon->get_cid());
+							int bwRequestCode = mac_->getMap()->getUlSubframe()->getBw_req()->getCODE ( currentCon->get_cid());
+
+
+							// this will not work if code 0 in slot 0 was choosen
+							if ( ( burstCdmaTop == bwRequestTop) && ( burstCdmaCode == bwRequestCode)) {
+								debug10 ("\tFound bw_req opportunity (remove enqueued cdma_bw_req), Burst start time %d, Burst duration %d, IUC %d, subchannel offset %d, num of subchannels %d, CID %d\n",
+										currentBurst->getStarttime(), currentBurst->getDuration(), currentBurst->getIUC(),  currentBurst->getSubchannelOffset(),  currentBurst->getnumSubchannels(), currentBurst->getCid());
+								debug10 ("\tCID :%d, b_code :%d, b_top :%d, bw_code :%d, bw_top :%d\n", currentCon->get_cid(), burstCdmaCode, burstCdmaTop, bwRequestCode, bwRequestTop);
+
+								// debug cdma bandwidth requests need only 6 byte
+								assert(currentBurst->getnumSubchannels() <= 2 );
+
+								// transfer bandwidth request
+								burstData = transfer_packets1( currentCon, currentBurst, burstData);
+							}
+
+						}
+
+						// check next connection
+						currentCon = currentCon->next_entry();
+					} // end while
+				}
+    		} // end if connection
+		} // end if burst
+	} // end burst loop
+
+
 
 
     int allocationfound = 0;
@@ -484,7 +616,16 @@ void SSscheduler::schedule ()
                     if (con_tmp->get_category()==CONN_DATA) {
                     	// Only nrtPS or BE uses CDMA Bandwidth Requests
                         if ( (con_tmp->get_serviceflow()->getQosSet()->getUlGrantSchedulingType()==UL_nrtPS) || (con_tmp->get_serviceflow()->getQosSet()->getUlGrantSchedulingType()==UL_BE)) {
-                            create_cdma_request(con_tmp);
+                            // Bandwidth request shall be allowed by traffic policing
+                        	MrtrMstrPair_t mrtrMstrPair = trafficShapingAlgo_->getDataSizes( con_tmp, con_tmp->queuePayloadLength());
+
+                        	if ( mrtrMstrPair.second > 0) {
+                        		create_cdma_request(con_tmp);
+                        	} else {
+                        		// skip this connection
+                        		con_tmp = con_tmp->next_entry();
+                        		continue;
+                        	}
                         }
                     } else {
                         create_cdma_request(con_tmp);
@@ -620,19 +761,25 @@ void SSscheduler::schedule ()
         //debug2 ("\tBurst CID=%d\n", b->getCid());
         c = mac_->getCManager ()->get_connection (b->getCid(), OUT_CONNECTION);
 
-        if (!c) {
-            continue;
-        } else {
-            my_burst = b;
-            allocationfound = 1;
-        }
+      //  if (!c) {
+      //      continue;
+      //  } else {
+
+        // Search for burst with data allocations
+		if ( ( c != NULL) && ( b->getBurstCdmaTop() == -1) && ( b->getBurstCdmaCode() == -1)) {
+			printf("Allocation for CID %d with Slots %d found \n", b->getCid(), b->getnumSubchannels());
+
+			allocationfound = 1;
+			my_burst = b;
+		}
+
         //end Check if same cdma code
     }
 
     Connection *head = mac_->getCManager()->get_out_connection();
     Connection *con = head;
 
-    if ( (allocationfound == 1) && (my_burst->getB_CDMA_CODE()==0) && (my_burst->getB_CDMA_TOP()==0) ) {
+    if ( allocationfound == 1 ) {
         b_data = 0;
         debug10 ("In SS, Found data opportunity, Burst start time %d, Burst duration %d, IUC %d, subchannel offset %d, num of subchannels %d, CID %d\n", my_burst->getStarttime(), my_burst->getDuration(), my_burst->getIUC(),  my_burst->getSubchannelOffset(),  my_burst->getnumSubchannels(), my_burst->getCid());
         ConnectionType_t contype;

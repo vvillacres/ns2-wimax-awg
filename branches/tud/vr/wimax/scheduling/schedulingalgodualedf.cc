@@ -200,7 +200,7 @@ void SchedulingAlgoDualEdf::scheduleConnections( VirtualAllocation* virtualAlloc
 				assert( wantedMrtrSize >= (newAllocPayload + allocPayload));
 
 				// update virtual allocation container
-				virtualAllocation->updateAllocation( newSlots + virtualAllocation->getCurrentNbOfSlots(), newAllocBytes + allocBytes, newAllocPayload + allocPayload, newAllocPayload + allocPayload);
+				virtualAllocation->updateAllocation( newAllocBytes + allocBytes, newSlots + virtualAllocation->getCurrentNbOfSlots(), newAllocPayload + allocPayload, newAllocPayload + allocPayload);
 
 				// remove packet from queue
 				edfMrtrQueue.pop();
@@ -278,7 +278,7 @@ void SchedulingAlgoDualEdf::scheduleConnections( VirtualAllocation* virtualAlloc
 				assert( wantedMstrSize >= (newAllocPayload + allocPayload));
 
 				// update virtual allocation container
-				virtualAllocation->updateAllocation( newSlots + virtualAllocation->getCurrentNbOfSlots(), newAllocBytes + allocBytes, virtualAllocation->getCurrentMrtrPayload(), newAllocPayload + allocPayload);
+				virtualAllocation->updateAllocation( newAllocBytes + allocBytes, newSlots + virtualAllocation->getCurrentNbOfSlots(),  virtualAllocation->getCurrentMrtrPayload(), newAllocPayload + allocPayload);
 
 			}
 

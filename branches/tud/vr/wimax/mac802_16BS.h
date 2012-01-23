@@ -145,6 +145,8 @@ public:
 
     Mac802_16BS();
 
+    ~Mac802_16BS();
+
     /**
      * Interface with the TCL script
      * @param argc The number of parameter
@@ -241,6 +243,8 @@ public:
     int getUlCCC() {
     	return ulccc_;
     }
+
+
 
 protected:
 
@@ -582,6 +586,9 @@ private:
      * UL configuration change count
      */
     int ulccc_;
+
+
+
 
 };
 

@@ -152,7 +152,7 @@ void SchedulingDualEqualFillUl::scheduleConnections( VirtualAllocation* virtualA
 				assert( freeSlots >= 0);
 
 				// update container
-				virtualAllocation->updateAllocation( allocatedSlots, maximumBytes, maximumBytes, maximumBytes);
+				virtualAllocation->updateAllocation( maximumBytes, allocatedSlots,  maximumBytes, maximumBytes);
 
 				// decrease loop counter
 				conThisRound--;
@@ -267,7 +267,7 @@ void SchedulingDualEqualFillUl::scheduleConnections( VirtualAllocation* virtualA
 					u_int32_t allocatedMrtrPayload = virtualAllocation->getCurrentMrtrPayload();
 
 					// update container
-					virtualAllocation->updateAllocation( allocatedSlots, maximumBytes, allocatedMrtrPayload, maximumBytes);
+					virtualAllocation->updateAllocation( maximumBytes, allocatedSlots,  allocatedMrtrPayload, maximumBytes);
 
 					// decrease loop counter
 					conThisRound--;

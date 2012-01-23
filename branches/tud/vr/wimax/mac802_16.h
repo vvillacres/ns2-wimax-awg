@@ -24,6 +24,8 @@
 
 #include <math.h>
 #include <libio.h>
+#include <iostream>
+#include <fstream>
 #include "sduclassifier.h"
 #include "connectionmanager.h"
 #include "serviceflowhandler.h"
@@ -273,6 +275,9 @@ class Mac802_16 : public Mac
 public:
 
     Mac802_16();
+
+    // debug
+    fstream debugfile_;
 
     /**
      * Return the connection manager

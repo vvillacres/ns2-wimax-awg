@@ -113,7 +113,11 @@ void SchedulingProportionalFairUl::scheduleConnections( VirtualAllocation* virtu
 				assert( freeSlots >= 0);
 
 				// update container
-				virtualAllocation->updateAllocation( allocatedSlots, allocatedBytes, 0, u_int32_t( allocatedBytes));
+				if ( u_int32_t( allocatedBytes) < virtualAllocation->getWantedMstrSize() ) {
+					virtualAllocation->updateAllocation( allocatedBytes, allocatedSlots,  u_int32_t( allocatedBytes), u_int32_t( allocatedBytes));
+				} else {
+					virtualAllocation->updateAllocation( allocatedBytes, allocatedSlots,  virtualAllocation->getWantedMstrSize(), u_int32_t( allocatedBytes));
+				}
 
 				// decrease loop counter
 				conThisRound--;

@@ -8,7 +8,7 @@
 #include "virtualallocationelement.h"
 #include "config.h"
 
-VirtualAllocationElement::VirtualAllocationElement(Connection* connectionPtr, u_int32_t wantedMrtrSize, u_int32_t wantedMstrSize, int slotCapacity, int nbOfBytes, int nbOfSlots, bool isCdmaAlloc, int cdmaTop, int cdmaCode)
+VirtualAllocationElement::VirtualAllocationElement(Connection* connectionPtr, u_int32_t wantedMrtrSize, u_int32_t wantedMstrSize, int slotCapacity, int nbOfBytes, int nbOfSlots, short int cdmaTop, short int cdmaCode)
 {
     // set member variables
     connectionPtr_ = connectionPtr;
@@ -17,7 +17,6 @@ VirtualAllocationElement::VirtualAllocationElement(Connection* connectionPtr, u_
     slotCapacity_ = slotCapacity;
     nbOfBytes_ = nbOfBytes;
     nbOfSlots_ = nbOfSlots;
-    isCdmaAlloc_ = isCdmaAlloc;
     cdmaTop_ = cdmaTop;
     cdmaCode_ = cdmaCode;
     allocatedMrtrPayload_ = 0;
