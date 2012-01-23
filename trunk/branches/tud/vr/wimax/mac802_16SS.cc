@@ -608,9 +608,9 @@ void Mac802_16SS::sendUp (Packet *p)
 
             if (head_pkt_ !=NULL) {
 
-                if (head_pkt_->p->txinfo_.RxPr / p->txinfo_.RxPr >= p->txinfo_.CPThresh)
+                if (head_pkt_->p->txinfo_.RxPr / p->txinfo_.RxPr >= p->txinfo_.CPThresh) {
                     Packet::free(p);
-                else if (head_pkt_->p->txinfo_.RxPr / p->txinfo_.RxPr <= p->txinfo_.CPThresh) {
+                } else if (head_pkt_->p->txinfo_.RxPr / p->txinfo_.RxPr <= p->txinfo_.CPThresh) {
                     head_pkt_->timer.stop();
                     removePacket(head_pkt_);
                     addPacket(p);
@@ -1363,7 +1363,8 @@ void Mac802_16SS::receive (Packet *pktRx_)
 
 				debug2(" 6 error in the packet, drop this packet. the Mac does not process\n");
 				drop(pktRx_, "NOPWR");
-				Packet::free(pktRx_);
+				//
+				// vr@tud Packet::free(pktRx_);
 				pkt_error = FALSE;
 				//update drop stat
 				update_watch (&loss_watch_, 1);

@@ -210,9 +210,9 @@ void SchedulingAlgoProportionalFair::scheduleConnections( VirtualAllocation* vir
 
 				// update container
 				if ( allocatedPayload < wantedMrtrSize ) {
-					virtualAllocation->updateAllocation( allocatedSlots, allocatedBytes, allocatedPayload, allocatedPayload);
+					virtualAllocation->updateAllocation( allocatedBytes, allocatedSlots,  u_int32_t( allocatedPayload), u_int32_t( allocatedPayload));
 				} else {
-					virtualAllocation->updateAllocation( allocatedSlots, allocatedBytes, wantedMrtrSize, allocatedPayload);
+					virtualAllocation->updateAllocation( allocatedBytes, allocatedSlots,  u_int32_t( wantedMrtrSize), u_int32_t( allocatedPayload));
 				}
 
 				// decrease loop counter

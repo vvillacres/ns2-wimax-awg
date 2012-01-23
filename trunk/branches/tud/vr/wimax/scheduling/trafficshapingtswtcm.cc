@@ -95,7 +95,7 @@ MrtrMstrPair_t TrafficShapingTswTcm::getDataSizes(Connection *connection, u_int3
     u_int32_t maxTrafficBurst = sfQosSet->getMaxTrafficBurst();
 
     //
-    if ( connection->getFragmentBytes() > 0 ) {
+    if ( (connection->getFragmentBytes() > 0) && ( connection->queueLength() > 0) ) {
     	queuePayloadSize -= ( connection->getFragmentBytes() - HDR_MAC802_16_SIZE - HDR_MAC802_16_FRAGSUB_SIZE );
     }
 

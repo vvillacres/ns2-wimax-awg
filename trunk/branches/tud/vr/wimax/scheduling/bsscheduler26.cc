@@ -853,8 +853,8 @@ void BSScheduler26::schedule ()
                 ub->setDuration (ulmap_ie.num_of_symbols);
                 ub->setSubchannelOffset (ulmap_ie.subchannel_offset);
                 ub->setnumSubchannels (ulmap_ie.num_of_subchannels);
-                ub->setB_CDMA_TOP (ulmap_ie.cdma_ie.subchannel);
-                ub->setB_CDMA_CODE (ulmap_ie.cdma_ie.code);
+                ub->setBurstCdmaTop (ulmap_ie.cdma_ie.subchannel);
+                ub->setBurstCdmaCode (ulmap_ie.cdma_ie.code);
 
 
                 /*By using the UL-MAP IE to bring the CQICH Allocation IE information down to the corresponding SS.*/
@@ -919,7 +919,7 @@ void BSScheduler26::schedule ()
 
 
                 debug2("UL.Data region (Addburst): symbol offset[%d]\t symbol num[%d]\t subchannel offset[%d]\t subchannel num[%d]\n", ulmap_ie.symbol_offset, ulmap_ie.num_of_symbols, ulmap_ie.subchannel_offset, ulmap_ie.num_of_subchannels);
-                debug2("   Addburst cdma code :%d, cdma top :%d\n", ub->getB_CDMA_CODE(), ub->getB_CDMA_TOP());
+                debug2("   Addburst cdma code :%d, cdma top :%d\n", ub->getBurstCdmaCode(), ub->getBurstCdmaTop());
             }
             free (ulmap);
         }

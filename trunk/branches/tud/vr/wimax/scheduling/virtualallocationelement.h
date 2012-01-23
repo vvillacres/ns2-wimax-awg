@@ -15,7 +15,7 @@ class Connection;
 class VirtualAllocationElement
 {
 public:
-    VirtualAllocationElement( Connection* connectionPtr, u_int32_t wantedMrtrSize, u_int32_t wantedMstrSize, int slotCapacity, int nbOfBytes, int nbOfSlots, bool isCdmaAlloc, int cdmaTop, int cdmaCode);
+    VirtualAllocationElement( Connection* connectionPtr, u_int32_t wantedMrtrSize, u_int32_t wantedMstrSize, int slotCapacity, int nbOfBytes, int nbOfSlots, short int cdmaTop, short int cdmaCode);
     virtual ~VirtualAllocationElement();
 
 
@@ -103,16 +103,6 @@ public:
      */
     inline void setNbOfAllocatedSlots( int nbOfSlots) {
         nbOfSlots_ = nbOfSlots;
-    }
-
-
-    inline bool isCdmaAlloc() {
-    	return isCdmaAlloc_;
-    }
-
-
-    inline void setCdmaAlloc( bool isCdmaAlloc) {
-    	isCdmaAlloc_ = isCdmaAlloc;
     }
 
     /*
@@ -205,19 +195,14 @@ private:
     int nbOfBytes_;
 
     /*
-     * Flag for CDMA Allocations
-     */
-    bool isCdmaAlloc_;
-
-    /*
      * Used CDMA slot ( CDMA Top)
      */
-    int cdmaTop_;
+    short int cdmaTop_;
 
     /*
      * Used CDMA code
      */
-    int cdmaCode_;
+    short int cdmaCode_;
 
     /*
      * fulfilled mrtr payload

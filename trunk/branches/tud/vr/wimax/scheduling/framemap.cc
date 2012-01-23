@@ -177,8 +177,8 @@ Packet* FrameMap::getUL_MAP( )
         ies[i].num_of_subchannels=b->getnumSubchannels();
         ies[i].num_of_symbols=b->getDuration();
         ies[i].symbol_offset=b->getStarttime();
-        ies[i].cdma_ie.code=b->getB_CDMA_CODE();
-        ies[i].cdma_ie.subchannel=b->getB_CDMA_TOP();
+        ies[i].cdma_ie.code=b->getBurstCdmaCode();
+        ies[i].cdma_ie.subchannel=b->getBurstCdmaTop();
 
         if ( (b->getCid() == -1) || (b->getCid() == UIUC_END_OF_MAP) )
             bc_ie++;
@@ -370,8 +370,8 @@ void FrameMap::parseULMAPframe (mac802_16_ul_map_frame *frame)
         //rpi added for including subchannels for OFDMA
         b->setnumSubchannels(ies[i].num_of_subchannels);//=ies[i].num_of_subchannels;ies[i].subchannel_offset=;
         b->setSubchannelOffset (ies[i].subchannel_offset);//ies[i].num_of_subchannels=b->getSubchannelOffset ();
-        b->setB_CDMA_CODE (ies[i].cdma_ie.code);
-        b->setB_CDMA_TOP (ies[i].cdma_ie.subchannel);
+        b->setBurstCdmaCode (ies[i].cdma_ie.code);
+        b->setBurstCdmaTop (ies[i].cdma_ie.subchannel);
         //rpi end
 
         if (b->getIUC()!=UIUC_END_OF_MAP) {
@@ -462,7 +462,7 @@ void FrameMap::print_frame ()
     for (PhyPdu *p = ulsubframe_.getFirstPdu(); p ; p= p ->next_entry()) {
         UlBurst *b = (UlBurst*) p->getBurst(0);
         printf ("\t\tBurst %d: start=%d (%f)", i, b->getStarttime(), starttime_+ulsubframe_.getStarttime()*mac_->getPhy()->getPS()+b->getStarttime()*mac_->getPhy()->getSymbolTime());
-        printf(" num subchanels = %d subchannel offset =%d code =%d top =%d\n",b->getnumSubchannels(),b->getSubchannelOffset (), b->getB_CDMA_CODE(), b->getB_CDMA_TOP() );
+        printf(" num subchanels = %d subchannel offset =%d code =%d top =%d\n",b->getnumSubchannels(),b->getSubchannelOffset (), b->getBurstCdmaCode(), b->getBurstCdmaTop() );
         printf(" num subchanels = %d subchannel offset =%d\n",b->getnumSubchannels(),b->getSubchannelOffset () );
 
         printf (" UIUC=%d",  b->getIUC());

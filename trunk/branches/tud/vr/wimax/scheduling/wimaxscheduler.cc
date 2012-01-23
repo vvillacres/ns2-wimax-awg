@@ -632,7 +632,11 @@ int WimaxScheduler::transfer_packets1 (Connection *c, Burst *b, int b_data)
         debug10 ("\t   BW-REQ, In station %d, Packet phy header: numsymbols :%d, symboloffset :%d, subchanneloffset :%d, numsubchannel :%d, Channel_num :%d, direction :%d\n", mac_->getNodeType(), txtime_s,initial_offset, initial_subchannel_offset,numsubchannels,wimaxHdr->phy_info.channel_index,wimaxHdr->phy_info.direction);
 
         b->enqueue(p1);      //enqueue into burst
-        b_data += wimaxHdr->phy_info.num_subchannels*phy->getSlotCapacity(dlul_map_mod,UL_);
+
+        //b_data += wimaxHdr->phy_info.num_subchannels*phy->getSlotCapacity(dlul_map_mod,UL_);
+        // bandwidth request has a fixed size
+        b_data += HDR_MAC802_16_SIZE;
+
         int t16time = (ceil)((double)(mac_->macmib_.t16_timeout)/(double)(mac_->macmib_.frame_duration));
         c->setBW_REQ_QUEUE(t16time);
 

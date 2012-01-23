@@ -56,18 +56,19 @@ public:
      * Get and set cdma_code and opportunity from/to burst
      * @return the CID for this burst
      */
-    inline u_char getB_CDMA_CODE( ) {
-        return b_cdma_code_;
+    inline short int getBurstCdmaCode( ) {
+        return burstCdmaCode_;
     }
-    inline u_char getB_CDMA_TOP( ) {
-        return b_cdma_top_;
+    inline short int getBurstCdmaTop() {
+        return burstCdmaTop_;
     }
-    inline void setB_CDMA_CODE( u_char cdma_code ) {
-        b_cdma_code_ = cdma_code;
+    inline void setBurstCdmaCode( short int cdmaCode ) {
+    	burstCdmaCode_ = cdmaCode;
     }
-    inline void setB_CDMA_TOP( u_char cdma_top ) {
-        b_cdma_top_ = cdma_top;
+    inline void setBurstCdmaTop( short int cdmaTop ) {
+    	burstCdmaTop_ = cdmaTop;
     }
+
 
     /*Get and set the CQICH parameters*/
     char ext_uiuc_;
@@ -313,10 +314,15 @@ private:
     int numsubchannels_;
 
     /**
-     * cdma code and top
+     * cdma code / -1 default value
+     * and top
      */
-    u_char b_cdma_code_;
-    u_char b_cdma_top_;
+    short int burstCdmaCode_;
+
+    /*
+     * cdma top ( used cdma slot) / -1 default value
+     */
+    short int burstCdmaTop_;
 };
 
 #endif

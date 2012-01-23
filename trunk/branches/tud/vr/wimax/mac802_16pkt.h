@@ -344,9 +344,9 @@ struct mac802_16_cdma_ie {
     u_char uiuc : 4;
     u_char repetition : 2;
     u_char frame_number : 4;
-    u_char code;
-    u_char symbol;
-    u_char subchannel : 7;
+    short int code;
+    short int symbol;
+    short int subchannel;
     u_char bw_req : 1;
 };
 #define UL_CDMA_MAP_IE_SIZE 5 	// byte

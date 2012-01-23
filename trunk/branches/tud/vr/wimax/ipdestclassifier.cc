@@ -20,6 +20,15 @@
 #include "mac802_16.h"
 #include "scheduling/wimaxscheduler.h"
 
+
+//vr@tud debug
+//DEBUG_EXT
+#ifdef DEBUG_EXT
+#define debug_ext printf
+#else
+#define debug_ext(arg1,...)
+#endif
+
 /**
  * TCL Hooks for the simulator for classifier
  */
@@ -50,8 +59,8 @@ IPDestClassifier::IPDestClassifier (): SDUClassifier ()
  */
 int IPDestClassifier::classify (Packet * p)
 {
-    //debug
-    printf("IPDestClassifer PacketSize %d \n", HDR_CMN(p)->size());
+    // debug
+	debug_ext("IPDestClassifer PacketSize %d MAC Addr %d\n", HDR_CMN(p)->size(), mac_->addr());
 
     struct hdr_mac *dh = HDR_MAC(p);
     int dst = dh->macDA();
@@ -62,14 +71,17 @@ int IPDestClassifier::classify (Packet * p)
 
     //if broadcast, then send to broadcast CID
     if (dst == -1) {
-        if (mac_->getNodeType ()==STA_BS)
+        if (mac_->getNodeType ()==STA_BS) {
             return BROADCAST_CID;
-        else {
+        } else {
             //I am a MN, check if I am connected
             PeerNode *n = mac_->getPeerNode_head ();
             //i should classify depending on the packet type.TBD
-            if (n && n->getSecondary(OUT_CONNECTION))
+            if (n && n->getSecondary(OUT_CONNECTION)) {
+            	// debug
+            	debug_ext("find the outgoing secondary connection %d.\n", n->getSecondary(OUT_CONNECTION)->get_cid());
                 return n->getSecondary(OUT_CONNECTION)->get_cid();
+            }
         }
     }
 
@@ -84,8 +96,11 @@ int IPDestClassifier::classify (Packet * p)
             case PT_RADS:
             case PT_RSOL:
 #endif
-                if (n->getSecondary(OUT_CONNECTION))
+                if (n->getSecondary(OUT_CONNECTION)) {
+                	// debug
+                	debug_ext("find the outgoing secondary connection %d.\n", n->getSecondary(OUT_CONNECTION)->get_cid());
                     return n->getSecondary(OUT_CONNECTION)->get_cid();
+                }
                 break;
 
             default:
@@ -105,10 +120,12 @@ int IPDestClassifier::classify (Packet * p)
                 // printf("MAC Instants %d NbPeers %d \n", mac_->getNodeType(), mac_->getNbPeerNodes());
 
                 if (n->getOutDataCon( portNumber)) {
-                    debug2("find the outcoming data connection %d.\n", n->getOutDataCon( portNumber)->get_cid());
+                    // debug
+                	debug_ext("find the outcoming data connection %d.\n", n->getOutDataCon( portNumber)->get_cid());
                     return n->getOutDataCon( portNumber)->get_cid();
                 } else { //this node is not ready to send data
-                    debug2("cannt find the outcoming data connection.\n");
+                    // debug
+                	debug_extprintf("cannt find the outcoming data connection.\n");
                     break;
                 }
             }
