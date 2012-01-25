@@ -350,7 +350,6 @@ OBJ_CC = \
     wimax/scheduling/schedulingproportionalfairul.o \
     wimax/scheduling/edfqueueelement.o \
     wimax/scheduling/schedulingalgodualedf.o \
-    wimax/scheduling/schedulingalgowedf.o \
     wimax/scheduling/dlburstmappinginterface.o \
     wimax/scheduling/dlburstmappingsimple.o \
     wimax/scheduling/dlburstmappingocsa.o \
