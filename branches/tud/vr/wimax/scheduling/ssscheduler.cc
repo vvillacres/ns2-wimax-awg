@@ -823,6 +823,16 @@ void SSscheduler::schedule ()
                     // this connection should not have an entry
                     assert( !virtualAlloc->findConnectionEntry( c));
 
+                    UlGrantSchedulingType_t schedulingType = c->get_serviceflow()->getQosSet()->getUlGrantSchedulingType();
+
+                    if ( (schedulingType == UL_rtPS) || (schedulingType == UL_nrtPS) || (schedulingType == UL_BE) ){
+
+                    	// demand more bandwidth for
+                    	mrtrMstrPair.first += HDR_MAC802_16_SIZE;
+                    	mrtrMstrPair.second += HDR_MAC802_16_SIZE;
+                    }
+                                               // Bandwidth request shall be allowed by traffic policing
+
                     // better way ???
                     Ofdm_mod_rate burstProfile = mac_->getMap()->getUlSubframe()->getProfile( my_burst->getIUC())->getEncoding();
                     int slotCapacity = mac_->getPhy()->getSlotCapacity( burstProfile, UL_);
@@ -859,6 +869,12 @@ void SSscheduler::schedule ()
         			 b_data = transfer_packets1(c, my_burst, b_data);
         		 } else {
         			 debug2 ("In SS, before transfer_packets1, c->queueBytes :%d, c->queueLength :%d, b_data :%d\n", c->queueByteLength(), c->queueLength(), b_data);
+
+        			 // fill BW Request Queue for rtPS connections
+        			 if ( c->getServiceFlow()->getQosSet()->getUlGrantSchedulingType() == UL_rtPS) {
+        				 // will be converted to an ordinary bw req
+        				 create_cdma_request( c);
+        			 }
 
         			 // debug
         			 allocatedSize += virtualAlloc->getCurrentNbOfBytes();

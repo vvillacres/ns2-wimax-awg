@@ -50,6 +50,8 @@ public:
      */
     virtual void updateAllocation(Connection* connection,u_int32_t mrtrSize,u_int32_t mstrSize);
 
+    virtual void correctAllocation(Connection * connection, u_int32_t arrivedDataVolume);
+
 private :
     /*
      * Saves the last occurred allocations
