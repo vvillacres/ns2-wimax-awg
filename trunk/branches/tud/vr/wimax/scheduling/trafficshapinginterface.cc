@@ -37,3 +37,9 @@ void TrafficShapingInterface::updateAllocation(Connection* connection,u_int32_t 
 {
 	// overwritten by subclass
 }
+
+
+void TrafficShapingInterface::correctAllocation(Connection* connection, u_int32_t arrivedDataVolume)
+{
+	// overwritten by subclass
+}

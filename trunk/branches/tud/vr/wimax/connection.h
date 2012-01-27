@@ -345,9 +345,37 @@ public:
     /**
      * Set the time stamp of the last resource assignment
      */
-    void setLastAllocationTime (double lastAllocationTime) {
+    inline void setLastAllocationTime (double lastAllocationTime) {
     	lastAllocationTime_ = lastAllocationTime;
     }
+
+    /**
+     * Get the arrived data volume
+     */
+    inline int getArrivedDataVolume () {
+    	return arrivedDataVolume_;
+    }
+
+    /**
+     * Set arrived data volume
+     * counter for arrived packets measured in byte
+     */
+    inline void setArrivedDataVolume (int arrivedDataVolume) {
+    	arrivedDataVolume_ = arrivedDataVolume;
+    }
+
+    inline void increaseArrivedDataVolume ( int dataVolume) {
+    	arrivedDataVolume_ += dataVolume;
+    }
+
+    inline double getOverheadFactor () {
+    	return overheadFactor_;
+    }
+
+    inline void setOverheadFactor( double overheadFactor) {
+    	overheadFactor_ = overheadFactor;
+    }
+
 
     /**
      * Get and Set counter for cdma bandwidth requested parameters
@@ -526,6 +554,16 @@ private:
      * Saves the time stamp of the last resource assignment
      */
     double lastAllocationTime_;
+
+    /**
+     * Counter for the arrived data volume
+     */
+    int arrivedDataVolume_;
+
+    /**
+     * Overhead proportion
+     */
+    double overheadFactor_;
 
     /**
      * Indicates cdma-bw-req variables

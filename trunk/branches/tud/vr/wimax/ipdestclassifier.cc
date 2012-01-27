@@ -125,7 +125,7 @@ int IPDestClassifier::classify (Packet * p)
                     return n->getOutDataCon( portNumber)->get_cid();
                 } else { //this node is not ready to send data
                     // debug
-                	debug_extprintf("cannt find the outcoming data connection.\n");
+                	debug_ext("cannt find the outcoming data connection.\n");
                     break;
                 }
             }

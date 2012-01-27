@@ -1459,6 +1459,16 @@ void Mac802_16BS::receive (Packet *pktRx_)
         update_throughput (&rx_data_watch_, 8*ch->size());
         update_throughput (&rx_traffic_watch_, 8*ch->size());
         ch->size() -= HDR_MAC802_16_SIZE;
+
+        // update arrived data volume vr@tud
+        int packetSize = ch->size();
+        con->increaseArrivedDataVolume( packetSize);
+
+        double overheadFactor = con->getOverheadFactor();
+        overheadFactor = 0.9 * overheadFactor + 0.1 * (double(packetSize + HDR_MAC802_16_SIZE) / packetSize);
+        con->setOverheadFactor( overheadFactor);
+
+
         uptarget_->recv(pktRx_, (Handler*) 0);
     }
 
@@ -2145,8 +2155,8 @@ void Mac802_16BS::process_bw_req (Packet *p)
     debug2 (" At %f received bandwidth request of %d bytes from %d\n", NOW, req->br, req->cid);
 
     // debug vr@tud
-    /*
-    if ( NOW >= 40.0224 ) {
+
+    if ( NOW >= 10.0024 ) {
     	debug2(" Debug \n");
     }
 
@@ -2154,7 +2164,7 @@ void Mac802_16BS::process_bw_req (Packet *p)
      {
     	debugfile_ << "At "<< NOW << " received bandwidth request of "<< req->br <<" bytes from "<< req->cid << endl;
      }
-     */
+
 
     //retrieve the CID and update bandwidth request information
     Connection *c =  getCManager()->get_connection (req->cid, IN_CONNECTION);

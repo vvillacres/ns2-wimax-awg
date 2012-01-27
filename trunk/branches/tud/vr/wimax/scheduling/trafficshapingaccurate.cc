@@ -92,10 +92,24 @@ MrtrMstrPair_t TrafficShapingAccurate::getDataSizes(Connection *connection, u_in
         printf("Current sumMrtrSize %d sumMstrSize %d \n", mapIterator->second.sumMrtrSize, mapIterator->second.sumMstrSize);
 
         // maximum data volume for mrtr allocation = Time Base size - already assigned size
-        wantedMrtrSize = u_int32_t( ceil(timeBase * sfQosSet->getMinReservedTrafficRate() / 8.0) ) - mapIterator->second.sumMrtrSize;
+        u_int32_t mrtrTimeBaseSize = u_int32_t( ceil(timeBase * sfQosSet->getMinReservedTrafficRate() / 8.0) );
+        if ( mrtrTimeBaseSize >= mapIterator->second.sumMrtrSize ) {
+        	wantedMrtrSize = mrtrTimeBaseSize - mapIterator->second.sumMrtrSize;
+        } else {
+        	wantedMrtrSize = 0;
+        }
 
         // maximum data volume for mstr allocation = Time Base size - already assigned size
-        wantedMstrSize = u_int32_t( floor(timeBase * sfQosSet->getMaxSustainedTrafficRate() / 8.0) ) - mapIterator->second.sumMstrSize;
+        u_int32_t mstrTimeBaseSize = u_int32_t( floor(timeBase * sfQosSet->getMaxSustainedTrafficRate() / 8.0) );
+        if ( mstrTimeBaseSize >= mapIterator->second.sumMstrSize) {
+        	wantedMstrSize = mstrTimeBaseSize - mapIterator->second.sumMstrSize;
+        } else {
+        	wantedMstrSize = 0;
+        }
+
+        //old version
+        //wantedMrtrSize = u_int32_t( ceil(timeBase * sfQosSet->getMinReservedTrafficRate() / 8.0) ) - mapIterator->second.sumMrtrSize;
+        //wantedMstrSize = u_int32_t( floor(timeBase * sfQosSet->getMaxSustainedTrafficRate() / 8.0) ) - mapIterator->second.sumMstrSize;
 
         // fix rounding errors
         if ( wantedMstrSize < wantedMrtrSize) {
@@ -244,6 +258,54 @@ void TrafficShapingAccurate::updateAllocation(Connection *con, u_int32_t realMrt
 		printf("Current lenght %d sumMrtrSize %d sumMstrSize %d \n", int(mapIterator->second.ptrDequeTrafficShapingElement->size()), mapIterator->second.sumMrtrSize, mapIterator->second.sumMstrSize);
 		assert(mapIterator->second.sumMrtrSize <= mapIterator->second.sumMstrSize);
     }
+
+}
+
+
+void TrafficShapingAccurate::correctAllocation(Connection * connection, u_int32_t arrivedDataVolume)
+{
+	 // create iterator
+	MapLastTrafficShapingList_t::iterator mapIterator;
+
+	// get cid of current connection
+	int currentCid = connection->get_cid();
+
+	// lock for an entry for the current connection
+	mapIterator = mapLastTrafficShapingList_.find(currentCid);
+
+	if ( mapIterator != mapLastTrafficShapingList_.end()) {
+
+		// entry exists
+
+		u_int32_t mrtrSize = mapIterator->second.ptrDequeTrafficShapingElement->back().mrtrSize;
+		u_int32_t mstrSize = mapIterator->second.ptrDequeTrafficShapingElement->back().mstrSize;
+
+        // update sum values
+        mapIterator->second.sumMrtrSize -= mrtrSize;
+        mapIterator->second.sumMstrSize -= mstrSize;
+
+		if ( arrivedDataVolume < mrtrSize ) {
+			mrtrSize = arrivedDataVolume;
+			mstrSize = arrivedDataVolume;
+		} else {
+			if ( mstrSize == mrtrSize) {
+				// UGS
+				mrtrSize = arrivedDataVolume;
+				mstrSize = arrivedDataVolume;
+			} else {
+				mstrSize = arrivedDataVolume;
+			}
+		}
+
+		assert( mrtrSize <= mstrSize);
+		mapIterator->second.ptrDequeTrafficShapingElement->back().mrtrSize = mrtrSize;
+		mapIterator->second.ptrDequeTrafficShapingElement->back().mstrSize = mstrSize;
+
+        // update sum values
+        mapIterator->second.sumMrtrSize += mrtrSize;
+        mapIterator->second.sumMstrSize += mstrSize;
+
+	}
 
 }
 

@@ -189,9 +189,14 @@ private:
     //sam
 
     /**
-     * pointer to the current traffic policing algorithm
+     * pointer to the current traffic policing algorithm for the downlink direction
      */
-    TrafficShapingInterface* trafficShapingAlgorithm_;
+    TrafficShapingInterface* dlTrafficShapingAlgorithm_;
+
+    /**
+     * pointer to the current traffic policing algorithm for the uplink direction
+     */
+    TrafficShapingInterface* ulTrafficShapingAlgorithm_;
 
     /**
      * pointer to the current scheduling algorithm for the downlink direction

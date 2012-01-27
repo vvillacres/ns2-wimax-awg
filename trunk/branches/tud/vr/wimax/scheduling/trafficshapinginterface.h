@@ -42,6 +42,8 @@ public:
      */
     virtual void updateAllocation(Connection *connection, u_int32_t realMrtrSize, u_int32_t realMstrSize);
 
+    virtual void correctAllocation(Connection * connection, u_int32_t arrivedDataVolume);
+
 
 protected:
 

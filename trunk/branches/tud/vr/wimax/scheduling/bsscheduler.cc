@@ -137,8 +137,11 @@ BSScheduler::BSScheduler () : WimaxScheduler ()
 
     // create default algorithm objects
 
-    // traffic policing
-    trafficShapingAlgorithm_ =  NULL;
+    // traffic shaping dl
+    dlTrafficShapingAlgorithm_ =  NULL;
+
+    // traffic shaping ul
+    ulTrafficShapingAlgorithm_ = NULL;
 
     // Scheduling Algorithm for Downlink Direction
     dlSchedulingAlgorithm_ = NULL;
@@ -157,7 +160,8 @@ BSScheduler::BSScheduler () : WimaxScheduler ()
 BSScheduler::~BSScheduler ()
 {
     // delate algorithm objects
-    delete trafficShapingAlgorithm_;
+    delete dlTrafficShapingAlgorithm_;
+    delete ulTrafficShapingAlgorithm_;
     delete dlSchedulingAlgorithm_;
     delete ulSchedulingAlgorithm_;
     delete dlBurstMappingAlgorithm_;
@@ -213,24 +217,48 @@ int BSScheduler::command(int argc, const char*const* argv)
         	return TCL_OK;
 
 
-        } else if (strcmp(argv[1], "set-traffic-shaping") == 0) {
+        } else if (strcmp(argv[1], "set-dl-traffic-shaping") == 0) {
             if (strcmp(argv[2], "accurate") == 0) {
                 // delete previous algorithm
-                delete trafficShapingAlgorithm_;
+                delete dlTrafficShapingAlgorithm_;
                 // create new alogrithm object
-                trafficShapingAlgorithm_ =  new TrafficShapingAccurate( mac_->getFrameDuration());
+                dlTrafficShapingAlgorithm_ =  new TrafficShapingAccurate( mac_->getFrameDuration());
                 printf("New Traffic Shaping Algorithm: Traffic Shaping Accurate \n");
             } else if (strcmp(argv[2], "tswtcm") == 0) {
                 // delete previous algorithm
-                delete trafficShapingAlgorithm_;
+                delete dlTrafficShapingAlgorithm_;
                 // create new alogrithm object
-                trafficShapingAlgorithm_ =  new TrafficShapingTswTcm( mac_->getFrameDuration());
+                dlTrafficShapingAlgorithm_ =  new TrafficShapingTswTcm( mac_->getFrameDuration());
                 printf("New Traffic Shaping Algorithm: Time Sliding Window Three Color Marker \n");
             } else if (strcmp(argv[2], "none") == 0) {
                 // delete previous algorithm
-                delete trafficShapingAlgorithm_;
+                delete dlTrafficShapingAlgorithm_;
                 // create new alogrithm object
-                trafficShapingAlgorithm_ =  new TrafficShapingNone( mac_->getFrameDuration());
+                dlTrafficShapingAlgorithm_ =  new TrafficShapingNone( mac_->getFrameDuration());
+                printf("New Traffic Shaping Algorithm: None \n");
+            } else {
+                fprintf(stderr, "Specified Traffic Shaping Algorithm NOT found ! \n");
+                return TCL_ERROR;
+            }
+            return TCL_OK;
+        } else if (strcmp(argv[1], "set-ul-traffic-shaping") == 0) {
+            if (strcmp(argv[2], "accurate") == 0) {
+                // delete previous algorithm
+                delete ulTrafficShapingAlgorithm_;
+                // create new alogrithm object
+                ulTrafficShapingAlgorithm_ =  new TrafficShapingAccurate( mac_->getFrameDuration());
+                printf("New Traffic Shaping Algorithm: Traffic Shaping Accurate \n");
+            } else if (strcmp(argv[2], "tswtcm") == 0) {
+                // delete previous algorithm
+                delete ulTrafficShapingAlgorithm_;
+                // create new alogrithm object
+                ulTrafficShapingAlgorithm_ =  new TrafficShapingTswTcm( mac_->getFrameDuration());
+                printf("New Traffic Shaping Algorithm: Time Sliding Window Three Color Marker \n");
+            } else if (strcmp(argv[2], "none") == 0) {
+                // delete previous algorithm
+                delete ulTrafficShapingAlgorithm_;
+                // create new alogrithm object
+                ulTrafficShapingAlgorithm_ =  new TrafficShapingNone( mac_->getFrameDuration());
                 printf("New Traffic Shaping Algorithm: None \n");
             } else {
                 fprintf(stderr, "Specified Traffic Shaping Algorithm NOT found ! \n");
@@ -298,11 +326,16 @@ void BSScheduler::init ()
 {
     WimaxScheduler::init();
 
-    // Create default alogrithm objects
+    // Create default algorithm objects
 
-    // traffic policing
-    if ( !trafficShapingAlgorithm_) {
-    	trafficShapingAlgorithm_ =  new TrafficShapingAccurate( mac_->getFrameDuration());
+    // traffic policing for downlink
+    if ( !dlTrafficShapingAlgorithm_) {
+    	dlTrafficShapingAlgorithm_ =  new TrafficShapingAccurate( mac_->getFrameDuration());
+    }
+
+    // traffic policing for uplink
+    if ( !ulTrafficShapingAlgorithm_) {
+    	ulTrafficShapingAlgorithm_ =  new TrafficShapingAccurate( mac_->getFrameDuration());
     }
 
     // Scheduling Algorithm for Downlink Direction
@@ -1456,7 +1489,7 @@ mac802_16_dl_map_frame * BSScheduler::buildDownlinkMap( VirtualAllocation * virt
             }
 
             // Traffic Policing
-            mrtrMstrPair = trafficShapingAlgorithm_->getDataSizes( currentCon, u_int32_t(currentCon->queuePayloadLength()));
+            mrtrMstrPair = dlTrafficShapingAlgorithm_->getDataSizes( currentCon, u_int32_t(currentCon->queuePayloadLength()));
 
             // Add to virtual allocation if data to send
             if (( mrtrMstrPair.first > 0 ) || (mrtrMstrPair.second > 0 )) {
@@ -1475,7 +1508,7 @@ mac802_16_dl_map_frame * BSScheduler::buildDownlinkMap( VirtualAllocation * virt
          /*   else {
             	if ( currentCon->queueLength() > 0) {
             		// connection has data and is not scheduled therefore updateAllocation has to be called separately
-            		trafficShapingAlgorithm_->updateAllocation( currentCon, 0, 0);
+            		dlTrafficShapingAlgorithm_->updateAllocation( currentCon, 0, 0);
             	}
             } */
 
@@ -1586,7 +1619,7 @@ mac802_16_dl_map_frame * BSScheduler::buildDownlinkMap( VirtualAllocation * virt
 
     		Connection * currentCon = virtualAlloc->getConnection();
     		if ( currentCon->getType() ==  CONN_DATA) {
-    			trafficShapingAlgorithm_->updateAllocation( currentCon, virtualAlloc->getCurrentMrtrPayload(), virtualAlloc->getCurrentMstrPayload());
+    			dlTrafficShapingAlgorithm_->updateAllocation( currentCon, virtualAlloc->getCurrentMrtrPayload(), virtualAlloc->getCurrentMstrPayload());
     		}
     	} while ( virtualAlloc->nextConnectionEntry());
     }
@@ -2066,10 +2099,6 @@ mac802_16_ul_map_frame * BSScheduler::buildUplinkMap( Connection *head, int tota
     ServiceFlowQosSet * sfQosSet;
 
 
-    // TODO: Avoid this ugly hack
-    double overheadFactor = 1.00;
-
-
     while ( currentCon != NULL) {
         // get type of connection
         conType = currentCon->get_category();
@@ -2079,10 +2108,11 @@ mac802_16_ul_map_frame * BSScheduler::buildUplinkMap( Connection *head, int tota
 
         if (( conType == CONN_DATA ) && ( currentCon->getServiceFlow()->getServiceFlowState() == ACTIVE )) {
 
-
         	// consider that the queue size is unknown to the BS
 
 			sfQosSet = currentCon->getServiceFlow()->getQosSet();
+
+			int arrivedDataVolume = currentCon->getArrivedDataVolume();
 
 			// handle grants and polling intervals
 			switch ( sfQosSet->getUlGrantSchedulingType() ) {
@@ -2090,7 +2120,7 @@ mac802_16_ul_map_frame * BSScheduler::buildUplinkMap( Connection *head, int tota
 			case UL_UGS:
 				if (( NOW - (( sfQosSet->getGrantInterval() - TIMEERRORTOLERANCE) * 1e-3)) >= currentCon->getLastAllocationTime()) {
 
-					mrtrMstrPair = trafficShapingAlgorithm_->getDataSizes( currentCon, sfQosSet->getMaxTrafficBurst());
+					mrtrMstrPair = ulTrafficShapingAlgorithm_->getDataSizes( currentCon, sfQosSet->getMaxTrafficBurst());
 					if ( mrtrMstrPair.first > 0) {
 //						if ( virtualAlloc->findConnectionEntry( currentCon) ) {
 //
@@ -2104,7 +2134,7 @@ mac802_16_ul_map_frame * BSScheduler::buildUplinkMap( Connection *head, int tota
 							// create new entry
 							Ofdm_mod_rate burstProfile = mac_->getMap()->getUlSubframe()->getProfile(currentCon->getPeerNode()->getUIUC())->getEncoding();
 							int slotCapacity = mac_->getPhy()->getSlotCapacity( burstProfile, UL_);
-							virtualAlloc->addAllocation( currentCon, u_int32_t( mrtrMstrPair.first * overheadFactor), u_int32_t( mrtrMstrPair.second * overheadFactor ), slotCapacity);
+							virtualAlloc->addAllocation( currentCon, u_int32_t( mrtrMstrPair.first * currentCon->getOverheadFactor()), u_int32_t( mrtrMstrPair.second * currentCon->getOverheadFactor() ), slotCapacity);
 //						}
 					}
 				}
@@ -2115,7 +2145,7 @@ mac802_16_ul_map_frame * BSScheduler::buildUplinkMap( Connection *head, int tota
 
 				if (( NOW - (( sfQosSet->getGrantInterval() - TIMEERRORTOLERANCE )* 1e-3)) >= currentCon->getLastAllocationTime()) {
 
-					mrtrMstrPair = trafficShapingAlgorithm_->getDataSizes( currentCon, sfQosSet->getMaxTrafficBurst());
+					mrtrMstrPair = ulTrafficShapingAlgorithm_->getDataSizes( currentCon, sfQosSet->getMaxTrafficBurst());
 					if ( mrtrMstrPair.second > 0) {
 //						if ( virtualAlloc->findConnectionEntry( currentCon) ) {
 //
@@ -2130,15 +2160,18 @@ mac802_16_ul_map_frame * BSScheduler::buildUplinkMap( Connection *head, int tota
 							Ofdm_mod_rate burstProfile = mac_->getMap()->getUlSubframe()->getProfile(currentCon->getPeerNode()->getUIUC())->getEncoding();
 							int slotCapacity = mac_->getPhy()->getSlotCapacity( burstProfile, UL_);
 							//virtualAlloc->addAllocation( currentCon, MIN( u_int32_t( mrtrMstrPair.first * overheadFactor), u_int32_t( currentCon->getBw())), MIN( u_int32_t( mrtrMstrPair.second * overheadFactor), u_int32_t( currentCon->getBw())), mrtrMstrPair.second, slotCapacity);
-							virtualAlloc->addAllocation( currentCon, u_int32_t( mrtrMstrPair.first * overheadFactor), u_int32_t( mrtrMstrPair.second * overheadFactor ), slotCapacity);
+							virtualAlloc->addAllocation( currentCon, u_int32_t( mrtrMstrPair.first * currentCon->getOverheadFactor()), u_int32_t( mrtrMstrPair.second * currentCon->getOverheadFactor() ), slotCapacity);
 //						}
 					}
 				}
 			break;
 			case UL_rtPS:
 
+				// update Allocation according to the used volume
+	        	//ulTrafficShapingAlgorithm_->correctAllocation( currentCon, arrivedDataVolume);
+	        	currentCon->setArrivedDataVolume( 0);
 
-				mrtrMstrPair = trafficShapingAlgorithm_->getDataSizes( currentCon, u_int32_t(currentCon->getBw()));
+				mrtrMstrPair = ulTrafficShapingAlgorithm_->getDataSizes( currentCon, u_int32_t(currentCon->getBw()));
 
 				// Unicast Polling according to Polling Interval
 				if (( NOW - ((sfQosSet->getPollingInterval() - TIMEERRORTOLERANCE )* 1e-3)) >= currentCon->getLastAllocationTime()) {
@@ -2169,7 +2202,11 @@ mac802_16_ul_map_frame * BSScheduler::buildUplinkMap( Connection *head, int tota
 				break;
 			case UL_nrtPS:
 
-				mrtrMstrPair = trafficShapingAlgorithm_->getDataSizes( currentCon, u_int32_t(currentCon->getBw()));
+				// update Allocation according to the used volume
+	        	//ulTrafficShapingAlgorithm_->correctAllocation( currentCon, arrivedDataVolume);
+	        	currentCon->setArrivedDataVolume( 0);
+
+				mrtrMstrPair = ulTrafficShapingAlgorithm_->getDataSizes( currentCon, u_int32_t(currentCon->getBw()));
 
 				// TODO: Ugly
 
@@ -2205,7 +2242,7 @@ mac802_16_ul_map_frame * BSScheduler::buildUplinkMap( Connection *head, int tota
 						Ofdm_mod_rate burstProfile = mac_->getMap()->getUlSubframe()->getProfile(currentCon->getPeerNode()->getUIUC())->getEncoding();
 						int slotCapacity = mac_->getPhy()->getSlotCapacity( burstProfile, UL_);
 						virtualAlloc->addAllocation( currentCon, mrtrMstrPair.first , mrtrMstrPair.second, slotCapacity);
-						printf("Debug addAllocation CID %d, Req-BW %d, MRTR %d, MSTR %d \n", currentCon->get_cid(), currentCon->getBw(), virtualAlloc->getWantedMrtrSize() + u_int32_t( mrtrMstrPair.first * overheadFactor), virtualAlloc->getWantedMstrSize() + u_int32_t( mrtrMstrPair.second * overheadFactor ) );
+						printf("Debug addAllocation CID %d, Req-BW %d, MRTR %d, MSTR %d \n", currentCon->get_cid(), currentCon->getBw(), virtualAlloc->getWantedMrtrSize() + mrtrMstrPair.first, virtualAlloc->getWantedMstrSize() + mrtrMstrPair.second );
 
 //					}
 				}
@@ -2213,7 +2250,12 @@ mac802_16_ul_map_frame * BSScheduler::buildUplinkMap( Connection *head, int tota
 
 			break;
 			case UL_BE:
-				mrtrMstrPair = trafficShapingAlgorithm_->getDataSizes( currentCon, u_int32_t(currentCon->getBw()));
+
+				// update Allocation according to the used volume
+	        	//ulTrafficShapingAlgorithm_->correctAllocation( currentCon, arrivedDataVolume);
+	        	currentCon->setArrivedDataVolume( 0);
+
+				mrtrMstrPair = ulTrafficShapingAlgorithm_->getDataSizes( currentCon, u_int32_t(currentCon->getBw()));
 
 				/*
     		    if (mac_->debugfile_.is_open())
@@ -2314,12 +2356,12 @@ mac802_16_ul_map_frame * BSScheduler::buildUplinkMap( Connection *head, int tota
 
 			printf("CDMA Allocation CID %d Slots %d Top %d Code %d\n",currentCon->get_cid(), nbOfSlots, cdmaAlloc->getCurrentCdmaTop(), cdmaAlloc->getCurrentCdmaCode());
 
-			/*
+
 			if (mac_->debugfile_.is_open())
 			 {
 				mac_->debugfile_ << "At "<< NOW << "CDMA Alloc CID "<< currentCon->get_cid() <<" CDMA Allocation with Bytes" <<   (cdmaAlloc->getCurrentNbOfSlots() * cdmaAlloc->getSlotCapacity()) << endl;
 			 }
-			*/
+
 
 			ulMapIeIndex++;
 
@@ -2351,13 +2393,13 @@ mac802_16_ul_map_frame * BSScheduler::buildUplinkMap( Connection *head, int tota
 			assert( currentCon->getPeerNode()->getBasic( IN_CONNECTION)->get_cid() == currentCon->getPeerNode()->getBasic( OUT_CONNECTION)->get_cid());
 
 
-			/*
+
 			if (mac_->debugfile_.is_open())
 			 {
 				mac_->debugfile_ << "At "<< NOW << "CID "<< currentCon->get_cid() <<" Basic CID "<< currentCon->getPeerNode()->getBasic( OUT_CONNECTION)->get_cid() <<
 						" Bytes " <<  (virtualAlloc->getCurrentNbOfSlots() * virtualAlloc->getSlotCapacity()) << endl;
 			 }
-			*/
+
 
 
 			int slotCapacity = virtualAlloc->getSlotCapacity();
@@ -2384,14 +2426,15 @@ mac802_16_ul_map_frame * BSScheduler::buildUplinkMap( Connection *head, int tota
 				ServiceFlowQosSet * sfQosSet = currentCon->getServiceFlow()->getQosSet();
 
 				int requestedBandwidth = currentCon->getBw();
+				double overheadFactor = currentCon->getOverheadFactor();
 				int receivedBandwidth = 0;
 
 				if (( sfQosSet->getUlGrantSchedulingType() == UL_rtPS)
 					&& (( NOW - (sfQosSet->getPollingInterval() * 1e-3)) >= currentCon->getLastAllocationTime())) {
 
 					// Reduce feedback size if BW Req was send
-					trafficShapingAlgorithm_->updateAllocation( currentCon, u_int32_t(virtualAlloc->getCurrentMrtrPayload() / overheadFactor - HDR_MAC802_16_SIZE),
-							u_int32_t(virtualAlloc->getCurrentMstrPayload() / overheadFactor - HDR_MAC802_16_SIZE));
+					ulTrafficShapingAlgorithm_->updateAllocation( currentCon, u_int32_t( (virtualAlloc->getCurrentMrtrPayload() - HDR_MAC802_16_SIZE) / overheadFactor),
+							u_int32_t( (virtualAlloc->getCurrentMstrPayload() - HDR_MAC802_16_SIZE) / overheadFactor));
 
 					receivedBandwidth = virtualAlloc->getCurrentNbOfBytes() - HDR_MAC802_16_SIZE;
 
@@ -2399,17 +2442,20 @@ mac802_16_ul_map_frame * BSScheduler::buildUplinkMap( Connection *head, int tota
 						&& (( NOW - (sfQosSet->getTimeBase() * 1e-3)) >= currentCon->getLastAllocationTime())) {
 
 					// Reduce feedback size if BW Req was send
-					trafficShapingAlgorithm_->updateAllocation( currentCon, u_int32_t(virtualAlloc->getCurrentMrtrPayload() / overheadFactor - HDR_MAC802_16_SIZE),
-													u_int32_t(virtualAlloc->getCurrentMstrPayload() / overheadFactor - HDR_MAC802_16_SIZE));
+					ulTrafficShapingAlgorithm_->updateAllocation( currentCon, u_int32_t( (virtualAlloc->getCurrentMrtrPayload() - HDR_MAC802_16_SIZE) / overheadFactor),
+							u_int32_t( (virtualAlloc->getCurrentMstrPayload() - HDR_MAC802_16_SIZE) / overheadFactor));
 
 					receivedBandwidth = virtualAlloc->getCurrentNbOfBytes() - HDR_MAC802_16_SIZE;
+
 				} else {
 
 					// Feedback to traffic shaping
-					trafficShapingAlgorithm_->updateAllocation( currentCon, u_int32_t(virtualAlloc->getCurrentMrtrPayload() / overheadFactor), u_int32_t(virtualAlloc->getCurrentMstrPayload() / overheadFactor));
+					ulTrafficShapingAlgorithm_->updateAllocation( currentCon, u_int32_t( virtualAlloc->getCurrentMrtrPayload() / overheadFactor), u_int32_t(virtualAlloc->getCurrentMstrPayload() / overheadFactor ));
 
 					receivedBandwidth = virtualAlloc->getCurrentNbOfBytes();
 				}
+
+
 				// update last allocation time
 				if ( virtualAlloc->getCurrentNbOfBytes() > 0)  {
 					currentCon->setLastAllocationTime( NOW);
