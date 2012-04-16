@@ -22,7 +22,7 @@
 
 
 //vr@tud debug
-//DEBUG_EXT
+#define DEBUG_EXT
 #ifdef DEBUG_EXT
 #define debug_ext printf
 #else
@@ -112,12 +112,13 @@ int IPDestClassifier::classify (Packet * p)
             		portNumber = HDR_IP(p)->dport();
             	} else {
             		// uplink connection -> take source port
-            		portNumber = HDR_IP(p)->sport();
+            		portNumber = HDR_IP(p)->sport() - n->getNbOutDataCon();
             	}
 
             	// debug
-                // printf("IPDestClassifier Src Addr %d, Src Port %d, Dest Addr %d, Dest Port %d \n", HDR_IP(p)->saddr(), HDR_IP(p)->sport(), HDR_IP(p)->daddr(), HDR_IP(p)->dport());
-                // printf("MAC Instants %d NbPeers %d \n", mac_->getNodeType(), mac_->getNbPeerNodes());
+                printf("IPDestClassifier Src Addr %d, Src Port %d, Dest Addr %d, Dest Port %d \n", HDR_IP(p)->saddr(), HDR_IP(p)->sport(), HDR_IP(p)->daddr(), HDR_IP(p)->dport());
+                printf("MAC Instants %d NbPeers %d \n", mac_->getNodeType(), mac_->getNbPeerNodes());
+                printf("Number of Outgoing Connections %d, Number of Incoming Connections %d \n", n->getNbOutDataCon(), n->getNbInDataCon());
 
                 if (n->getOutDataCon( portNumber)) {
                     // debug

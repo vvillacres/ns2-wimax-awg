@@ -117,15 +117,29 @@ Connection*  PeerNode::getInDataCon (int index) {
 }
 
 /**
+ * Return the number of connections
+ */
+int PeerNode::getNbInDataCon() {
+	return indata_.size();
+}
+
+/**
  * Return the connection used for data messages
  */
 Connection*  PeerNode::getOutDataCon (int index) {
     if ( index < int( outdata_.size()) ) {
     	return outdata_.at( index);
     } else {
-    	printf("Number of outgoing connections %d \n", outdata_.size());
+    	printf("Number of outgoing connections %d \n", int(outdata_.size()));
     	return NULL;
     }
+}
+
+/**
+ * Return the number of connections
+ */
+int PeerNode::getNbOutDataCon() {
+	return outdata_.size();
 }
 
 /**
