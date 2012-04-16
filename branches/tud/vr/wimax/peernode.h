@@ -108,10 +108,23 @@ public:
      * Return the connection used for data messages
      */
     Connection*  getOutDataCon (int index);
+
+    /**
+     * Return the number of connections
+     */
+    int getNbOutDataCon();
+
+
     /**
      * Return the connection used for data messages
      */
     Connection*  getInDataCon (int index);
+
+    /**
+     * Return the number of connections
+     */
+    int getNbInDataCon();
+
 
     /**
      * Remove the last connection for incoming data messages from the vector and return the corresponding pointer
