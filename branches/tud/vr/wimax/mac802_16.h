@@ -19,8 +19,8 @@
 #ifndef MAC802_16_H
 #define MAC802_16_H
 //Should not hard code those define. Just edit the Makefile and add -DDEBUG_WIMAX and/or -DDEBUG_WIMAX_EXT
-#define DEBUG_WIMAX
-#define DEBUG_WIMAX_EXT
+//#define DEBUG_WIMAX
+//#define DEBUG_WIMAX_EXT
 
 #include <math.h>
 #include <libio.h>
@@ -275,9 +275,6 @@ class Mac802_16 : public Mac
 public:
 
     Mac802_16();
-
-    // debug
-    fstream debugfile_;
 
     /**
      * Return the connection manager

@@ -75,13 +75,11 @@ Mac802_16BS::Mac802_16BS() : Mac802_16 (), cl_head_(0), cl_tail_(0), ctrlagent_(
     }
     cqich_slot_allocation_offset_ = 0;
 
-    // debug
-    // debugfile_.open("debugoutput.txt", ios_base::out);
 }
 
 Mac802_16BS::~Mac802_16BS()
 {
-	debugfile_.close();
+
 }
 /*
  * Interface with the TCL script
@@ -2153,18 +2151,6 @@ void Mac802_16BS::process_bw_req (Packet *p)
     req = (bw_req_header_t *)&header;
 
     debug2 (" At %f received bandwidth request of %d bytes from %d\n", NOW, req->br, req->cid);
-
-    // debug vr@tud
-
-    if ( NOW >= 10.0024 ) {
-    	debug2(" Debug \n");
-    }
-
-    if (debugfile_.is_open())
-     {
-    	debugfile_ << "At "<< NOW << " received bandwidth request of "<< req->br <<" bytes from "<< req->cid << endl;
-     }
-
 
     //retrieve the CID and update bandwidth request information
     Connection *c =  getCManager()->get_connection (req->cid, IN_CONNECTION);
