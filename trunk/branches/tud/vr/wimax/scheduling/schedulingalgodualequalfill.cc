@@ -154,11 +154,10 @@ void SchedulingAlgoDualEqualFill::scheduleConnections( VirtualAllocation* virtua
 						allocatedPayload += packetSize - HDR_MAC802_16_SIZE;
 						allocatedBytes += packetSize;
 					}
+
 					// get next packet
 					currentPacket = currentPacket->next_;
 				}
-
-
 
 				// calculate fragmentation of the last scheduled packet
 				if ( allocatedBytes > maximumBytes) {
@@ -196,6 +195,11 @@ void SchedulingAlgoDualEqualFill::scheduleConnections( VirtualAllocation* virtua
 								allocatedBytes -= ( (allocatedPayload - wantedMrtrSize) - HDR_MAC802_16_FRAGSUB_SIZE);
 							}
 							allocatedPayload = wantedMrtrSize;
+						}
+					} else {
+						if (allocatedPayload < 0) {
+							// avoid rounding errors
+							allocatedPayload = 0;
 						}
 					}
 				}
@@ -367,6 +371,11 @@ void SchedulingAlgoDualEqualFill::scheduleConnections( VirtualAllocation* virtua
 									allocatedBytes -= ( (allocatedPayload - wantedMstrSize) - HDR_MAC802_16_FRAGSUB_SIZE);
 								}
 								allocatedPayload = wantedMstrSize;
+							}
+						} else {
+							if (allocatedPayload < 0) {
+								// avoid rounding errors
+								allocatedPayload = 0;
 							}
 						}
 					}
