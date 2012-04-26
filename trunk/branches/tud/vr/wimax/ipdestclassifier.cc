@@ -22,7 +22,7 @@
 
 
 //vr@tud debug
-#define DEBUG_EXT
+//#define DEBUG_EXT
 #ifdef DEBUG_EXT
 #define debug_ext printf
 #else
@@ -60,7 +60,7 @@ IPDestClassifier::IPDestClassifier (): SDUClassifier ()
 int IPDestClassifier::classify (Packet * p)
 {
     // debug
-	debug_ext("IPDestClassifer PacketSize %d MAC Addr %d\n", HDR_CMN(p)->size(), mac_->addr());
+	debug_ext("At %f IPDestClassifer PacketSize %d MAC Addr %d\n", NOW, HDR_CMN(p)->size(), mac_->addr());
 
     struct hdr_mac *dh = HDR_MAC(p);
     int dst = dh->macDA();
@@ -86,7 +86,7 @@ int IPDestClassifier::classify (Packet * p)
     }
 
     for (PeerNode *n = mac_->getPeerNode_head (); n ; n=n->next_entry()) {
-        printf ("Checking peer %d for %d\n", n->getAddr(), dst);
+    	debug_ext ("Checking peer %d for %d\n", n->getAddr(), dst);
         if (dst == n->getAddr ()) {
             switch (HDR_CMN(p)->ptype()) {
             case PT_ARP:
@@ -112,13 +112,13 @@ int IPDestClassifier::classify (Packet * p)
             		portNumber = HDR_IP(p)->dport();
             	} else {
             		// uplink connection -> take source port
-            		portNumber = HDR_IP(p)->sport() - n->getNbOutDataCon();
+            		portNumber = HDR_IP(p)->sport() - n->getNbInDataCon();
             	}
 
             	// debug
-                printf("IPDestClassifier Src Addr %d, Src Port %d, Dest Addr %d, Dest Port %d \n", HDR_IP(p)->saddr(), HDR_IP(p)->sport(), HDR_IP(p)->daddr(), HDR_IP(p)->dport());
-                printf("MAC Instants %d NbPeers %d \n", mac_->getNodeType(), mac_->getNbPeerNodes());
-                printf("Number of Outgoing Connections %d, Number of Incoming Connections %d \n", n->getNbOutDataCon(), n->getNbInDataCon());
+            	debug_ext("IPDestClassifier Src Addr %d, Src Port %d, Dest Addr %d, Dest Port %d \n", HDR_IP(p)->saddr(), HDR_IP(p)->sport(), HDR_IP(p)->daddr(), HDR_IP(p)->dport());
+            	debug_ext("MAC Instants %d NbPeers %d \n", mac_->getNodeType(), mac_->getNbPeerNodes());
+            	debug_ext("Number of Outgoing Connections %d, Number of Incoming Connections %d \n", n->getNbOutDataCon(), n->getNbInDataCon());
 
                 if (n->getOutDataCon( portNumber)) {
                     // debug

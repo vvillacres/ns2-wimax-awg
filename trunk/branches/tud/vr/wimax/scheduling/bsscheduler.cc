@@ -68,7 +68,7 @@
 // to avoid error of grant and polling interval
 #define TIMEERRORTOLERANCE 1
 
-#define DEBUG_EXT
+//#define DEBUG_EXT
 //vr@tud debug
 #ifdef DEBUG_EXT
 #define debug_ext printf
@@ -77,8 +77,8 @@
 #endif
 
 //vr@tud dedug for bsscheduler
-#define debug10 printf
-#define debug2 printf
+//#define debug10 printf
+//#define debug2 printf
 
 //Scheduler allocates CBR every frame
 #define UGS_AVG
@@ -485,7 +485,7 @@ void BSScheduler::schedule ()
     //  PeerNode *peer;
 
 
-    printf("Simulation Time %g \n", NOW);
+    debug2("Simulation Time %g \n", NOW);
 
     // ARQ will be reviewed later vr@tud
 /*
@@ -779,7 +779,7 @@ void BSScheduler::schedule ()
 
                 /*By using the UL-MAP IE to bring the CQICH Allocation IE information down to the corresponding SS.*/
                 debug2("mac_ get cqich alloc ie ind %d\n", mac_->get_cqich_alloc_ie_ind());
-                //printf("amc_enable flag is %d\n", amc_enable_);
+                //debug2("amc_enable flag is %d\n", amc_enable_);
                 /*Now we add the CQICH allocation IE to the corresponding UL-MAP IE.*/
                 if (getMac()->get_cqich_alloc_ie_ind() == true && mac_->amc_enable_ ==1) {
                     debug2("1.1 BSscheduler is gonna sent CQICH Allocation IE via UL-MAP.\n");
@@ -963,9 +963,6 @@ void BSScheduler::schedule ()
 		//debug10 ("\tStartdld :%d, Enddld :%d, Dldsize :%d, Uldsize :%d, Numsubchannels (35 or 30) :%d \n", useNbDlSymbols,  phy->getNumsubchannels(/*phy->getPermutationscheme (), */DL_));
 
 		dlMap = buildDownlinkMap( virtualAlloc, mac_->getCManager()->get_out_connection (), phy->getNumsubchannels(DL_), useNbDlSymbols, dlSymbolOffset, dlSubchannelOffset, freeDlSlots);
-		if (NOW > 10.0) {
-			printf("ok \n");
-		}
 
 		// create physical DL burst
 		// TODO: Note that #subchannels = #slots in this version
@@ -1976,7 +1973,7 @@ mac802_16_ul_map_frame * BSScheduler::buildUplinkMap( Connection *head, int tota
                         currentCon->setCdma( 0);
 
                     } else {
-                    	printf("Resources for BW Req are missing \n");
+                    	debug2("Resources for BW Req are missing \n");
                     }
 
                 }
@@ -2230,7 +2227,7 @@ mac802_16_ul_map_frame * BSScheduler::buildUplinkMap( Connection *head, int tota
 
 							// update wanted Sizes
 //				//			virtualAlloc->updateWantedMrtrMstr( HDR_MAC802_16_SIZE + u_int32_t( mrtrMstrPair.first * overheadFactor), HDR_MAC802_16_SIZE + u_int32_t( mrtrMstrPair.second * overheadFactor ));
-//							printf("Debug addAllocation CID %d, Req-BW %d, MRTR %d, MSTR %d \n", currentCon->get_cid(), currentCon->getBw(), virtualAlloc->getWantedMrtrSize() + u_int32_t( mrtrMstrPair.first * overheadFactor), virtualAlloc->getWantedMstrSize() + u_int32_t( mrtrMstrPair.second * overheadFactor ) );
+//							debug2("Debug addAllocation CID %d, Req-BW %d, MRTR %d, MSTR %d \n", currentCon->get_cid(), currentCon->getBw(), virtualAlloc->getWantedMrtrSize() + u_int32_t( mrtrMstrPair.first * overheadFactor), virtualAlloc->getWantedMstrSize() + u_int32_t( mrtrMstrPair.second * overheadFactor ) );
 //						} else {
 							// Not POSSIBLE
 //							assert( false);
@@ -2242,7 +2239,7 @@ mac802_16_ul_map_frame * BSScheduler::buildUplinkMap( Connection *head, int tota
 						Ofdm_mod_rate burstProfile = mac_->getMap()->getUlSubframe()->getProfile(currentCon->getPeerNode()->getUIUC())->getEncoding();
 						int slotCapacity = mac_->getPhy()->getSlotCapacity( burstProfile, UL_);
 						virtualAlloc->addAllocation( currentCon, mrtrMstrPair.first , mrtrMstrPair.second, slotCapacity);
-						printf("Debug addAllocation CID %d, Req-BW %d, MRTR %d, MSTR %d \n", currentCon->get_cid(), currentCon->getBw(), virtualAlloc->getWantedMrtrSize() + mrtrMstrPair.first, virtualAlloc->getWantedMstrSize() + mrtrMstrPair.second );
+						debug2("Debug addAllocation CID %d, Req-BW %d, MRTR %d, MSTR %d \n", currentCon->get_cid(), currentCon->getBw(), virtualAlloc->getWantedMrtrSize() + mrtrMstrPair.first, virtualAlloc->getWantedMstrSize() + mrtrMstrPair.second );
 
 //					}
 				}
@@ -2256,14 +2253,6 @@ mac802_16_ul_map_frame * BSScheduler::buildUplinkMap( Connection *head, int tota
 	        	currentCon->setArrivedDataVolume( 0);
 
 				mrtrMstrPair = ulTrafficShapingAlgorithm_->getDataSizes( currentCon, u_int32_t(currentCon->getBw()));
-
-				/*
-    		    if (mac_->debugfile_.is_open())
-    		     {
-    		    	mac_->debugfile_ << "At "<< NOW << " Traffic Shaping CID "<< currentCon->get_cid() << "Req BW " <<  currentCon->getBw()
-    		    			<< " MRTR " << mrtrMstrPair.first << " MSTR " << mrtrMstrPair.second << endl;
-    		     }
-    		     */
 
 				if ( mrtrMstrPair.second > 0 ) {
 
@@ -2289,7 +2278,7 @@ mac802_16_ul_map_frame * BSScheduler::buildUplinkMap( Connection *head, int tota
 						Ofdm_mod_rate burstProfile = mac_->getMap()->getUlSubframe()->getProfile(currentCon->getPeerNode()->getUIUC())->getEncoding();
 						int slotCapacity = mac_->getPhy()->getSlotCapacity( burstProfile, UL_);
 						virtualAlloc->addAllocation( currentCon, mrtrMstrPair.first , mrtrMstrPair.second, slotCapacity);
-						printf("Debug addAllocation CID %d, Req-BW %d, MRTR %d, MSTR %d \n", currentCon->get_cid(), currentCon->getBw(), mrtrMstrPair.first, mrtrMstrPair.second );
+						debug2("Debug addAllocation CID %d, Req-BW %d, MRTR %d, MSTR %d \n", currentCon->get_cid(), currentCon->getBw(), mrtrMstrPair.first, mrtrMstrPair.second );
 //					}
 				}
 
@@ -2354,14 +2343,7 @@ mac802_16_ul_map_frame * BSScheduler::buildUplinkMap( Connection *head, int tota
 			ulMap->ies[ulMapIeIndex].cdma_ie.subchannel = cdmaAlloc->getCurrentCdmaTop();
 			ulMap->ies[ulMapIeIndex].cdma_ie.code = cdmaAlloc->getCurrentCdmaCode();
 
-			printf("CDMA Allocation CID %d Slots %d Top %d Code %d\n",currentCon->get_cid(), nbOfSlots, cdmaAlloc->getCurrentCdmaTop(), cdmaAlloc->getCurrentCdmaCode());
-
-
-			if (mac_->debugfile_.is_open())
-			 {
-				mac_->debugfile_ << "At "<< NOW << "CDMA Alloc CID "<< currentCon->get_cid() <<" CDMA Allocation with Bytes" <<   (cdmaAlloc->getCurrentNbOfSlots() * cdmaAlloc->getSlotCapacity()) << endl;
-			 }
-
+			debug2("CDMA Allocation CID %d Slots %d Top %d Code %d\n",currentCon->get_cid(), nbOfSlots, cdmaAlloc->getCurrentCdmaTop(), cdmaAlloc->getCurrentCdmaCode());
 
 			ulMapIeIndex++;
 
@@ -2371,7 +2353,7 @@ mac802_16_ul_map_frame * BSScheduler::buildUplinkMap( Connection *head, int tota
     }
 
 	// debug
-	printf("Number of Init Ranging and BW Req Opportunities %d \n", ulMapIeIndex);
+	debug2("Number of Init Ranging and BW Req Opportunities %d \n", ulMapIeIndex);
 
 
 
@@ -2389,18 +2371,8 @@ mac802_16_ul_map_frame * BSScheduler::buildUplinkMap( Connection *head, int tota
 			// build up basicAlloc container to aggregate allocations
 
 			Connection * currentCon = virtualAlloc->getConnection();
-			printf("CID %d, Basic CID %d Slots %d\n", currentCon->get_cid(), currentCon->getPeerNode()->getBasic( OUT_CONNECTION)->get_cid(), virtualAlloc->getCurrentNbOfSlots());
+			debug2("CID %d, Basic CID %d Slots %d\n", currentCon->get_cid(), currentCon->getPeerNode()->getBasic( OUT_CONNECTION)->get_cid(), virtualAlloc->getCurrentNbOfSlots());
 			assert( currentCon->getPeerNode()->getBasic( IN_CONNECTION)->get_cid() == currentCon->getPeerNode()->getBasic( OUT_CONNECTION)->get_cid());
-
-
-
-			if (mac_->debugfile_.is_open())
-			 {
-				mac_->debugfile_ << "At "<< NOW << "CID "<< currentCon->get_cid() <<" Basic CID "<< currentCon->getPeerNode()->getBasic( OUT_CONNECTION)->get_cid() <<
-						" Bytes " <<  (virtualAlloc->getCurrentNbOfSlots() * virtualAlloc->getSlotCapacity()) << endl;
-			 }
-
-
 
 			int slotCapacity = virtualAlloc->getSlotCapacity();
 			int nbOfBytes = virtualAlloc->getCurrentNbOfBytes();
@@ -2464,7 +2436,7 @@ mac802_16_ul_map_frame * BSScheduler::buildUplinkMap( Connection *head, int tota
 				// update requested bandwidth
 				currentCon->setBw(requestedBandwidth - receivedBandwidth);
 				// debug
-				printf("Connection %d Requested BW %d Received BW %d \n", currentCon->get_cid(), requestedBandwidth, receivedBandwidth);
+				debug2("Connection %d Requested BW %d Received BW %d \n", currentCon->get_cid(), requestedBandwidth, receivedBandwidth);
 
 			}
 
@@ -2488,7 +2460,7 @@ mac802_16_ul_map_frame * BSScheduler::buildUplinkMap( Connection *head, int tota
 			// map CDMA Ranging or BW Req opportunity
 
 			Connection * basicCon = basicAlloc->getConnection();
-			printf("CID %d \n",basicCon->get_cid());
+			debug2("CID %d \n",basicCon->get_cid());
 
 			ulMap->ies[ulMapIeIndex].cid = basicCon->get_cid();
 			// default Profile is used now
@@ -2519,7 +2491,7 @@ mac802_16_ul_map_frame * BSScheduler::buildUplinkMap( Connection *head, int tota
 
 
 	// debug
-	printf("Number of Burst %d \n", ulMapIeIndex);
+	debug2("Number of Burst %d \n", ulMapIeIndex);
 
     // set the number of information elements
     ulMap->nb_ies = ulMapIeIndex;

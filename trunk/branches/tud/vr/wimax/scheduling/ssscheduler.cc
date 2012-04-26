@@ -291,9 +291,9 @@ void SSscheduler::schedule ()
 
      */
 
-    debug2("\n=============MAC SS subframe ===============\n");
-    mac_->getMap()->print_frame();
-    debug2("=========================================\n");
+//    debug2("\n=============MAC SS subframe ===============\n");
+//    mac_->getMap()->print_frame();
+//    debug2("=========================================\n");
 
 
 ////Print the map

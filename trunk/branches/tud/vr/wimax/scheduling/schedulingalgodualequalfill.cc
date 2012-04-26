@@ -27,10 +27,6 @@ void SchedulingAlgoDualEqualFill::scheduleConnections( VirtualAllocation* virtua
 	 * would break the algorithm independent interface.
 	 */
 
-	if ( NOW > 11.0067) {
-		printf("debug %f \n", NOW);
-	}
-
 	// update totalNbOfSlots_ for statistic
 	assert( ( 0 < movingAverageFactor_) && ( 1 > movingAverageFactor_) );
 	totalNbOfSlots_ = ( totalNbOfSlots_ * ( 1 - movingAverageFactor_)) + ( freeSlots * movingAverageFactor_);
@@ -196,12 +192,13 @@ void SchedulingAlgoDualEqualFill::scheduleConnections( VirtualAllocation* virtua
 							}
 							allocatedPayload = wantedMrtrSize;
 						}
-					} else {
-						if (allocatedPayload < 0) {
-							// avoid rounding errors
-							allocatedPayload = 0;
-						}
 					}
+
+					if (allocatedPayload < 0) {
+						// avoid rounding errors
+						allocatedPayload = 0;
+					}
+
 				}
 				// Calculate Allocated Slots
 				allocatedSlots = int( ceil( double(allocatedBytes) / virtualAllocation->getSlotCapacity()) );
@@ -372,12 +369,12 @@ void SchedulingAlgoDualEqualFill::scheduleConnections( VirtualAllocation* virtua
 								}
 								allocatedPayload = wantedMstrSize;
 							}
-						} else {
-							if (allocatedPayload < 0) {
-								// avoid rounding errors
-								allocatedPayload = 0;
-							}
 						}
+						if (allocatedPayload < 0) {
+							// avoid rounding errors
+							allocatedPayload = 0;
+						}
+
 					}
 					// Calculate Allocated Slots
 					allocatedSlots = int( ceil( double(allocatedBytes) / virtualAllocation->getSlotCapacity()) );
