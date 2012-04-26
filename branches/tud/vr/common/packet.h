@@ -47,6 +47,9 @@
 #include "packet-stamp.h"
 #include "ns-process.h"
 
+// number of timestamps for each packet
+#define TSTAMP_NO 10
+
 // Used by wireless routing code to attach routing agent
 #define RT_PORT		255	/* port that all route msgs are sent to */
 
@@ -613,6 +616,16 @@ struct hdr_cmn {
 
 	// tx time for this packet in sec
 	double txtime_;
+
+	// measure module start
+	double e2e_ts_[TSTAMP_NO];  // timestamp fore2e packet delay and jitter
+	int e2e_ts_no;              // the first empty timestamp (initially =0)
+	int e2e_sn_;                // Sequence number for e2e packet loss ratio
+	inline double& e2e_timestamp(int t) { return e2e_ts_[t]; }
+	inline int& e2e_timestamp_no() { return (e2e_ts_no); }
+	inline int& e2e_sn() {return e2e_sn_; }
+	// measure module end
+		
 	inline double& txtime() { return(txtime_); }
 
 	static int offset_;	// offset for this header
@@ -682,6 +695,7 @@ inline Packet* Packet::alloc()
 	init(p); // Initialize bits_[]
 	(HDR_CMN(p))->next_hop_ = -2; // -1 reserved for IP_BROADCAST
 	(HDR_CMN(p))->last_hop_ = -2; // -1 reserved for IP_BROADCAST
+	(HDR_CMN(p))->e2e_ts_no=-1; // no timestamp for a newly created packet
 	p->fflag_ = TRUE;
 	(HDR_CMN(p))->direction() = hdr_cmn::DOWN;
 	/* setting all direction of pkts to be downward as default; 

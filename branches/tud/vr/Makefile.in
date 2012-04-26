@@ -74,7 +74,8 @@ INCLUDES = \
 	-I./diffserv -I./satellite \
 	-I./wpan \
 	-I./wimax \
-	-I./wimax/scheduling
+	-I./wimax/scheduling \
+	-I./voip
 
 
 LIB	= \
@@ -165,6 +166,14 @@ NS_TCL_LIB_STL = tcl/lib/ns-diffusion.tcl \
 
 OBJ_CC = \
 	tools/random.o tools/rng.o tools/ranvar.o common/misc.o common/timer-handler.o \
+	tools/e2et.o \
+	tools/e2em.o \
+	tools/fairness.o \
+	tools/timestamper.o \
+	tools/debug-tools.o \
+	common/t_timers.o \
+	common/tfunctor.o \
+	common/stat.o \
 	common/scheduler.o common/object.o common/packet.o \
 	common/ip.o routing/route.o common/connector.o common/ttl.o \
 	trace/trace.o trace/trace-ip.o \
@@ -216,6 +225,11 @@ OBJ_CC = \
 	sctp/sctp-cmt.o \
 	sctp/sctpDebug.o \
 	tools/integrator.o tools/queue-monitor.o \
+	tools/e2et.o \
+	tools/e2em.o \
+	tools/fairness.o \
+	tools/timestamper.o \
+	tools/debug-tools.o \
 	tools/flowmon.o tools/loss-monitor.o \
 	tools/wimax-monitor.o \
 	tools/weibull.o tools/voip.o \
@@ -334,56 +348,67 @@ OBJ_CC = \
 	wpan/p802_15_4sscs.o wpan/p802_15_4timer.o \
 	wpan/p802_15_4trace.o wpan/p802_15_4transac.o \
 	wimax/ofdmphy.o wimax/mac802_16pkt.o \
-    wimax/scheduling/wimaxscheduler.o \
-    wimax/scheduling/bsscheduler.o \
-    wimax/scheduling/bsscheduler26.o \
-    wimax/scheduling/virtualallocationelement.o \
-    wimax/scheduling/virtualallocation.o \
-    wimax/scheduling/trafficshapinginterface.o \
-    wimax/scheduling/trafficshapingaccurate.o \
-    wimax/scheduling/trafficshapingtswtcm.o \
-    wimax/scheduling/trafficshapingnone.o \
-    wimax/scheduling/schedulingalgointerface.o \
-    wimax/scheduling/schedulingalgodualequalfill.o \
-    wimax/scheduling/schedulingdualequalfillul.o \
-    wimax/scheduling/schedulingalgoproportionalfair.o \
-    wimax/scheduling/schedulingproportionalfairul.o \
-    wimax/scheduling/edfqueueelement.o \
-    wimax/scheduling/schedulingalgodualedf.o \
-    wimax/scheduling/dlburstmappinginterface.o \
-    wimax/scheduling/dlburstmappingsimple.o \
-    wimax/scheduling/dlburstmappingocsa.o \
-    wimax/scheduling/ocsaalgorithm.o \
-    wimax/scheduling/frame.o \
-    wimax/scheduling/anfrage.o \
-    wimax/scheduling/freearea.o \
-    wimax/scheduling/oscaburst.o \
-    wimax/admissioncontrolinterface.o \
-    wimax/thresholdbasedcac.o \
-    wimax/faircac.o \
-    wimax/scheduling/ssscheduler.o \
-    wimax/scheduling/ulsubframetimer.o \
-    wimax/scheduling/dlsubframetimer.o \
-    wimax/scheduling/burst.o \
-    wimax/scheduling/contentionslot.o \
+	wimax/scheduling/wimaxscheduler.o \
+	wimax/scheduling/bsscheduler.o \
+	wimax/scheduling/bsscheduler26.o \
+	wimax/scheduling/virtualallocationelement.o \
+	wimax/scheduling/virtualallocation.o \
+	wimax/scheduling/trafficshapinginterface.o \
+	wimax/scheduling/trafficshapingaccurate.o \
+	wimax/scheduling/trafficshapingtswtcm.o \
+	wimax/scheduling/trafficshapingnone.o \
+	wimax/scheduling/schedulingalgointerface.o \
+	wimax/scheduling/schedulingalgodualequalfill.o \
+	wimax/scheduling/schedulingdualequalfillul.o \
+	wimax/scheduling/schedulingalgoproportionalfair.o \
+	wimax/scheduling/schedulingproportionalfairul.o \
+	wimax/scheduling/edfqueueelement.o \
+	wimax/scheduling/schedulingalgodualedf.o \
+	wimax/scheduling/dlburstmappinginterface.o \
+	wimax/scheduling/dlburstmappingsimple.o \
+	wimax/scheduling/dlburstmappingocsa.o \
+	wimax/scheduling/ocsaalgorithm.o \
+	wimax/scheduling/frame.o \
+	wimax/scheduling/anfrage.o \
+	wimax/scheduling/freearea.o \
+	wimax/scheduling/oscaburst.o \
+	wimax/admissioncontrolinterface.o \
+	wimax/thresholdbasedcac.o \
+	wimax/faircac.o \
+	wimax/scheduling/ssscheduler.o \
+	wimax/scheduling/ulsubframetimer.o \
+	wimax/scheduling/dlsubframetimer.o \
+	wimax/scheduling/burst.o \
+	wimax/scheduling/contentionslot.o \
 	wimax/arqstatus.o \
-    wimax/scheduling/contentionrequest.o wimax/scheduling/contentiontimer.o \
-    wimax/scheduling/dlburst.o wimax/scheduling/ulburst.o \
-    wimax/scheduling/framemap.o wimax/scheduling/phypdu.o \
-    wimax/scheduling/profile.o wimax/scheduling/subframe.o \
-    wimax/scheduling/scanningstation.o \
-    wimax/serviceflowqosset.o wimax/serviceflow.o \
-    wimax/serviceflowhandler.o \
-    wimax/connection.o wimax/connectionmanager.o wimax/peernode.o \
-    wimax/mac802_16.o wimax/mac802_16BS.o wimax/mac802_16SS.o \
-    wimax/sduclassifier.o \
-    wimax/destclassifier.o \
-    wimax/ipdestclassifier.o \
-    wimax/mac802_16timer.o \
-    wimax/wimaxneighborentry.o wimax/neighbordb.o \
-    wimax/scheduling/wimaxctrlagent.o \
-    wimax/globalparams_wimax.o \
+	wimax/scheduling/contentionrequest.o wimax/scheduling/contentiontimer.o \
+	wimax/scheduling/dlburst.o wimax/scheduling/ulburst.o \
+	wimax/scheduling/framemap.o wimax/scheduling/phypdu.o \
+	wimax/scheduling/profile.o wimax/scheduling/subframe.o \
+	wimax/scheduling/scanningstation.o \
+	wimax/serviceflowqosset.o wimax/serviceflow.o \
+	wimax/serviceflowhandler.o \
+	wimax/connection.o wimax/connectionmanager.o wimax/peernode.o \
+	wimax/mac802_16.o wimax/mac802_16BS.o wimax/mac802_16SS.o \
+	wimax/sduclassifier.o \
+	wimax/destclassifier.o \
+	wimax/ipdestclassifier.o \
+	wimax/mac802_16timer.o \
+	wimax/wimaxneighborentry.o wimax/neighbordb.o \
+	wimax/scheduling/wimaxctrlagent.o \
+	wimax/globalparams_wimax.o \
 	apps/pbc.o \
+	voip/voip_bidirectional.o \
+	voip/voip_encoder.o \
+	voip/voip_decoder.o \
+	voip/voip_decoder_optimal.o \
+	voip/voip_decoder_static.o \
+	voip/voip_decoder_80216m.o \
+	voip/voip_decoder_h323.o \
+	voip/voip_decoder_atzori.o \
+        voip/voip_source.o \
+        voip/voip_aggregate.o \
+        voip/voip_header.o \
 	@V_STLOBJ@
 
 

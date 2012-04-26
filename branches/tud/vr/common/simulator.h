@@ -53,6 +53,7 @@
 
 #include <tclcl.h>
 #include "object.h"
+#include <stat.h>
 
 class ParentNode;
 class RouteLogic;
@@ -75,6 +76,7 @@ public:
 	char *append_addr(int level, int *addr);
 	void alloc(int n);
 	void check(int n);
+	static unsigned int run () { return run_; }
 	
 private:
         ParentNode **nodelist_;
@@ -83,6 +85,7 @@ private:
 	int size_;
 	char macType_[SMALL_LEN];
 	static Simulator* instance_;
+	static unsigned int run_;
 };
 
 #endif /* ns_simulator_h */

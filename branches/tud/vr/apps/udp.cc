@@ -50,6 +50,7 @@ static const char rcsid[] =
 #include "address.h"
 #include "ip.h"
 
+#include <stat.h> 
 
 static class UdpAgentClass : public TclClass {
 public:
@@ -73,12 +74,13 @@ UdpAgent::UdpAgent(packet_t type) : Agent(type)
 // have one.
 void UdpAgent::sendmsg(int nbytes, AppData* data, const char* flags)
 {
-	Packet *p;
-	int n;
+	Packet* p = 0;
+        int n = 0;
 
 	assert (size_ > 0);
 
-	n = nbytes / size_;
+        n = 1 + (( nbytes - 1 ) / size_);
+        int ntot = n ;
 
 	if (nbytes == -1) {
 		printf("Error:  sendmsg() for UDP should not be -1\n");
@@ -91,33 +93,26 @@ void UdpAgent::sendmsg(int nbytes, AppData* data, const char* flags)
 		return;
 	}
 
-	double local_time = Scheduler::instance().clock();
-	while (n-- > 0) {
+	//double local_time = Scheduler::instance().clock();
+	while ( n > 0) {
 		p = allocpkt();
-		hdr_cmn::access(p)->size() = size_;
 		hdr_rtp* rh = hdr_rtp::access(p);
-		rh->flags() = 0;
-		rh->seqno() = ++seqno_;
-		hdr_cmn::access(p)->timestamp() = 
-		    (u_int32_t)(SAMPLERATE*local_time);
 		// add "beginning of talkspurt" labels (tcl/ex/test-rcvr.tcl)
-		if (flags && (0 ==strcmp(flags, "NEW_BURST")))
+		if (flags && (0 ==strcmp(flags, "NEW_BURST"))) {
 			rh->flags() |= RTP_M;
-		p->setdata(data);
-		target_->recv(p);
 	}
-	n = nbytes % size_;
-	if (n > 0) {
-		p = allocpkt();
-		hdr_cmn::access(p)->size() = n;
-		hdr_rtp* rh = hdr_rtp::access(p);
-		rh->flags() = 0;
-		rh->seqno() = ++seqno_;
-		hdr_cmn::access(p)->timestamp() = 
-		    (u_int32_t)(SAMPLERATE*local_time);
-		// add "beginning of talkspurt" labels (tcl/ex/test-rcvr.tcl)
-		if (flags && (0 == strcmp(flags, "NEW_BURST")))
+		if ( n > 1 ) {
+                        // non-last packet
+                        rh->flags() &= ~RTP_M;
+                        hdr_cmn::access(p)->size() = size_;
+                } else {
+                        // last packet
 			rh->flags() |= RTP_M;
+                        hdr_cmn::access(p)->size() = nbytes - ( ntot - 1 ) * size_;
+                }
+                n--;
+                rh->seqno() = ++seqno_;
+                hdr_cmn::access(p)->timestamp() = NOW;
 		p->setdata(data);
 		target_->recv(p);
 	}

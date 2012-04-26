@@ -2297,3 +2297,18 @@ Simulator instproc prepare-to-stop {} {
 	}
 }
     
+################################################
+# Start of MeMo extensions
+# timestamping at a node
+# installs a module that timestamps packets at a node
+
+Simulator instproc timestamper-install { n1 n2 timestamper } {
+   $self instvar link_
+   set headref [$link_([$n1 id]:[$n2 id]) head]
+   $timestamper target [$headref target]
+   $headref target $timestamper
+}
+
+# End of MeMo extensions
+################################################
+
