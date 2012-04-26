@@ -70,6 +70,12 @@ static const char rcsid[] =
 #endif /* !OLD_RNG */
 #include "rng.h"
 
+// include ns2VoIP++ vr@tud
+#ifdef MEASURE_MODULE
+#include "simulator.h"
+#endif // MEASURE_MODULE
+
+
 #ifdef OLD_RNG
 /*
  * RNGImplementation
@@ -260,7 +266,12 @@ RNG::command(int argc, const char*const* argv)
 		}
 #ifndef OLD_RNG
 		if (strcmp (argv[1], "next-substream") == 0) {
+			// include ns2VoIP++ vr@tud
+			#ifndef MEASURE_MODULE
 			reset_next_substream();
+			#endif // MEASURE_MODULE
+			// orig
+			// reset_next_substream();
 			return (TCL_OK);
 		}
 		if (strcmp (argv[1], "all-seeds") == 0) {
@@ -803,6 +814,13 @@ void RNG::init()
 	} 
 	MatVecModM (A1p127, next_seed_, next_seed_, m1); 
 	MatVecModM (A2p127, &next_seed_[3], &next_seed_[3], m2); 
+	
+	// include ns2VoIP++ vr@tud
+	#ifdef MEASURE_MODULE
+	for ( unsigned int i = 0 ; i < Simulator::run() ; i++ ) {
+		reset_next_substream ();
+	}
+	#endif // MEASURE_MODULE
 }
 
 void RNG::set_seed (long seed) 

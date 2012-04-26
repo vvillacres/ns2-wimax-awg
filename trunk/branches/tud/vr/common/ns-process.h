@@ -84,6 +84,9 @@ enum AppDataType {
 	// pub/sub ADU
 	PUBSUB,
 	
+	// VoIP DATA
+	VOIP_DATA,
+	
 	//Diffusion ADU
 	DIFFUSION_DATA,
 

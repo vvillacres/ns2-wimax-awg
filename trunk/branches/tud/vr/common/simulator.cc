@@ -60,11 +60,27 @@ public:
 } simulator_class;
 
 Simulator* Simulator::instance_;
+unsigned int Simulator::run_ = 0;
 
 int Simulator::command(int argc, const char*const* argv) {
 	Tcl& tcl = Tcl::instance();
 	if ((instance_ == 0) || (instance_ != this))
 		instance_ = this;
+	// set the run identifier for the current run
+	// reset the substream index for the defaultRNG
+	if ( argc == 3 && strcmp(argv[1], "run-identifier") == 0 ) {
+		run_ = (unsigned)atoi(argv[2]);
+		for ( unsigned int i = 0 ; i < run_ ; i++ ) {
+		        RNG::defaultrng()->reset_next_substream();
+		}
+		return TCL_OK;
+	}
+	
+	// call Stat command functions
+	if ( argc >= 3 && strcmp(argv[1], "stat") == 0 ) {
+		return Stat::command (argc - 2, argv + 2);
+	}
+	
 	if (argc == 3) {
 		if (strcmp(argv[1], "populate-flat-classifiers") == 0) {
 			nn_ = atoi(argv[2]);

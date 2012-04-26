@@ -635,6 +635,7 @@ NetworkInterface set debug_ false
 TBF set rate_ 64k
 TBF set bucket_ 1024
 TBF set qlen_ 0
+TBF set debug_ 0
 
 #
 # mobile Ip
@@ -1482,3 +1483,11 @@ Agent/PBC set periodicBroadcastInterval 1
 Agent/PBC set periodicBroadcastVariance 0.1
 Agent/PBC set modulationScheme 0
 
+e2em set debug_ 0
+e2et set debug_ 0
+timestamper set debug_ 0
+
+VoipSource set shape_ 1.0 
+VoipSource set scale_ 1.0
+
+Tracefile set debug_ false

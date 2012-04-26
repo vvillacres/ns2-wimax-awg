@@ -197,3 +197,26 @@ Agent/AOMDV set sport_   0
 Agent/AOMDV set dport_   0
 Agent/AOMDV set aomdv_prim_alt_path_len_diff_ 1
 Agent/AOMDV set aomdv_max_paths_ 3
+
+########################################################
+# Start of Measure Module extensions
+
+# Attach e2et to an agent
+#
+Agent instproc attach-e2et { e2et } {
+   $e2et target [$self target]
+   $self target $e2et
+
+}
+
+# Attach e2em to an agent
+#
+Agent instproc attach-e2em { e2em } {
+   set nd [$self set node_]
+   set pt [$self set agent_port_]
+   $nd add-target $e2em $pt
+   $e2em target $self
+}
+
+# End of Measure Module extensions
+########################################################

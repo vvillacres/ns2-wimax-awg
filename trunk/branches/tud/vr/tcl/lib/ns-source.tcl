@@ -398,3 +398,15 @@ Source/Telnet instproc attach o {
 	$self attach-agent $o
 }
 
+#
+# For consistency with other applications
+#
+Class Source/VoipEncoder -superclass Application/VoipEncoder
+
+Source/VoipEncoder set maxpkts_ 268435456
+
+Source/VoipEncoder instproc attach o {
+       $self instvar agent_
+       set agent_ $o
+       $self attach-agent $o
+}
