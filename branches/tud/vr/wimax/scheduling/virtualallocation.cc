@@ -32,11 +32,11 @@ VirtualAllocation::~VirtualAllocation()
 /**
  *  Increases the BroadcastBurst by added Bytes return the delta of used slots
  */
-int VirtualAllocation::increaseBroadcastBurst( int addedBytes)
+int VirtualAllocation::increaseBroadcastBurst( double addedBytes)
 {
 	//
 	nbOfBroadcastBytes_ += addedBytes;
-	int newSlots = int( ceil( double(nbOfBroadcastBytes_) / slotCapacityBroadcast_)) - nbOfBroadcastSlots_;
+	int newSlots = int( ceil( ceil(nbOfBroadcastBytes_) / slotCapacityBroadcast_)) - nbOfBroadcastSlots_;
 	nbOfBroadcastSlots_ += newSlots;
 	return newSlots;
 }

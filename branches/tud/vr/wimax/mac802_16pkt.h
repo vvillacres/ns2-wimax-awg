@@ -349,7 +349,7 @@ struct mac802_16_cdma_ie {
     short int subchannel;
     u_char bw_req : 1;
 };
-#define UL_CDMA_MAP_IE_SIZE 5 	// byte
+#define UL_CDMA_MAP_IE_SIZE 6.5 	// byte
 
 /** Defines UL_MAP IE (see p464.) */
 struct mac802_16_ulmap_ie {

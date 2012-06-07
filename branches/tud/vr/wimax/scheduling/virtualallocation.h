@@ -71,7 +71,7 @@ public:
     /**
      *  Increases the BroadcastBurst by added Bytes return the delta of used slots
      */
-    int increaseBroadcastBurst( int addedBytes);
+    int increaseBroadcastBurst( double addedBytes);
 
     /*
      * Adds a new Virtual Allocation in the Map
@@ -183,7 +183,7 @@ private:
     /*
      * Number of Bytes for Broadcast Burst
      */
-    int nbOfBroadcastBytes_;
+    double nbOfBroadcastBytes_;
 
     /*
      * All elements are saved in an STL Map container

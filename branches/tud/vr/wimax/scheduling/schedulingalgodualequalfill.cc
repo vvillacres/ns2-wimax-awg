@@ -33,6 +33,7 @@ void SchedulingAlgoDualEqualFill::scheduleConnections( VirtualAllocation* virtua
 
 	int nbOfMrtrConnections = 0;
 	int nbOfMstrConnections = 0;
+	int nbOfUnscheduledConnections = 0;
 	u_int32_t sumOfWantedMrtrBytes = 0;
 	u_int32_t sumOfWantedMstrBytes = 0;
 
@@ -66,7 +67,13 @@ void SchedulingAlgoDualEqualFill::scheduleConnections( VirtualAllocation* virtua
 					nbOfMstrConnections++;
 					sumOfWantedMstrBytes += ( virtualAllocation->getWantedMstrSize() - virtualAllocation->getWantedMrtrSize());
 				}
-				printf("Connection CID %d Demand MRTR %d MSTR %d \n", virtualAllocation->getConnection()->get_cid(), virtualAllocation->getWantedMrtrSize(), virtualAllocation->getWantedMstrSize());
+
+				// count connections to be scheduled
+				if ( virtualAllocation->getWantedMstrSize() > 0) {
+					nbOfUnscheduledConnections++;
+				}
+
+				//printf("Connection CID %d Demand MRTR %d MSTR %d \n", virtualAllocation->getConnection()->get_cid(), virtualAllocation->getWantedMrtrSize(), virtualAllocation->getWantedMstrSize());
 			}
 		} while ( virtualAllocation->nextConnectionEntry() );
 
@@ -98,8 +105,16 @@ void SchedulingAlgoDualEqualFill::scheduleConnections( VirtualAllocation* virtua
 			// number of Connections which can be served in this iteration
 			int conThisRound = nbOfMrtrConnections;
 
-			// divide slots equally for the first round
-			int nbOfSlotsPerConnection = freeSlots / nbOfMrtrConnections;
+			int nbOfSlotsPerConnection = 0;
+
+			// reserve space for dl-map
+			if ( nbOfMrtrConnections < nbOfUnscheduledConnections) {
+				// divide slots equally for the first round
+				nbOfSlotsPerConnection = (freeSlots - ( ceil( double(nbOfMrtrConnections * DL_MAP_IE_SIZE) / virtualAllocation->getBroadcastSlotCapacity() ))) / nbOfMrtrConnections;
+			} else {
+				// divide slots equally for the first round
+				nbOfSlotsPerConnection = (freeSlots - ( ceil( double( nbOfUnscheduledConnections * DL_MAP_IE_SIZE) / virtualAllocation->getBroadcastSlotCapacity() ))) / nbOfMrtrConnections;
+			}
 
 			// only one slot per connection left
 			if ( nbOfSlotsPerConnection <= 0 ) {
@@ -203,10 +218,28 @@ void SchedulingAlgoDualEqualFill::scheduleConnections( VirtualAllocation* virtua
 				// Calculate Allocated Slots
 				allocatedSlots = int( ceil( double(allocatedBytes) / virtualAllocation->getSlotCapacity()) );
 
-				int newSlots = ( allocatedSlots - virtualAllocation->getCurrentNbOfSlots());
+
+				int oldSlots = virtualAllocation->getCurrentNbOfSlots();
+				if ( oldSlots == 0 ) {
+					// new dl-map ie is needed
+
+					// debug for QPSK 1/2
+					assert( freeSlots >= 1);
+					// increase broadcast burst
+					freeSlots -= virtualAllocation->increaseBroadcastBurst( DL_MAP_IE_SIZE);
+
+					// debug
+					assert( freeSlots >= 0);
+
+					// decrease unscheduled connections
+					nbOfUnscheduledConnections--;
+				}
+
+
+				int newSlots = ( allocatedSlots - oldSlots);
 
 				// debug
-				printf(" %d new Mrtr Slots for Connection CID %d \n", newSlots, virtualAllocation->getConnection()->get_cid() );
+				//printf(" %d new Mrtr Slots for Connection CID %d \n", newSlots, virtualAllocation->getConnection()->get_cid() );
 
 				// update freeSlots
 				freeSlots -= newSlots;
@@ -272,7 +305,9 @@ void SchedulingAlgoDualEqualFill::scheduleConnections( VirtualAllocation* virtua
 				int conThisRound = nbOfMstrConnections;
 
 				// divide slots equally for the first round
-				int nbOfSlotsPerConnection = freeSlots / nbOfMstrConnections;
+				// reserve space for dl-map
+				//int nbOfSlotsPerConnection = freeSlots / nbOfMstrConnections;
+				int nbOfSlotsPerConnection = (freeSlots - ( ceil( double( nbOfUnscheduledConnections * DL_MAP_IE_SIZE) / virtualAllocation->getBroadcastSlotCapacity() ))) / nbOfMstrConnections;
 
 				// only one slot per connection left
 				if ( nbOfSlotsPerConnection <= 0 ) {
@@ -379,11 +414,28 @@ void SchedulingAlgoDualEqualFill::scheduleConnections( VirtualAllocation* virtua
 					// Calculate Allocated Slots
 					allocatedSlots = int( ceil( double(allocatedBytes) / virtualAllocation->getSlotCapacity()) );
 
+
+					int oldSlots = virtualAllocation->getCurrentNbOfSlots();
+					if ( oldSlots == 0 ) {
+						// new dl-map ie is needed
+
+						// debug for QPSK 1/2
+						assert( freeSlots >= 1);
+						// increase broadcast burst
+						freeSlots -= virtualAllocation->increaseBroadcastBurst( DL_MAP_IE_SIZE);
+
+						// debug
+						assert( freeSlots >= 0);
+
+						// decrease unscheduled connections
+						nbOfUnscheduledConnections--;
+					}
+
 					// calculate new assigned slots
-					int newSlots = ( allocatedSlots - virtualAllocation->getCurrentNbOfSlots());
+					int newSlots = ( allocatedSlots - oldSlots);
 
 					// debug
-					printf(" %d new Mstr Slots for Connection CID %d \n", newSlots, virtualAllocation->getConnection()->get_cid() );
+					// printf(" %d new Mstr Slots for Connection CID %d \n", newSlots, virtualAllocation->getConnection()->get_cid() );
 
 					// update freeSlots
 					freeSlots -= newSlots;
