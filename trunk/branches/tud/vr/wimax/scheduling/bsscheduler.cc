@@ -152,6 +152,7 @@ BSScheduler::BSScheduler () : WimaxScheduler ()
     // Burst Mapping Algorithm for Downlink Direction
     dlBurstMappingAlgorithm_ = NULL;
 
+
 }
 
 /*
@@ -165,6 +166,7 @@ BSScheduler::~BSScheduler ()
     delete dlSchedulingAlgorithm_;
     delete ulSchedulingAlgorithm_;
     delete dlBurstMappingAlgorithm_;
+
 }
 
 /**
@@ -744,7 +746,7 @@ void BSScheduler::schedule ()
 
 
     //============================UL scheduling =================================
-    int nbOfUlMapIes = 0;
+    double sizeOfUlMap = 0;
 
     PeerNode * peer = mac_->getPeerNode_head();
     //Call ul_stage2 to allocate the uplink resource
@@ -759,7 +761,7 @@ void BSScheduler::schedule ()
 
             // From UL_MAP_IE, we map the allocation into UL_BURST
             debug2("\nafter ul_stage2().ie_num is %d \n\n", ulMap->nb_ies);
-            nbOfUlMapIes = int( ulMap->nb_ies);
+            int nbOfUlMapIes = int( ulMap->nb_ies);
             for (int numie = 0 ; numie < nbOfUlMapIes ; numie++) {
                 mac802_16_ulmap_ie ulmap_ie = ulMap->ies[numie];
                 ub = (UlBurst*) mac_->getMap()->getUlSubframe()->addPhyPdu (nbUlPdus++,0)->addBurst (0);
@@ -775,6 +777,14 @@ void BSScheduler::schedule ()
                 ub->setnumSubchannels (ulmap_ie.num_of_subchannels);
                 ub->setBurstCdmaTop (ulmap_ie.cdma_ie.subchannel);
                 ub->setBurstCdmaCode (ulmap_ie.cdma_ie.code);
+
+                if (( ulmap_ie.cdma_ie.subchannel == 0) && ( ulmap_ie.cdma_ie.code == 0)) {
+                	// normal UL-Map IE
+                	sizeOfUlMap += UL_MAP_IE_SIZE;
+                } else {
+                	// cdma UL-MAP IE
+                	sizeOfUlMap += UL_CDMA_MAP_IE_SIZE;
+                }
 
 
                 /*By using the UL-MAP IE to bring the CQICH Allocation IE information down to the corresponding SS.*/
@@ -874,19 +884,22 @@ void BSScheduler::schedule ()
 
     // Build broadcast burst first
 
+    // not implemented for other default burst profile
+    assert( default_mod_ == OFDM_QPSK_1_2);
+    const int QPSK_1_2 = 2;
     // Set capacity for broadcast burst
-    int broadcastSlotCapacity = phy->getSlotCapacity(map->getDlSubframe()->getProfile ( map->getDlSubframe()->getProfile (default_mod_)->getIUC())->getEncoding(), DL_);
+    int broadcastSlotCapacity = phy->getSlotCapacity(map->getDlSubframe()->getProfile ( QPSK_1_2 )->getEncoding(), DL_);
 
     // TODO: May result in false values
     broadcastSlotCapacity = int( ceil( float(broadcastSlotCapacity) / repetition_code_));
     virtualAlloc->setBroadcastSlotCapacity( broadcastSlotCapacity);
 
     // 1. Virtual DL_MAP
-    int sizeOfDlMap = GENERIC_HEADER_SIZE + DL_MAP_HEADER_SIZE;
+    double sizeOfDlMap = GENERIC_HEADER_SIZE + DL_MAP_HEADER_SIZE;
     freeDlSlots -= virtualAlloc->increaseBroadcastBurst( sizeOfDlMap);
 
     // 2. Virtual UL_MAP
-    int sizeOfUlMap = GENERIC_HEADER_SIZE + UL_MAP_HEADER_SIZE + UL_MAP_IE_SIZE * nbOfUlMapIes;
+    sizeOfUlMap += GENERIC_HEADER_SIZE + UL_MAP_HEADER_SIZE;
     freeDlSlots -= virtualAlloc->increaseBroadcastBurst( sizeOfUlMap + DL_MAP_IE_SIZE);
 
     // 3. Virtual DCD
@@ -1065,7 +1078,7 @@ void BSScheduler::schedule ()
     ch->txtime() = nbOfSymbolsPacket * phy->getSymbolTime();
 
     // assuring that the burst has enough space for the packet
-    assert( freeBurstSize > packetSize);
+    assert( freeBurstSize >= packetSize);
 
     // Put information into physical info header
     wimaxHdr = HDR_MAC802_16(p);
@@ -1108,7 +1121,7 @@ void BSScheduler::schedule ()
     ch->txtime() = nbOfSymbolsPacket * phy->getSymbolTime();
 
     // assuring that the burst has enough space for the packet
-    assert( freeBurstSize > packetSize);
+    assert( freeBurstSize >= packetSize);
 
     // Put information into physical info header
     wimaxHdr = HDR_MAC802_16(p);
@@ -1151,7 +1164,7 @@ void BSScheduler::schedule ()
         ch->txtime() = nbOfSymbolsPacket * phy->getSymbolTime();
 
         // assuring that the burst has enough space for the packet
-        assert( freeBurstSize > packetSize);
+        assert( freeBurstSize >= packetSize);
 
         // Put information into physical info header
         wimaxHdr = HDR_MAC802_16(p);
@@ -1194,7 +1207,7 @@ void BSScheduler::schedule ()
         ch->txtime() = nbOfSymbolsPacket * phy->getSymbolTime();
 
         // assuring that the burst has enough space for the packet
-        assert( freeBurstSize > packetSize);
+        assert( freeBurstSize >= packetSize);
 
         // Put information into physical info header
         wimaxHdr = HDR_MAC802_16(p);
@@ -1286,7 +1299,6 @@ void BSScheduler::schedule ()
     printf("=====================================================\n");
 #endif
 
-    debug2("\n============================BSScheduler::schedule () End =============================\n");
 
 }
 
@@ -1446,9 +1458,13 @@ mac802_16_dl_map_frame * BSScheduler::buildDownlinkMap( VirtualAllocation * virt
                         virtualAlloc->setCurrentNbOfSlots( virtualAlloc->getCurrentNbOfSlots() + nbOfSlots);
                         virtualAlloc->setCurrentNbOfBytes( virtualAlloc->getCurrentNbOfBytes() + allocationSize);
                     } else {
-                        // connection has no assigned ressources
+                        // connection has no assigned resources
                         // add new entry
                         virtualAlloc->addAllocation( currentCon, 0, 0, slotCapacity, allocationSize, nbOfSlots);
+
+                        // increase size of Downlink Map
+                        // This is necessary as management connections are not handled by the scheduler
+                        freeDlSlots -= virtualAlloc->increaseBroadcastBurst( DL_MAP_IE_SIZE);
                     }
                 }
             }
@@ -1497,18 +1513,8 @@ mac802_16_dl_map_frame * BSScheduler::buildDownlinkMap( VirtualAllocation * virt
                 int slotCapacity = mac_->getPhy()->getSlotCapacity( burstProfile, DL_);
                 virtualAlloc->addAllocation( currentCon, mrtrMstrPair.first , mrtrMstrPair.second, slotCapacity);
 
-                // increase size of Downlink Map TODO: Might be not necessary if connection is not scheduled
-                freeDlSlots -= virtualAlloc->increaseBroadcastBurst( DL_MAP_IE_SIZE);
+                // DL-Map is increased by scheduler
             }
-
-         // udpate of traffic shaping now with get Data Sizese
-         /*   else {
-            	if ( currentCon->queueLength() > 0) {
-            		// connection has data and is not scheduled therefore updateAllocation has to be called separately
-            		dlTrafficShapingAlgorithm_->updateAllocation( currentCon, 0, 0);
-            	}
-            } */
-
 
             break;
         default:
