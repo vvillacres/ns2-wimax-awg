@@ -16,6 +16,7 @@ VirtualAllocation::VirtualAllocation()
 {
 
     // Initializes Broadcast Burst
+	slotCapacityBroadcast_ = 0;
     nbOfBroadcastSlots_ = 0;
     nbOfBroadcastBytes_ = 0;
 
