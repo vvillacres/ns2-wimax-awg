@@ -107,13 +107,18 @@ void SchedulingAlgoDualEqualFill::scheduleConnections( VirtualAllocation* virtua
 
 			int nbOfSlotsPerConnection = 0;
 
-			// reserve space for dl-map
-			if ( nbOfMrtrConnections < nbOfUnscheduledConnections) {
-				// divide slots equally for the first round
-				nbOfSlotsPerConnection = (freeSlots - ( ceil( double(nbOfMrtrConnections * DL_MAP_IE_SIZE) / virtualAllocation->getBroadcastSlotCapacity() ))) / nbOfMrtrConnections;
+			if ( virtualAllocation->getBroadcastSlotCapacity() != 0) {
+				// Downlink direction --> reserve space for dl-map
+				if ( nbOfMrtrConnections < nbOfUnscheduledConnections) {
+					// divide slots equally for the first round
+					nbOfSlotsPerConnection = (freeSlots - ( ceil( double(nbOfMrtrConnections * DL_MAP_IE_SIZE) / virtualAllocation->getBroadcastSlotCapacity() ))) / nbOfMrtrConnections;
+				} else {
+					// divide slots equally for the first round
+					nbOfSlotsPerConnection = (freeSlots - ( ceil( double( nbOfUnscheduledConnections * DL_MAP_IE_SIZE) / virtualAllocation->getBroadcastSlotCapacity() ))) / nbOfMrtrConnections;
+				}
 			} else {
-				// divide slots equally for the first round
-				nbOfSlotsPerConnection = (freeSlots - ( ceil( double( nbOfUnscheduledConnections * DL_MAP_IE_SIZE) / virtualAllocation->getBroadcastSlotCapacity() ))) / nbOfMrtrConnections;
+				// Uplink Direction
+				nbOfSlotsPerConnection = freeSlots / nbOfMrtrConnections;
 			}
 
 			// only one slot per connection left
@@ -220,7 +225,7 @@ void SchedulingAlgoDualEqualFill::scheduleConnections( VirtualAllocation* virtua
 
 
 				int oldSlots = virtualAllocation->getCurrentNbOfSlots();
-				if ( oldSlots == 0 ) {
+				if (( oldSlots == 0 ) && (virtualAllocation->getBroadcastSlotCapacity() != 0 )) {
 					// new dl-map ie is needed
 
 					// debug for QPSK 1/2
@@ -304,10 +309,17 @@ void SchedulingAlgoDualEqualFill::scheduleConnections( VirtualAllocation* virtua
 				// number of Connections which can be served in this iteration
 				int conThisRound = nbOfMstrConnections;
 
+				int nbOfSlotsPerConnection = 0;
+
 				// divide slots equally for the first round
-				// reserve space for dl-map
-				//int nbOfSlotsPerConnection = freeSlots / nbOfMstrConnections;
-				int nbOfSlotsPerConnection = (freeSlots - ( ceil( double( nbOfUnscheduledConnections * DL_MAP_IE_SIZE) / virtualAllocation->getBroadcastSlotCapacity() ))) / nbOfMstrConnections;
+				if ( virtualAllocation->getBroadcastSlotCapacity() != 0) {
+					// Downlink direction --> reserve space for dl-map
+					//int nbOfSlotsPerConnection = freeSlots / nbOfMstrConnections;
+					nbOfSlotsPerConnection = (freeSlots - ( ceil( double( nbOfUnscheduledConnections * DL_MAP_IE_SIZE) / virtualAllocation->getBroadcastSlotCapacity() ))) / nbOfMstrConnections;
+				} else {
+					// Uplink direction
+					nbOfSlotsPerConnection = freeSlots / nbOfMstrConnections;
+				}
 
 				// only one slot per connection left
 				if ( nbOfSlotsPerConnection <= 0 ) {
@@ -416,7 +428,7 @@ void SchedulingAlgoDualEqualFill::scheduleConnections( VirtualAllocation* virtua
 
 
 					int oldSlots = virtualAllocation->getCurrentNbOfSlots();
-					if ( oldSlots == 0 ) {
+					if (( oldSlots == 0 ) && (virtualAllocation->getBroadcastSlotCapacity() != 0 )) {
 						// new dl-map ie is needed
 
 						// debug for QPSK 1/2
