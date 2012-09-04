@@ -169,7 +169,7 @@ Packet* FrameMap::getUL_MAP( )
     //allocate IEs
     mac802_16_ulmap_ie *ies = frame->ies;
     int bc_ie = 0;
-    int sum_ie_size = 0;
+    double sum_ie_size = 2 * UL_MAP_IE_UIUC12_SIZE;
     int i_normal_ie = 0;
     int i_cdma_ie = 0;
     int i=0;
@@ -230,7 +230,7 @@ Packet* FrameMap::getUL_MAP( )
 
 
         if (b->getCid() >= 0) {
-            if ( (ies[i].cdma_ie.code==0) && (ies[i].cdma_ie.subchannel==0) ) {
+            if ( (ies[i].cdma_ie.code == -1) && (ies[i].cdma_ie.subchannel == -1) ) {
                 normal_or_cdma = UL_MAP_IE_SIZE;
                 i_normal_ie++;
             } else {
@@ -243,7 +243,7 @@ Packet* FrameMap::getUL_MAP( )
     }
 
     debug2 ("Frame_map.UL_MAP_IE index :%d, #normal_ie :%d, #cdma_ie :%d, ie_size :%d, ul_map_size :%d\n", i, i_normal_ie, i_cdma_ie, sum_ie_size, int(GET_UL_MAP_SIZE(0))+sum_ie_size);
-    ch->size() += int(GET_UL_MAP_SIZE(0))+sum_ie_size;
+    ch->size() += int(GET_UL_MAP_SIZE(0) + ceil(sum_ie_size));
     return p;
 }
 

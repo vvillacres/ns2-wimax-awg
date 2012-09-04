@@ -28,6 +28,7 @@ void SchedulingAlgoProportionalFair::scheduleConnections( VirtualAllocation* vir
 	totalNbOfSlots_ = ( totalNbOfSlots_ * ( 1 - movingAverageFactor_)) + ( freeSlots * movingAverageFactor_);
 
 	int nbOfMstrConnections = 0;
+	int nbOfUnscheduledConnections = 0;
 	u_int32_t sumOfWantedMstrBytes = 0;
 
 	// count number of allocated slots for mrtr demands
@@ -53,6 +54,8 @@ void SchedulingAlgoProportionalFair::scheduleConnections( VirtualAllocation* vir
 			}
 		} while ( virtualAllocation->nextConnectionEntry() );
 
+		nbOfUnscheduledConnections = nbOfMstrConnections;
+
 
 		/*
 		 * Allocation of Slots for fulfilling the MSTR demands
@@ -77,8 +80,17 @@ void SchedulingAlgoProportionalFair::scheduleConnections( VirtualAllocation* vir
 			// number of Connections which can be served in this iteration
 			int conThisRound = nbOfMstrConnections;
 
+			int nbOfSlotsPerConnection = 0;
+
 			// divide slots equally for the first round
-			int nbOfSlotsPerConnection = freeSlots / nbOfMstrConnections;
+			if ( virtualAllocation->getBroadcastSlotCapacity() != 0) {
+				// Downlink direction --> reserve space for dl-map
+				//int nbOfSlotsPerConnection = freeSlots / nbOfMstrConnections;
+				nbOfSlotsPerConnection = (freeSlots - ( ceil( double( nbOfUnscheduledConnections * DL_MAP_IE_SIZE) / virtualAllocation->getBroadcastSlotCapacity() ))) / nbOfMstrConnections;
+			} else {
+				// Uplink direction
+				nbOfSlotsPerConnection = freeSlots / nbOfMstrConnections;
+			}
 
 			// only one slot per connection left
 			if ( nbOfSlotsPerConnection <= 0 ) {
@@ -175,17 +187,37 @@ void SchedulingAlgoProportionalFair::scheduleConnections( VirtualAllocation* vir
 						}
 					}
 				}
+
+
 				// Calculate Allocated Slots
 				allocatedSlots = int( ceil( double(allocatedBytes) / virtualAllocation->getSlotCapacity()) );
 
-				int newSlots = ( allocatedSlots - virtualAllocation->getCurrentNbOfSlots());
 
-				// debug
-				printf(" %d new Mstr Slots for Connection CID %d \n", newSlots, virtualAllocation->getConnection()->get_cid() );
+				int oldSlots = virtualAllocation->getCurrentNbOfSlots();
+				if (( oldSlots == 0 ) && (virtualAllocation->getBroadcastSlotCapacity() != 0 )) {
+					// new dl-map ie is needed
+
+					// debug for QPSK 1/2
+					assert( freeSlots >= 1);
+					// increase broadcast burst
+					freeSlots -= virtualAllocation->increaseBroadcastBurst( DL_MAP_IE_SIZE);
+
+					// debug
+					assert( freeSlots >= 0);
+
+					// decrease unscheduled connections
+					nbOfUnscheduledConnections--;
+				}
+
+				// calculate new assigned slots
+				int newSlots = ( allocatedSlots - oldSlots);
 
 
 				// update freeSlots
 				freeSlots -= newSlots;
+				// update mstrSlots
+				mstrSlots += newSlots;
+
 
 				if ( allocatedPayload < wantedMrtrSize ) {
 					// update only mrtrSlots
