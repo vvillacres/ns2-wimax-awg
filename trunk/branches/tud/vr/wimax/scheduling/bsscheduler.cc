@@ -296,19 +296,20 @@ int BSScheduler::command(int argc, const char*const* argv)
                 // delete previous algorithm
                 delete ulSchedulingAlgorithm_;
                 // create new alogrithm object
-                ulSchedulingAlgorithm_ =  new SchedulingAlgoDualEqualFill();
+                ulSchedulingAlgorithm_ =  new SchedulingDualEqualFillUl();
                 printf("New Uplink Scheduling Algorithm: Dual Equal Fill");
             } else if (strcmp(argv[2], "dual-edf") == 0) {
                 // delete previous algorithm
-                delete ulSchedulingAlgorithm_;
+                // delete ulSchedulingAlgorithm_;
                 // create new alogrithm object
-                ulSchedulingAlgorithm_ =  new SchedulingAlgoDualEdf();
-                printf("New Uplink Scheduling Algorithm: Dual Earliest Deadline First");
+                // ulSchedulingAlgorithm_ =  new SchedulingAlgoDualEdf();
+                fprintf(stderr, "Dual Earliest Deadline First not implemented for Uplink");
+                exit(1);
             } else if (strcmp(argv[2], "proportional-fair") == 0) {
                 // delete previous algorithm
                 delete ulSchedulingAlgorithm_;
                 // create new alogrithm object
-                ulSchedulingAlgorithm_ =  new SchedulingAlgoProportionalFair();
+                ulSchedulingAlgorithm_ =  new SchedulingProportionalFairUl();
                 printf("New Uplink Scheduling Algorithm: ProportionalFair");
             } else {
                 fprintf(stderr, "Specified Downlink Scheduling Policing Algorithm NOT found !");
@@ -486,8 +487,6 @@ void BSScheduler::schedule ()
     //  DlBurst *db;
     //  PeerNode *peer;
 
-
-    debug2("Simulation Time %g \n", NOW);
 
     // ARQ will be reviewed later vr@tud
 /*
