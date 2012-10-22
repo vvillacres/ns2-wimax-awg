@@ -12,7 +12,7 @@
 
 SchedulingProportionalFairUl::SchedulingProportionalFairUl() {
 	// Initialize member variables
-	lastConnectionPtr_ = NULL;
+	nextConnectionPtr_ = NULL;
 
 }
 
@@ -64,7 +64,7 @@ void SchedulingProportionalFairUl::scheduleConnections( VirtualAllocation* virtu
 		// get first data connection
 		if ( nextConnectionPtr_ != NULL ) {
 			// find last connection
-			if ( ! virtualAllocation->findConnectionEntry( lastConnectionPtr_)) {
+			if ( ! virtualAllocation->findConnectionEntry( nextConnectionPtr_)) {
 				// connection not found -> get first connection
 				virtualAllocation->firstConnectionEntry();
 			}
@@ -128,9 +128,9 @@ void SchedulingProportionalFairUl::scheduleConnections( VirtualAllocation* virtu
 				assert( freeSlots >= 0);
 
 				// update container
-				if ( u_int32_t( allocatedBytes) <= virtualAllocation->getWantedMrtrSize() ) {
+				if ( u_int32_t( maximumBytes) <= virtualAllocation->getWantedMrtrSize() ) {
 					// only MRTR has been fulfilled
-					virtualAllocation->updateAllocation( allocatedBytes, allocatedSlots,  u_int32_t( allocatedBytes), u_int32_t( allocatedBytes));
+					virtualAllocation->updateAllocation( maximumBytes, allocatedSlots,  u_int32_t( maximumBytes), u_int32_t( maximumBytes));
 					// increase mrtr slots
 					mrtrSlots += newSlots;
 
@@ -144,7 +144,7 @@ void SchedulingProportionalFairUl::scheduleConnections( VirtualAllocation* virtu
 						mstrSlots += newSlots;
 					}
 					// updateContainer
-					virtualAllocation->updateAllocation( allocatedBytes, allocatedSlots,  virtualAllocation->getWantedMrtrSize(), u_int32_t( allocatedBytes));
+					virtualAllocation->updateAllocation( maximumBytes, allocatedSlots,  virtualAllocation->getWantedMrtrSize(), u_int32_t( maximumBytes));
 
 				}
 
@@ -153,11 +153,11 @@ void SchedulingProportionalFairUl::scheduleConnections( VirtualAllocation* virtu
 
 				// get next connection
 				virtualAllocation->nextConnectionEntry();
+
+				// save last served connection to begin with in the next frame
+				nextConnectionPtr_ = virtualAllocation->getConnection();
 			}
 		}
-
-		// save last served connection for the next round
-		nextConnectionPtr_ = virtualAllocation->getConnection();
 	}
 
 	// update usedMrtrSlots_ for statistic
