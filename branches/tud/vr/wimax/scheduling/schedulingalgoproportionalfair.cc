@@ -223,7 +223,7 @@ void SchedulingAlgoProportionalFair::scheduleConnections( VirtualAllocation* vir
 					// update only mrtrSlots
 					mrtrSlots += newSlots;
 				} else {
-					// update mrtrSlot and m
+					// update mrtrSlot and mstrSlots
 					int newMrtrSlots = int( ceil( double( wantedMrtrSize ) / virtualAllocation->getSlotCapacity())) - virtualAllocation->getCurrentNbOfSlots();
 
 					if ( newMrtrSlots >0 ) {
