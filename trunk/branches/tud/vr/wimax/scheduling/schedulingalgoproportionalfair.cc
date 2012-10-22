@@ -215,18 +215,24 @@ void SchedulingAlgoProportionalFair::scheduleConnections( VirtualAllocation* vir
 
 				// update freeSlots
 				freeSlots -= newSlots;
-				// update mstrSlots
-				mstrSlots += newSlots;
+
+				// check for debug
+				assert( freeSlots >= 0);
 
 
-				if ( allocatedPayload < wantedMrtrSize ) {
+
+				if ( allocatedPayload <= wantedMrtrSize ) {
 					// update only mrtrSlots
 					mrtrSlots += newSlots;
+
+					// update container
+					virtualAllocation->updateAllocation( allocatedBytes, allocatedSlots,  u_int32_t( allocatedPayload), u_int32_t( allocatedPayload));
+
 				} else {
 					// update mrtrSlot and mstrSlots
 					int newMrtrSlots = int( ceil( double( wantedMrtrSize ) / virtualAllocation->getSlotCapacity())) - virtualAllocation->getCurrentNbOfSlots();
 
-					if ( newMrtrSlots >0 ) {
+					if ( newMrtrSlots > 0 ) {
 						// update mrtrSlots and mstrSlots
 						mrtrSlots += newMrtrSlots;
 						mstrSlots += (newSlots - newMrtrSlots);
@@ -234,18 +240,11 @@ void SchedulingAlgoProportionalFair::scheduleConnections( VirtualAllocation* vir
 						// update only mstrSlots
 						mstrSlots += newSlots;
 					}
-				}
 
-
-				// check for debug
-				assert( freeSlots >= 0);
-
-				// update container
-				if ( allocatedPayload < wantedMrtrSize ) {
-					virtualAllocation->updateAllocation( allocatedBytes, allocatedSlots,  u_int32_t( allocatedPayload), u_int32_t( allocatedPayload));
-				} else {
+					// update container
 					virtualAllocation->updateAllocation( allocatedBytes, allocatedSlots,  u_int32_t( wantedMrtrSize), u_int32_t( allocatedPayload));
 				}
+
 
 				// decrease loop counter
 				conThisRound--;
