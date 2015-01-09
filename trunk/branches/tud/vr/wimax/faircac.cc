@@ -28,6 +28,11 @@ LB_2_ = LB_2;
 N_    = N;
 }
 
+FairCAC::~FairCAC()
+{
+	// nothing to do
+}
+
 
 /**
  * Don't use this algorithm ! It is faulty implementation of my student.
@@ -74,7 +79,7 @@ bool FairCAC::checkAdmission( ServiceFlow * serviceFlow, PeerNode * peer)
 		// Bandwidth Acquirement Ratio (BAR) (the user is forbidden to send any connection request when his BAR is reach 0.85)
 		// double eta_i =  1 - ( RB_i / LB_1_);
 
-		N_ = N_++;
+		N_++;
 		std::cout<< N_ <<std::endl;
 
 		// The admitting threshold for user Ui

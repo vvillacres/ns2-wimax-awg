@@ -28,6 +28,8 @@ public:
             int N  // Number of users
 		    );
 
+	virtual ~FairCAC();
+
 	virtual bool checkAdmission( ServiceFlow * serviceFlow, PeerNode * peer);
 
 

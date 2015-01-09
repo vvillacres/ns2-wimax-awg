@@ -16,7 +16,7 @@ public:
 
 	AdmissionControlInterface (Mac802_16 * mac);
 
-	~AdmissionControlInterface ();
+	virtual ~AdmissionControlInterface ();
 
 	virtual bool checkAdmission( ServiceFlow * serviceFlow, PeerNode * peer);
 
