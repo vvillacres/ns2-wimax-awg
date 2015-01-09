@@ -21,6 +21,8 @@ public:
 			float thresholdBe
 	);
 
+	virtual ~ThresholdBasedCAC();
+
 	virtual bool checkAdmission( ServiceFlow * serviceFlow, PeerNode * peer);
 
 private:

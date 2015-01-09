@@ -25,6 +25,11 @@ thresholdNrtPs_ = thresholdNrtPS;
 thresholdBe_    = thresholdBe;
 }
 
+ThresholdBasedCAC::~ThresholdBasedCAC()
+{
+	// nothing to do
+}
+
 bool ThresholdBasedCAC::checkAdmission( ServiceFlow * serviceFlow, PeerNode * peer)
 {
     // Get direction
