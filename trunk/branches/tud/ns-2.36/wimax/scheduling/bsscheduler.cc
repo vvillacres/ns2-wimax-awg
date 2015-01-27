@@ -68,7 +68,7 @@
 // to avoid error of grant and polling interval
 #define TIMEERRORTOLERANCE 1
 
-#define DEBUG_EXT
+// #define DEBUG_EXT
 //vr@tud debug
 #ifdef DEBUG_EXT
 #define debug_ext printf
@@ -360,7 +360,7 @@ void BSScheduler::init ()
     	 // Change Line 1226 according to the choosen algorithm
     }
 
-    printf("Algorithm Objects created \n");
+    debug_ext("Algorithm Objects created \n");
 
     // If the user did not set the profiles by hand, let's do it
     // automatically

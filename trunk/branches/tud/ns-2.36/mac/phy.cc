@@ -103,8 +103,6 @@ Phy::recv(Packet* p, Handler*)
 {
 	struct hdr_cmn *hdr = HDR_CMN(p);	
 	//struct hdr_sr *hsr = HDR_SR(p);
-	
-	printf("Phy::recv Time: %f Type: %d Size: %d Dir: %d Pointer: %x \n", NOW, hdr->ptype(), hdr->size(), hdr->direction(), p);
 
 	/*
 	 * Handle outgoing packets
