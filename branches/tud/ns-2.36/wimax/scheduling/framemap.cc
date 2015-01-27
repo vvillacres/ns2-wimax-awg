@@ -48,7 +48,7 @@ Packet* FrameMap::getDL_MAP( )
 
     //printf ("Creating DL_MAP:");
     int nbies = dlsubframe_.getPdu()->getNbBurst();
-    printf ("nbies=%d\n",nbies);
+    debug2 ("nbies=%d\n",nbies);
 
     //allocate data for DL_MAP
     p->allocdata (sizeof (struct mac802_16_dl_map_frame));
@@ -80,7 +80,7 @@ Packet* FrameMap::getDL_MAP( )
         	bc_ie++;
         }
 //rpi end
-        printf ("DL_MAP_IE index :%d, cid :%d, bc_ie :%d, diuc :%d, starttime :%d, #subchannels :%d, #symbols :%d\n", i, b->getCid(), bc_ie, ies[i].diuc, ies[i].start_time, ies[i].num_of_subchannels, ies[i].num_of_symbols);
+        debug2 ("DL_MAP_IE index :%d, cid :%d, bc_ie :%d, diuc :%d, starttime :%d, #subchannels :%d, #symbols :%d\n", i, b->getCid(), bc_ie, ies[i].diuc, ies[i].start_time, ies[i].num_of_subchannels, ies[i].num_of_symbols);
         if (b->getIUC()!=DIUC_END_OF_MAP) {
             ies[i].cid =  b->getCid();
             if ( i == 0 ) {
@@ -96,7 +96,7 @@ Packet* FrameMap::getDL_MAP( )
     //int dl_ie = nbies - bc_ie - 1;
     // Uplink Map is sended in the broadcast burst
     int dl_ie = nbies - bc_ie;
-    printf ("Frame_map.DL_MAP before size => chsize :%d, ie (include ulmap) :%d, after ie_size+fix :%d\n", ch->size(), nbies-bc_ie-1, int(ceil(GET_DL_MAP_SIZE(dl_ie))));
+    debug2 ("Frame_map.DL_MAP before size => chsize :%d, ie (include ulmap) :%d, after ie_size+fix :%d\n", ch->size(), nbies-bc_ie-1, int(ceil(GET_DL_MAP_SIZE(dl_ie))));
     // the downlink map is send a normal
     ch->size() += int( ceil( GET_DL_MAP_SIZE(dl_ie) ));
 //    ch->size() = ceil (GET_DL_MAP_SIZE(dl_ie));
@@ -140,7 +140,7 @@ Packet* FrameMap::getDCD( )
     }
     //the end of map is already included in the frame length
 
-    printf ("Frame_map.DCD before size => chsize :%d, after size :%d\n", ch->size(), int(GET_DCD_SIZE(dlsubframe_.getNbProfile())) );
+    debug2 ("Frame_map.DCD before size => chsize :%d, after size :%d\n", ch->size(), int(GET_DCD_SIZE(dlsubframe_.getNbProfile())) );
 //  ch->size() += GET_DCD_SIZE(dlsubframe_.getNbProfile());
     ch->size() += int(GET_DCD_SIZE(dlsubframe_.getNbProfile()));
     return p;
@@ -281,7 +281,7 @@ Packet* FrameMap::getUCD( )
     }
 
     //the end of map is already included in the frame length
-    printf ("Frame_map.UCD before size => chsize :%d, after size :%d\n",ch->size(), int(GET_UCD_SIZE(ulsubframe_.getNbProfile())));
+    debug2 ("Frame_map.UCD before size => chsize :%d, after size :%d\n",ch->size(), int(GET_UCD_SIZE(ulsubframe_.getNbProfile())));
 //  ch->size() += int(GET_UCD_SIZE(ulsubframe_.getNbProfile()));
     ch->size() += int(GET_UCD_SIZE(ulsubframe_.getNbProfile()));
     return p;
