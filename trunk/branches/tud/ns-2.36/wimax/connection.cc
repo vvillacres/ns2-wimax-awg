@@ -166,9 +166,7 @@ void Connection::setManager (ConnectionManager *manager)
  */
 void Connection::enqueue (Packet * p)
 {
-    printf("Connection::enqueue CID: %d, Headerlength %d,  Datalength: %d , Time: %f\n",cid_, p->hdrlen_, p->datalen(), NOW);
-
-	//Mark the timestamp for queueing delay
+ 	//Mark the timestamp for queueing delay
     HDR_CMN(p)->timestamp() = NOW;
     queue_->enque (p);
 }
@@ -180,9 +178,7 @@ void Connection::enqueue (Packet * p)
  */
 void Connection::enqueue_head (Packet * p)
 {
-    printf("Connection::enqueue_head CID: %d, Headerlength %d,  Datalength: %d , Time: %f\n",cid_, p->hdrlen_, p->datalen(), NOW);
-
-	//Mark the timestamp for queueing delay
+ 	//Mark the timestamp for queueing delay
     //HDR_CMN(p)->timestamp() = NOW;
     queue_->enqueHead (p);
 }
@@ -195,7 +191,6 @@ void Connection::enqueue_head (Packet * p)
 Packet * Connection::dequeue ()
 {
     Packet *p = queue_->deque ();
-    printf("Connection::dequeue CID: %d, Headerlength %d,  Datalength: %d , Time: %f\n",cid_, p->hdrlen_, p->datalen(), NOW);
     return p;
 }
 
@@ -271,7 +266,6 @@ void Connection::setBw (int bw)
     //in some cases, the SS may send more data than allocated.
     // assert (bw >=0);
     requested_bw_ = bw<0?0:bw;
-    printf ("Set bw %d for connection %d\n", requested_bw_,cid_);
 }
 
 /**
@@ -280,7 +274,6 @@ void Connection::setBw (int bw)
  */
 int Connection::getBw ()
 {
-    printf ("Get %d bw for connection %d\n", requested_bw_,cid_);
     return requested_bw_;
 }
 
