@@ -88,11 +88,11 @@ void WimaxScheduler::init()
 
     // Useful number of OFDMA symbols per downlink frame for PUSC ofdm = 2 * slots + preamble
     int useNbDlSymbols = int( floor ( (maxNbDlSymbols - DL_PREAMBLE) / phy->getSlotLength(DL_))) * phy->getSlotLength(DL_) + DL_PREAMBLE;
-    printf("Maximum Number of OFDM Symbols in DL Frame : %d Useful Number of Symbols in DL Frame : %d \n", maxNbDlSymbols, useNbDlSymbols);
+    debug2("Maximum Number of OFDM Symbols in DL Frame : %d Useful Number of Symbols in DL Frame : %d \n", maxNbDlSymbols, useNbDlSymbols);
 
     // Useful number of OFDMA symbols per uplink frame for PUSC  ofdm = 3 * slots
     int useNbUlSymbols = int( floor (maxNbUlSymbols / phy->getSlotLength(UL_)) * phy->getSlotLength(UL_));
-    printf("Maximum Number of OFDM Symbols in UL Frame : %d Useful Number of Symbols in UL Frame : %d \n", maxNbUlSymbols, useNbUlSymbols);
+    debug2("Maximum Number of OFDM Symbols in UL Frame : %d Useful Number of Symbols in UL Frame : %d \n", maxNbUlSymbols, useNbUlSymbols);
 
     mac_->setMaxDlduration (useNbDlSymbols - DL_PREAMBLE); // dl duration left after preamble for dl timer
     mac_->setMaxUlduration (useNbUlSymbols);
@@ -327,7 +327,7 @@ int WimaxScheduler::transfer_packets1 (Connection *c, Burst *b, int b_data)
              mac_->addr(), c->get_cid(), b_data, b->getnumSubchannels(), b->getDuration(), b->getIUC(), b->getCqichSlotFlag());
 
 //Start sending registration message
-    printf ("TOTO: check init ranging %d \n", c->getINIT_REQ_QUEUE(mac_->addr()));
+    debug2 ("TOTO: check init ranging %d \n", c->getINIT_REQ_QUEUE(mac_->addr()));
     if ( (c->get_cid() == 0) && (c->getINIT_REQ_QUEUE(mac_->addr()) == 0) && (mac_->getNodeType()!=STA_BS) ) {
 
         Packet *p1= mac_->getPacket();
@@ -998,7 +998,7 @@ int WimaxScheduler::transfer_packets1 (Connection *c, Burst *b, int b_data)
             offset = b->getStarttime( )+ txtime_s-num_symbol_per_slot;
             subchannel_offset = (int) ceil((numsubchannels + subchannel_offset) % (phy->getNumsubchannels(UL_)));
         }
-        printf ("txtime_s=%d, symbol time = %f txtime=%f\n", txtime_s, phy->getSymbolTime (), txtime_s*phy->getSymbolTime ());
+        debug2 ("txtime_s=%d, symbol time = %f txtime=%f\n", txtime_s, phy->getSymbolTime (), txtime_s*phy->getSymbolTime ());
 
         ch->txtime() = txtime_s*phy->getSymbolTime ();
 
@@ -1363,7 +1363,7 @@ int WimaxScheduler::transfer_packets_with_fragpackarq(Connection *c, Burst *b, i
         if ((((seqno - ack_seq) > 0) && ((seqno - ack_seq) > max_window))
                 //|| ((seqno >= curr_window && seqno < max_window) && (ack_seq < max_seq && ack_seq >= (max_seq - max_window))))
                 ||((seqno-ack_seq)<0 && ((seqno+max_seq-ack_seq)>max_window))) {
-            printf("ARQ2.0 Transfer_Packets: seqno=%d, ack_seq=%d, 1st judge=%d,  2nd judge=%d",
+        	debug2("ARQ2.0 Transfer_Packets: seqno=%d, ack_seq=%d, 1st judge=%d,  2nd judge=%d",
                    seqno,ack_seq,(((seqno - ack_seq) > 0) && ((seqno - ack_seq) > max_window)),((seqno-ack_seq)<0 && ((seqno+max_seq-ack_seq)>max_window)));
             debug2("ARQ2.0 Transfer_Packets: this ARQ block is outside of ARQ slide window, Will not be transferred.\n ");
             break;

@@ -41,8 +41,8 @@
 #include "neighbordb.h"
 #include "wimaxneighborentry.h"
 
-#define DEBUG_WIMAX
-#define DEBUG_WIMAX_EXT
+//#define DEBUG_WIMAX
+//#define DEBUG_WIMAX_EXT
 //Define new debug function for cleaner code
 #ifdef DEBUG_WIMAX
 #define debug2 printf
