@@ -73,35 +73,37 @@ DlBurstMappingSimple::mapDlBursts( mac802_16_dl_map_frame * dlMap, VirtualAlloca
             Connection * currentCon = virtualAlloc->getConnection();
             int nbOfUsedSlots = virtualAlloc->getCurrentNbOfSlots();
 
-            dlMapIe = &(dlMap->ies[dlMapIeIndex]);
+            // only add connection to DL-MAP, which received allocations
+            if ( nbOfUsedSlots > 0 ) {
+				dlMapIe = &(dlMap->ies[dlMapIeIndex]);
 
-            dlMapIe->cid = currentCon->get_cid();
-            dlMapIe->n_cid = 1;
-            dlMapIe->diuc = bsScheduler_->getDIUCProfile(mac_->getMap()->getDlSubframe()->getProfile(currentCon->getPeerNode()->getDIUC())->getEncoding());
-            dlMapIe->preamble = false;
-            dlMapIe->start_time = dlSymbolOffset;
-            dlMapIe->symbol_offset = dlSymbolOffset;
-            dlMapIe->subchannel_offset = dlSubchannelOffset;
-            dlMapIe->boosting = 0;
-            dlMapIe->num_of_subchannels = nbOfUsedSlots;
-            dlMapIe->num_of_symbols = int( ceil( double( dlSubchannelOffset + nbOfUsedSlots) / totalDlSubchannels) * phy->getSlotLength(DL_));
-            dlMapIe->repition_coding_indicator = 0;
+				dlMapIe->cid = currentCon->get_cid();
+				dlMapIe->n_cid = 1;
+				dlMapIe->diuc = bsScheduler_->getDIUCProfile(mac_->getMap()->getDlSubframe()->getProfile(currentCon->getPeerNode()->getDIUC())->getEncoding());
+				dlMapIe->preamble = false;
+				dlMapIe->start_time = dlSymbolOffset;
+				dlMapIe->symbol_offset = dlSymbolOffset;
+				dlMapIe->subchannel_offset = dlSubchannelOffset;
+				dlMapIe->boosting = 0;
+				dlMapIe->num_of_subchannels = nbOfUsedSlots;
+				dlMapIe->num_of_symbols = int( ceil( double( dlSubchannelOffset + nbOfUsedSlots) / totalDlSubchannels) * phy->getSlotLength(DL_));
+				dlMapIe->repition_coding_indicator = 0;
 
-            // update Symbol and Subchannel Offset
-            dlSymbolOffset += int( floor( double( dlSubchannelOffset + nbOfUsedSlots) / totalDlSubchannels) * phy->getSlotLength(DL_));
-            dlSubchannelOffset = ( dlSubchannelOffset + nbOfUsedSlots) % (totalDlSubchannels);
+				// update Symbol and Subchannel Offset
+				dlSymbolOffset += int( floor( double( dlSubchannelOffset + nbOfUsedSlots) / totalDlSubchannels) * phy->getSlotLength(DL_));
+				dlSubchannelOffset = ( dlSubchannelOffset + nbOfUsedSlots) % (totalDlSubchannels);
 
-            // update traffic policing
-            if ( currentCon->getType() == CONN_DATA) {
-            //	trafficShapingAlgorithm_->updateAllocation( currentCon, virtualAlloc->getCurrentMrtrPayload(), virtualAlloc->getCurrentMstrPayload());
+				// update traffic policing
+				if ( currentCon->getType() == CONN_DATA) {
+				//	trafficShapingAlgorithm_->updateAllocation( currentCon, virtualAlloc->getCurrentMrtrPayload(), virtualAlloc->getCurrentMstrPayload());
+				}
+
+				// testing
+				entireUsedSlots += nbOfUsedSlots;
+
+				// increase index
+				dlMapIeIndex++;
             }
-
-            // testing
-            entireUsedSlots += nbOfUsedSlots;
-
-
-            // increase index
-            dlMapIeIndex++;
         } while (virtualAlloc->nextConnectionEntry());
         // go to the next connection if existing
     }
