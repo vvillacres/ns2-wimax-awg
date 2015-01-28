@@ -449,18 +449,24 @@ void SchedulingAlgoDualEqualFill::scheduleConnections( VirtualAllocation* virtua
 					// debug
 					// printf(" %d new Mstr Slots for Connection CID %d \n", newSlots, virtualAllocation->getConnection()->get_cid() );
 
-					// update freeSlots
-					freeSlots -= newSlots;
-					// update mstrSlots
-					mstrSlots += newSlots;
+					// check if connection can be scheduled
+					if ( freeSlots >= newSlots) {
 
-					u_int32_t allocatedMrtrPayload = virtualAllocation->getCurrentMrtrPayload();
+						// update freeSlots
+						freeSlots -= newSlots;
+
+						// update mstrSlots
+						mstrSlots += newSlots;
+
+						u_int32_t allocatedMrtrPayload = virtualAllocation->getCurrentMrtrPayload();
+
+						// update container
+						virtualAllocation->updateAllocation( allocatedBytes, allocatedSlots,  allocatedMrtrPayload, u_int32_t(allocatedPayload));
+					}
 					// check for debug
 					assert( freeSlots >= 0);
 					assert( allocatedPayload >= 0);
 
-					// update container
-					virtualAllocation->updateAllocation( allocatedBytes, allocatedSlots,  allocatedMrtrPayload, u_int32_t(allocatedPayload));
 
 					// decrease loop counter
 					conThisRound--;
