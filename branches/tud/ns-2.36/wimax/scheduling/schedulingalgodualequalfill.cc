@@ -462,6 +462,9 @@ void SchedulingAlgoDualEqualFill::scheduleConnections( VirtualAllocation* virtua
 
 						// update container
 						virtualAllocation->updateAllocation( allocatedBytes, allocatedSlots,  allocatedMrtrPayload, u_int32_t(allocatedPayload));
+					} else {
+						// reduce number of connections to avoid endless loops
+						nbOfMstrConnections--;
 					}
 					// check for debug
 					assert( freeSlots >= 0);
