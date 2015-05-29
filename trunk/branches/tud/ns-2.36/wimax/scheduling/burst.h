@@ -69,16 +69,6 @@ public:
     	burstCdmaTop_ = cdmaTop;
     }
 
-
-    /*Get and set the CQICH parameters*/
-    char ext_uiuc_;
-    u_int16_t cqich_alloc_ie_cqich_id_;
-    u_int16_t ss_mac_id_;
-    int cqich_alloc_offset_;
-    int cqich_period_;
-    int cqich_duration_;
-    char cqich_fb_type_;
-    //u_int16_t burst_ss_mac_id_;
     void set_cqich_ext_uiuc(char ext_uiuc) {
         ext_uiuc_ = ext_uiuc;
     }
@@ -275,6 +265,9 @@ protected:
     LIST_ENTRY(Burst) link;
     //LIST_ENTRY(Burst); //for magic draw
 
+    u_int16_t cqich_alloc_ie_cqich_id_;
+    u_int16_t ss_mac_id_;
+
 private:
     /**
      * The CID for the burst. If a broadcast or multicast is used, then Mac SDUs for different SSs can be included in the burst.
@@ -323,6 +316,13 @@ private:
      * cdma top ( used cdma slot) / -1 default value
      */
     short int burstCdmaTop_;
+
+    /*Get and set the CQICH parameters*/
+    char ext_uiuc_;
+    int cqich_alloc_offset_;
+    int cqich_period_;
+    int cqich_duration_;
+    char cqich_fb_type_;
 };
 
 #endif
