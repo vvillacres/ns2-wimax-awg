@@ -6,6 +6,7 @@
  */
 
 #include "schedulingalgodualequalfill.h"
+
 #include "virtualallocation.h"
 #include "connection.h"
 #include "packet.h"
@@ -142,7 +143,12 @@ void SchedulingAlgoDualEqualFill::scheduleConnections( VirtualAllocation* virtua
 
 				// calculate the corresponding number of bytes
 				int allocatedSlots = nbOfSlotsPerConnection + virtualAllocation->getCurrentNbOfSlots();
+				// increse slots for QPSK 1/2 to allow scheduling
+				if ((allocatedSlots < 2 ) && (freeSlots > 1) && (virtualAllocation->getSlotCapacity() == 6)) {
+					allocatedSlots = 2;
+				}
 				int maximumBytes = allocatedSlots * virtualAllocation->getSlotCapacity();
+
 
 				// get fragmented bytes to calculate first packet size
 				int fragmentedBytes = virtualAllocation->getConnection()->getFragmentBytes();
@@ -154,72 +160,87 @@ void SchedulingAlgoDualEqualFill::scheduleConnections( VirtualAllocation* virtua
 				int allocatedPayload = 0;
 				int wantedMrtrSize = virtualAllocation->getWantedMrtrSize();
 
-				while ( ( currentPacket != NULL) && ( (allocatedBytes < maximumBytes) && ( allocatedPayload < wantedMrtrSize) ) ) {
+				bool allocationDone = false;
 
-					int packetSize = HDR_CMN(currentPacket)->size();
+				while ( ( currentPacket != NULL) && ( !allocationDone) ) {
 
-					if (fragmentedBytes > 0) {
+					int packetPayload = HDR_CMN(currentPacket)->size() - fragmentedBytes;
 
-						// payload is packet size - already send byte - Generice Header - Fragmentation Subheader
-						allocatedPayload += ( packetSize - fragmentedBytes - HDR_MAC802_16_SIZE - HDR_MAC802_16_FRAGSUB_SIZE );
+					// check for sufficient space for headers
+					int maxNewAllocation = maximumBytes - allocatedBytes;
+					if (maxNewAllocation > HDR_MAC802_16_SIZE ) {
+						// Sufficient space for PDUs
+						if (maxNewAllocation > HDR_MAC802_16_SIZE + HDR_MAC802_16_FRAGSUB_SIZE ) {
+							// Sufficient space for fragmented PDUs
 
-						// packet size - already send bytes
-						allocatedBytes += ( packetSize - fragmentedBytes );
-						fragmentedBytes = 0;
-					} else {
-						allocatedPayload += packetSize - HDR_MAC802_16_SIZE;
-						allocatedBytes += packetSize;
-					}
+							// allocated packet
+							allocatedPayload += packetPayload;
 
-					// get next packet
-					currentPacket = currentPacket->next_;
-				}
-
-				// calculate fragmentation of the last scheduled packet
-				if ( allocatedBytes > maximumBytes) {
-					// one additional fragmentation subheader has to be considered
-					allocatedPayload -= ( (allocatedBytes - maximumBytes) + HDR_MAC802_16_FRAGSUB_SIZE);
-					if ( allocatedPayload < 0) {
-						// avoid rounding errors
-						allocatedPayload = 0;
-					}
-					allocatedBytes = maximumBytes;
-					// is demand fulfilled ?
-					if ( allocatedPayload >= wantedMrtrSize) {
-						// reduce payload
-						if ( (allocatedPayload - wantedMrtrSize) > HDR_MAC802_16_FRAGSUB_SIZE) {
-							allocatedBytes -= ( (allocatedPayload - wantedMrtrSize) - HDR_MAC802_16_FRAGSUB_SIZE);
-						}
-						allocatedPayload = wantedMrtrSize;
-						// reduce number of connection with mrtr demand
-						nbOfMrtrConnections--;
-						// avoids, that connection is called again
-						virtualAllocation->updateWantedMrtrMstr( 0, virtualAllocation->getWantedMstrSize());
-					}
-				} else {
-					// is demand fulfilled due to allocated bytes or all packets
-					if (( allocatedPayload >= wantedMrtrSize) || ( currentPacket == NULL)) {
-						// reduce number of connection with mrtr demand
-						nbOfMrtrConnections--;
-						// avoids, that connection is called again
-						virtualAllocation->updateWantedMrtrMstr( 0, virtualAllocation->getWantedMstrSize());
-
-						// consider fragmentation due to traffic policing
-						if ( allocatedPayload > wantedMrtrSize) {
-							// reduce payload
-							if ( (allocatedPayload - wantedMrtrSize) > HDR_MAC802_16_FRAGSUB_SIZE) {
-								allocatedBytes -= ( (allocatedPayload - wantedMrtrSize) - HDR_MAC802_16_FRAGSUB_SIZE);
+							// check if MRTR was reached
+							if (allocatedPayload > wantedMrtrSize) {
+								// reduce allocation
+								// fragmentation necessary
+								fragmentedBytes = packetPayload - (allocatedPayload - wantedMrtrSize);
+								allocatedBytes += packetPayload - (allocatedPayload - wantedMrtrSize) + HDR_MAC802_16_SIZE + HDR_MAC802_16_FRAGSUB_SIZE;
+								allocatedPayload = wantedMrtrSize;
+								// finish
+								allocationDone = true;
+							} else if ( fragmentedBytes > 0) {
+								// a fragment is send
+								allocatedBytes += packetPayload + HDR_MAC802_16_SIZE + HDR_MAC802_16_FRAGSUB_SIZE;
+							} else {
+								// entire packet is send
+								allocatedBytes += packetPayload + HDR_MAC802_16_SIZE;
 							}
-							allocatedPayload = wantedMrtrSize;
+
+
+							// check if maximum Bytes was reached
+							if (allocatedBytes > maximumBytes) {
+								if (fragmentedBytes > 0) {
+									// last packet already fragmented --> fragment becomes smaller
+									allocatedPayload -= (allocatedBytes - maximumBytes);
+								} else {
+									// new fragmentation necessary --> add fragmentation header
+									allocatedPayload -= (allocatedBytes - maximumBytes) + HDR_MAC802_16_FRAGSUB_SIZE;
+								}
+								allocatedBytes = maximumBytes ;
+								// finish
+								allocationDone = true;
+
+							}
+
+							// check if demand is fullfilled
+							if (allocatedPayload == wantedMrtrSize) {
+								allocationDone = true;
+								// reduce number of connection with mrtr demand
+								nbOfMrtrConnections--;
+								// avoids, that connection is called again
+								virtualAllocation->updateWantedMrtrMstr( 0, virtualAllocation->getWantedMstrSize());
+							}
+
+							// fragment already handeled
+							fragmentedBytes = 0;
+
+						} else if ((fragmentedBytes == 0) && ( packetPayload <= HDR_MAC802_16_FRAGSUB_SIZE)){
+							// add micro packet with 1 or 2 Bytes
+							allocatedPayload += packetPayload;
+							allocatedBytes += packetPayload + HDR_MAC802_16_SIZE;
+							// finish this round
+							allocationDone = true;
 						}
+
+
+
+					} else {
+						// not sufficent space to schedule
+						allocationDone = true;
 					}
 
-					if (allocatedPayload < 0) {
-						// avoid rounding errors
-						allocatedPayload = 0;
-					}
-
+				// get next packet
+				currentPacket = currentPacket->next_;
+				// end loop through packets
 				}
+
 				// Calculate Allocated Slots
 				allocatedSlots = int( ceil( double(allocatedBytes) / virtualAllocation->getSlotCapacity()) );
 
@@ -244,7 +265,7 @@ void SchedulingAlgoDualEqualFill::scheduleConnections( VirtualAllocation* virtua
 				int newSlots = ( allocatedSlots - oldSlots);
 
 				// debug
-				//printf(" %d new Mrtr Slots for Connection CID %d \n", newSlots, virtualAllocation->getConnection()->get_cid() );
+				// printf(" %d new Mrtr Slots for Connection CID %d \n", newSlots, virtualAllocation->getConnection()->get_cid() );
 
 				// update freeSlots
 				freeSlots -= newSlots;
@@ -272,7 +293,7 @@ void SchedulingAlgoDualEqualFill::scheduleConnections( VirtualAllocation* virtua
 			// count mstr connections
 			nbOfMstrConnections = 0;
 			virtualAllocation->firstConnectionEntry();
-			// run ones through whole the map
+			// run ones through the whole map
 			do {
 				if ( virtualAllocation->getConnection()->getType() == CONN_DATA ) {
 
@@ -359,70 +380,87 @@ void SchedulingAlgoDualEqualFill::scheduleConnections( VirtualAllocation* virtua
 					int allocatedPayload = 0;
 					int wantedMstrSize = virtualAllocation->getWantedMstrSize();
 
-					while ( ( currentPacket != NULL) && ( (allocatedBytes < maximumBytes) && ( allocatedPayload < wantedMstrSize) ) ) {
+					bool allocationDone = false;
 
-						int packetSize = HDR_CMN(currentPacket)->size();
+					while ( ( currentPacket != NULL) && ( !allocationDone) ) {
 
-						if (fragmentedBytes > 0) {
+						int packetPayload = HDR_CMN(currentPacket)->size() - fragmentedBytes;
 
-							// payload is packet size - already send byte - Generice Header - Fragmentation Subheader
-							allocatedPayload += ( packetSize - fragmentedBytes - HDR_MAC802_16_SIZE - HDR_MAC802_16_FRAGSUB_SIZE );
+						// check for sufficient space for headers
+						int maxNewAllocation = maximumBytes - allocatedBytes;
+						if (maxNewAllocation > HDR_MAC802_16_SIZE ) {
+							// Sufficient space for PDUs
+							if (maxNewAllocation > HDR_MAC802_16_SIZE + HDR_MAC802_16_FRAGSUB_SIZE ) {
+								// Sufficient space for fragmented PDUs
 
-							// packet size - already send bytes
-							allocatedBytes += ( packetSize - fragmentedBytes );
-							fragmentedBytes = 0;
+								// allocated packet
+								allocatedPayload += packetPayload;
+
+								// check if MRTR was reached
+								if (allocatedPayload > wantedMstrSize) {
+									// reduce allocation
+									// fragmentation necessary
+									fragmentedBytes = packetPayload - (allocatedPayload - wantedMstrSize);
+									allocatedBytes += packetPayload - (allocatedPayload - wantedMstrSize) + HDR_MAC802_16_SIZE + HDR_MAC802_16_FRAGSUB_SIZE;
+									allocatedPayload = wantedMstrSize;
+									// finish
+									allocationDone = true;
+								} else if ( fragmentedBytes > 0) {
+									// a fragment is send
+									allocatedBytes += packetPayload + HDR_MAC802_16_SIZE + HDR_MAC802_16_FRAGSUB_SIZE;
+								} else {
+									// entire packet is send
+									allocatedBytes += packetPayload + HDR_MAC802_16_SIZE;
+								}
+
+
+								// check if maximum Bytes was reached
+								if (allocatedBytes > maximumBytes) {
+									if (fragmentedBytes > 0) {
+										// last packet already fragmented --> fragment becomes smaller
+										allocatedPayload -= (allocatedBytes - maximumBytes);
+									} else {
+										// new fragmentation necessary --> add fragmentation header
+										allocatedPayload -= (allocatedBytes - maximumBytes) + HDR_MAC802_16_FRAGSUB_SIZE;
+									}
+									allocatedBytes = maximumBytes ;
+									// finish
+									allocationDone = true;
+
+								}
+
+								// check if demand is fullfilled
+								if (allocatedPayload == wantedMstrSize) {
+									allocationDone = true;
+									// reduce number of connection with mstr demand
+									nbOfMstrConnections--;
+									// avoids, that connection is called again
+									virtualAllocation->updateWantedMrtrMstr( 0, 0);
+								}
+
+								// fragment already handeled
+								fragmentedBytes = 0;
+
+							} else if ((fragmentedBytes == 0) && ( packetPayload <= HDR_MAC802_16_FRAGSUB_SIZE)){
+								// add micro packet with 1 or 2 Bytes
+								allocatedPayload += packetPayload;
+								allocatedBytes += packetPayload + HDR_MAC802_16_SIZE;
+								// finish this round
+								allocationDone = true;
+							}
+
+
 						} else {
-							allocatedPayload += packetSize - HDR_MAC802_16_SIZE;
-							allocatedBytes += packetSize;
+							// not sufficent space to schedule
+							allocationDone = true;
 						}
+
 						// get next packet
 						currentPacket = currentPacket->next_;
+
+					// end loop through packets
 					}
 
-
-					// calculate fragmentation of the last scheduled packet
-					if ( allocatedBytes > maximumBytes) {
-						// one additional fragmentation subheader has to be considered
-						allocatedPayload -= ( (allocatedBytes - maximumBytes) + HDR_MAC802_16_FRAGSUB_SIZE);
-						if ( allocatedPayload < 0) {
-							// avoid rounding errors
-							allocatedPayload = 0;
-						}
-						allocatedBytes = maximumBytes;
-						// has demand fulfilled
-						if ( allocatedPayload >= wantedMstrSize) {
-							// reduce payload
-							if ( (allocatedPayload - wantedMstrSize) > HDR_MAC802_16_FRAGSUB_SIZE) {
-								allocatedBytes -= ( (allocatedPayload - wantedMstrSize) - HDR_MAC802_16_FRAGSUB_SIZE);
-							}
-							allocatedPayload = wantedMstrSize;
-							// reduce number of connection with mrtr demand
-							nbOfMstrConnections--;
-							// avoids, that connection is called again
-							virtualAllocation->updateWantedMrtrMstr( 0, 0);
-						}
-					} else {
-						// is demand fulfilled due to allocated bytes or all packets in the queue are scheduled
-						if (( allocatedPayload >= wantedMstrSize) || ( currentPacket == NULL)) {
-							// reduce number of connection with mstr demand
-							nbOfMstrConnections--;
-							// avoids, that connection is called again
-							virtualAllocation->updateWantedMrtrMstr( 0, 0);
-							// consider fragmentation due to traffic policing
-							if ( allocatedPayload > wantedMstrSize) {
-								// reduce payload
-								if ( (allocatedPayload - wantedMstrSize) > HDR_MAC802_16_FRAGSUB_SIZE) {
-									allocatedBytes -= ( (allocatedPayload - wantedMstrSize) - HDR_MAC802_16_FRAGSUB_SIZE);
-								}
-								allocatedPayload = wantedMstrSize;
-							}
-						}
-						if (allocatedPayload < 0) {
-							// avoid rounding errors
-							allocatedPayload = 0;
-						}
-
-					}
 					// Calculate Allocated Slots
 					allocatedSlots = int( ceil( double(allocatedBytes) / virtualAllocation->getSlotCapacity()) );
 

@@ -407,7 +407,7 @@ void Mac802_16SS::sendDown(Packet *p)
                     wimaxHdr->header.eks = 0;
                     wimaxHdr->header.cid = cid; //default
                     wimaxHdr->header.hcs = 0;
-                    HDR_CMN(p)->size() += HDR_MAC802_16_SIZE;
+                    // HDR_CMN(p)->size() += HDR_MAC802_16_SIZE; // Overhead will be added on transmission
                     connection ->enqueue (p);
                     //Begin RPI
                     debug2 ("At %f (SS) in Mac %d, SENDDOWN, Enqueue packet to cid :%d queue size :%d (max :%d)\n", NOW, index_, cid,connection->queueLength (), macmib_.queue_length);
@@ -1416,6 +1416,12 @@ void Mac802_16SS::receive (Packet *pktRx_)
         return;
     }
     //End RPI
+
+
+    if (HDR_CMN(pktRx_)->ptype()!=PT_MAC){
+    	printf("debug\n");
+    }
+
     //process reassembly
     if (wimaxHdr->header.type_frag) {
         bool drop_pkt = true;
@@ -1423,8 +1429,11 @@ void Mac802_16SS::receive (Packet *pktRx_)
         debug2 (" Frag type = %d %d\n",wimaxHdr->frag_subheader.fc,wimaxHdr->frag_subheader.fc & 0x3);
         switch (wimaxHdr->frag_subheader.fc & 0x3) {
         case FRAG_NOFRAG:
-            if (con->getFragmentationStatus()!=FRAG_NOFRAG)
+            if (con->getFragmentationStatus()!=FRAG_NOFRAG) {
                 con->updateFragmentation (FRAG_NOFRAG, 0, 0); //reset
+            }
+            // remove header
+            ch->size() -= HDR_MAC802_16_SIZE;
             drop_pkt = false;
             break;
         case FRAG_FIRST:
@@ -1432,7 +1441,7 @@ void Mac802_16SS::receive (Packet *pktRx_)
             //received other fragments, since we reset the information
             assert (wimaxHdr->frag_subheader.fsn == 0);
             //printf ("\tReceived first fragment\n");
-            con->updateFragmentation (FRAG_FIRST, 0, ch->size()-(HDR_MAC802_16_SIZE+HDR_MAC802_16_FRAGSUB_SIZE));
+            con->updateFragmentation (FRAG_FIRST, 0, ch->size() - (HDR_MAC802_16_SIZE + HDR_MAC802_16_FRAGSUB_SIZE));
             break;
         case FRAG_CONT:
             if ( (con->getFragmentationStatus()!=FRAG_FIRST
@@ -1450,7 +1459,10 @@ void Mac802_16SS::receive (Packet *pktRx_)
                     || con->getFragmentationStatus()==FRAG_CONT)
                     && ((wimaxHdr->frag_subheader.fsn&0x7) == (con->getFragmentNumber ()+1)%8) ) {
                 //printf ("\tReceived last fragment\n");
-                ch->size() += con->getFragmentBytes()-HDR_MAC802_16_FRAGSUB_SIZE;
+                ch->size() += con->getFragmentBytes() - ( HDR_MAC802_16_SIZE + HDR_MAC802_16_FRAGSUB_SIZE);
+                if ( ch->size() != 200) {
+                	printf("debug %d",ch->size());
+                }
                 drop_pkt = false;
             } else {
                 //printf ("ERROR with last frag seq=%d (expected=%d)\n", wimaxHdr->fsn&0x7, (con->getFragmentNumber ()+1)%8);
@@ -1476,6 +1488,10 @@ void Mac802_16SS::receive (Packet *pktRx_)
             debug2("==============================SS receive End ===========================================\n");
             return;
         }
+    } else {
+    	// entire packet was received
+    	// remove mac header
+    	ch->size() -= HDR_MAC802_16_SIZE;
     }
 
     //We check if it is a MAC packet or not
@@ -1490,7 +1506,7 @@ void Mac802_16SS::receive (Packet *pktRx_)
         if (state_ == MAC802_16_CONNECTED) {
             update_throughput (&rx_data_watch_, 8*ch->size());
             update_throughput (&rx_traffic_watch_, 8*ch->size());
-            ch->size() -= HDR_MAC802_16_SIZE;
+            //ch->size() -= HDR_MAC802_16_SIZE; // overhead was already removed in reassembly
             debug2("This is a MAC packet, size is %d,  SS send to upper layer.\n", 8*ch->size());
             uptarget_->recv(pktRx_, (Handler*) 0);
         } else {
