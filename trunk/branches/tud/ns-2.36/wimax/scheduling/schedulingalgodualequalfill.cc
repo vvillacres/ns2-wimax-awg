@@ -147,8 +147,8 @@ void SchedulingAlgoDualEqualFill::scheduleConnections( VirtualAllocation* virtua
 				if ((allocatedSlots < 2 ) && (freeSlots > 1) && (virtualAllocation->getSlotCapacity() == 6)) {
 					allocatedSlots = 2;
 				}
-				int maximumBytes = allocatedSlots * virtualAllocation->getSlotCapacity();
-
+				int slotCapacity = virtualAllocation->getSlotCapacity();
+				int maximumBytes = allocatedSlots * slotCapacity;
 
 				// get fragmented bytes to calculate first packet size
 				int fragmentedBytes = virtualAllocation->getConnection()->getFragmentBytes();
@@ -180,9 +180,20 @@ void SchedulingAlgoDualEqualFill::scheduleConnections( VirtualAllocation* virtua
 							if (allocatedPayload > wantedMrtrSize) {
 								// reduce allocation
 								// fragmentation necessary
-								fragmentedBytes = packetPayload - (allocatedPayload - wantedMrtrSize);
 								allocatedBytes += packetPayload - (allocatedPayload - wantedMrtrSize) + HDR_MAC802_16_SIZE + HDR_MAC802_16_FRAGSUB_SIZE;
-								allocatedPayload = wantedMrtrSize;
+								// check slot boundaries
+								int slotDifference =  int(slotCapacity * ceil( double(allocatedBytes) / slotCapacity)) - allocatedBytes;
+
+								fragmentedBytes = packetPayload - (allocatedPayload - wantedMrtrSize) + slotDifference;
+								if (fragmentedBytes >= packetPayload){
+									// rounding caused errors
+									printf("Slot allignment did not work !!!! Difference %d \n", slotDifference);
+									slotDifference = 0;
+									fragmentedBytes = packetPayload - (allocatedPayload - wantedMrtrSize);
+								}
+
+								allocatedBytes += slotDifference;
+								allocatedPayload = wantedMrtrSize + slotDifference;
 								// finish
 								allocationDone = true;
 							} else if ( fragmentedBytes > 0) {
@@ -210,7 +221,7 @@ void SchedulingAlgoDualEqualFill::scheduleConnections( VirtualAllocation* virtua
 							}
 
 							// check if demand is fullfilled
-							if (allocatedPayload == wantedMrtrSize) {
+							if (allocatedPayload >= wantedMrtrSize) {
 								allocationDone = true;
 								// reduce number of connection with mrtr demand
 								nbOfMrtrConnections--;
@@ -242,7 +253,7 @@ void SchedulingAlgoDualEqualFill::scheduleConnections( VirtualAllocation* virtua
 				}
 
 				// Calculate Allocated Slots
-				allocatedSlots = int( ceil( double(allocatedBytes) / virtualAllocation->getSlotCapacity()) );
+				allocatedSlots = int( ceil( double(allocatedBytes) / slotCapacity) );
 
 
 				int oldSlots = virtualAllocation->getCurrentNbOfSlots();
@@ -368,7 +379,8 @@ void SchedulingAlgoDualEqualFill::scheduleConnections( VirtualAllocation* virtua
 
 					// calculate the corresponding number of bytes
 					int allocatedSlots = nbOfSlotsPerConnection + virtualAllocation->getCurrentNbOfSlots();
-					int maximumBytes = allocatedSlots * virtualAllocation->getSlotCapacity();
+					int slotCapacity = virtualAllocation->getSlotCapacity();
+					int maximumBytes = allocatedSlots * slotCapacity;
 
 					// get fragmented bytes to calculate first packet size
 					int fragmentedBytes = virtualAllocation->getConnection()->getFragmentBytes();
@@ -379,6 +391,8 @@ void SchedulingAlgoDualEqualFill::scheduleConnections( VirtualAllocation* virtua
 					int allocatedBytes = 0;
 					int allocatedPayload = 0;
 					int wantedMstrSize = virtualAllocation->getWantedMstrSize();
+					// for slot allignment
+					int slotDifference = 0;
 
 					bool allocationDone = false;
 
@@ -396,13 +410,31 @@ void SchedulingAlgoDualEqualFill::scheduleConnections( VirtualAllocation* virtua
 								// allocated packet
 								allocatedPayload += packetPayload;
 
-								// check if MRTR was reached
+								// check if MSTR was reached
 								if (allocatedPayload > wantedMstrSize) {
 									// reduce allocation
 									// fragmentation necessary
-									fragmentedBytes = packetPayload - (allocatedPayload - wantedMstrSize);
 									allocatedBytes += packetPayload - (allocatedPayload - wantedMstrSize) + HDR_MAC802_16_SIZE + HDR_MAC802_16_FRAGSUB_SIZE;
-									allocatedPayload = wantedMstrSize;
+									// check slot boundaries
+									if ( allocatedBytes > slotCapacity) {
+										// floor for MSTR based demands
+										slotDifference =  int(slotCapacity * floor( double(allocatedBytes) / slotCapacity)) - allocatedBytes;
+									} else {
+										// ceil for only one slot
+										slotDifference =  int(slotCapacity * ceil( double(allocatedBytes) / slotCapacity)) - allocatedBytes;
+									}
+
+									fragmentedBytes = packetPayload - (allocatedPayload - wantedMstrSize) + slotDifference;
+									if (( fragmentedBytes < 1) && (fragmentedBytes >= packetPayload)){
+										// rounding caused errors
+										printf("Slot allignment did not work !!!! Difference %d \n", slotDifference);
+										assert(false);
+										slotDifference = 0;
+										fragmentedBytes = packetPayload - (allocatedPayload - wantedMstrSize);
+									}
+
+									allocatedBytes += slotDifference;
+									allocatedPayload = wantedMstrSize + slotDifference;
 									// finish
 									allocationDone = true;
 								} else if ( fragmentedBytes > 0) {
@@ -414,7 +446,7 @@ void SchedulingAlgoDualEqualFill::scheduleConnections( VirtualAllocation* virtua
 								}
 
 
-								// check if maximum Bytes was reached
+								// check if maximum Bytes was reached --> already alligned to slot boundaries
 								if (allocatedBytes > maximumBytes) {
 									if (fragmentedBytes > 0) {
 										// last packet already fragmented --> fragment becomes smaller
@@ -430,7 +462,7 @@ void SchedulingAlgoDualEqualFill::scheduleConnections( VirtualAllocation* virtua
 								}
 
 								// check if demand is fullfilled
-								if (allocatedPayload == wantedMstrSize) {
+								if (allocatedPayload == (wantedMstrSize + slotDifference)) {
 									allocationDone = true;
 									// reduce number of connection with mstr demand
 									nbOfMstrConnections--;
@@ -462,7 +494,7 @@ void SchedulingAlgoDualEqualFill::scheduleConnections( VirtualAllocation* virtua
 					}
 
 					// Calculate Allocated Slots
-					allocatedSlots = int( ceil( double(allocatedBytes) / virtualAllocation->getSlotCapacity()) );
+					allocatedSlots = int( ceil( double(allocatedBytes) / slotCapacity) );
 
 
 					int oldSlots = virtualAllocation->getCurrentNbOfSlots();
