@@ -40,7 +40,7 @@ class Packet;
 
 class PacketQueue : public TclObject {
 public:
-	PacketQueue() : head_(0), tail_(0), len_(0), bytes_(0) {}
+	PacketQueue() : head_(0), tail_(0), len_(0), bytes_(0), iter_(NULL) {}
 	virtual int length() const { return (len_); }
 	virtual int byteLength() const { return (bytes_); }
 	virtual Packet* enque(Packet* p) { // Returns previous tail
@@ -75,7 +75,7 @@ public:
 	virtual void remove(Packet*);
 	/* Remove a packet, located after a given packet. Either could be 0. */
 	void remove(Packet *, Packet *);
-        Packet* head() { return head_; }
+    Packet* head() { return head_; }
 	Packet* tail() { return tail_; }
 	// MONARCH EXTNS
 	virtual inline void enqueHead(Packet* p) {
@@ -85,11 +85,14 @@ public:
 		++len_;
 		bytes_ += hdr_cmn::access(p)->size();
 	}
-        void resetIterator() {iter = head_;}
-        Packet* getNext() { 
-	        if (!iter) return 0;
-		Packet *tmp = iter; iter = iter->next_;
-		return tmp;
+	inline void resetIterator() {iter_ = head_;}
+    inline Packet* getNext() {
+    	if (!iter_) {
+    		return NULL;
+    	}
+	    Packet *tmp = iter_;
+	    iter_ = iter_->next_;
+	    return tmp;
 	}
 
 protected:
@@ -101,7 +104,7 @@ protected:
 
 // MONARCH EXTNS
 private:
-	Packet *iter;
+	Packet *iter_;
 };
 
 class Queue;
