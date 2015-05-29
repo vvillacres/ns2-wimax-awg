@@ -164,15 +164,15 @@ int WimaxScheduler::transfer_packets (Connection *c, Burst *b, int b_data, int s
             return b_data; //not even space for header
 
         if (c->getFragmentationStatus()!=FRAG_NOFRAG) {
-            if (max_data >= ch->size()-c->getFragmentBytes()+HDR_MAC802_16_FRAGSUB_SIZE) {
-                //add fragmentation header
+            if (max_data >= ch->size() - c->getFragmentBytes() + HDR_MAC802_16_SIZE + HDR_MAC802_16_FRAGSUB_SIZE) {
+                //add generic header and fragmentation subheader
                 wimaxHdr->header.type_frag = true;
                 //no need to fragment again
                 wimaxHdr->frag_subheader.fc = FRAG_LAST;
                 wimaxHdr->frag_subheader.fsn = c->getFragmentNumber ();
                 c->dequeue();  /*remove packet from queue */
 
-                ch->size() = ch->size()-c->getFragmentBytes()+HDR_MAC802_16_FRAGSUB_SIZE; //new packet size
+                ch->size() = ch->size() - c->getFragmentBytes() + HDR_MAC802_16_SIZE + HDR_MAC802_16_FRAGSUB_SIZE; //add header new packet size
                 //update fragmentation
                 debug2 ("\tEnd of fragmentation (FRAG :%x), FSN :%d (max_data :%d, bytes to send :%d\n", FRAG_LAST, wimaxHdr->frag_subheader.fsn, max_data, ch->size());
 
@@ -188,11 +188,11 @@ int WimaxScheduler::transfer_packets (Connection *c, Burst *b, int b_data, int s
                 wimaxHdr->frag_subheader.fsn = c->getFragmentNumber ();
                 ch->size() = max_data; //new packet size
                 //update fragmentation
-                c->updateFragmentation (FRAG_CONT, (c->getFragmentNumber ()+1)%8, c->getFragmentBytes()+max_data-(HDR_MAC802_16_SIZE+HDR_MAC802_16_FRAGSUB_SIZE));
+                c->updateFragmentation (FRAG_CONT, (c->getFragmentNumber ()+1)%8, c->getFragmentBytes()+ max_data - (HDR_MAC802_16_SIZE + HDR_MAC802_16_FRAGSUB_SIZE));
                 debug2 ("\tContinue fragmentation (FRAG :%x), FSN :%d\n", FRAG_CONT, wimaxHdr->frag_subheader.fsn);
             }
         } else {
-            if (max_data < ch->size() && c->isFragEnable()) {
+            if (max_data < ( ch->size() + HDR_MAC802_16_SIZE )  && c->isFragEnable()) {
                 //need to fragment the packet for the first time
                 p = p->copy(); //copy packet to send
                 ch = HDR_CMN(p);
@@ -203,7 +203,7 @@ int WimaxScheduler::transfer_packets (Connection *c, Burst *b, int b_data, int s
                 wimaxHdr->frag_subheader.fsn = c->getFragmentNumber ();
                 ch->size() = max_data; //new packet size
                 //update fragmentation
-                c->updateFragmentation (FRAG_FIRST, 1, c->getFragmentBytes()+max_data-(HDR_MAC802_16_SIZE+HDR_MAC802_16_FRAGSUB_SIZE));
+                c->updateFragmentation (FRAG_FIRST, 1, max_data - (HDR_MAC802_16_SIZE + HDR_MAC802_16_FRAGSUB_SIZE));
                 debug2 ("\tFirst fragmentation (FRAG :%x), FSN :%d\n", FRAG_FIRST, c->getFragmentNumber());
 
             } else if (max_data < ch->size() && !c->isFragEnable()) {
@@ -213,6 +213,8 @@ int WimaxScheduler::transfer_packets (Connection *c, Burst *b, int b_data, int s
             } else {
                 //no fragmentation necessary
                 c->dequeue();
+                // add generic header
+                ch->size() += HDR_MAC802_16_SIZE;
             }
         }
 
@@ -272,7 +274,7 @@ int WimaxScheduler::transfer_packets (Connection *c, Burst *b, int b_data, int s
                 c->get_cid(), wimaxHdr->phy_info.num_OFDMSymbol, wimaxHdr->phy_info.OFDMSymbol_offset,wimaxHdr->phy_info.num_subchannels,
                 wimaxHdr->phy_info.subchannel_offset);
         b->enqueue(p);         //enqueue into burst
-        b_data += ch->size(); //increment amount of data enqueued
+        b_data += ch->size(); //increment amount of data enqueued including mac overhead
         if (!pkt_transfered && mac_->getNodeType()!=STA_BS) { //if we transfert at least one packet, remove bw request
             pkt_transfered = true;
             mac_->getMap()->getUlSubframe()->getBw_req()->removeRequest (c->get_cid());
@@ -348,7 +350,7 @@ int WimaxScheduler::transfer_packets1 (Connection *c, Burst *b, int b_data)
         wimaxHdr->header.type_fbgm = 0;
         frame->req_dl_burst_profile = mac_->get_diuc() & 0xF; //we use lower bits only
 
-        ch->size() = RNG_REQ_SIZE;
+        ch->size() = HDR_MAC802_16_SIZE + RNG_REQ_SIZE;
 
         debug10 ("\t   Sending INIT-RNG-MSG-REQ, cid :%d, ssid :%d, MaxSize :%d, msg-size :%d\n", c->get_cid(), mac_->addr(), max_data, ch->size());
 
@@ -482,11 +484,11 @@ int WimaxScheduler::transfer_packets1 (Connection *c, Burst *b, int b_data)
                     i_packet++;
 
                     if ( (c_tmp->getFragmentBytes()>0) && (already_frag == 0) ) {
-                        p_size = p_size - c_tmp->getFragmentBytes() + 4;
+                        p_size = p_size - c_tmp->getFragmentBytes();
                         already_frag = 1;
                     }
 
-                    realQueueSize += p_size;
+                    realQueueSize += p_size + HDR_MAC802_16_SIZE;
 
                     Ofdm_mod_rate dlul_map_mod = mac_->getMap()->getUlSubframe()->getProfile (b->getIUC())->getEncoding();
 
@@ -574,10 +576,10 @@ int WimaxScheduler::transfer_packets1 (Connection *c, Burst *b, int b_data)
                 i_packet++;
 
                 if ( (c_tmp->getFragmentBytes()>0) && (already_frag == 0) ) {
-                    p_size = p_size - c_tmp->getFragmentBytes() + 4;
+                    p_size = p_size - c_tmp->getFragmentBytes() ;
                     already_frag = 1;
                 }
-                realQueueSize += p_size;
+                realQueueSize += p_size + HDR_MAC802_16_SIZE;
 
                 // several PDUs share one burst vr@tud
                 //int num_of_slots = (int) ceil((double)p_size/(double)phy->getSlotCapacity(dlul_map_mod,UL_));
@@ -808,17 +810,15 @@ int WimaxScheduler::transfer_packets1 (Connection *c, Burst *b, int b_data)
         }
 
         if (max_data <= HDR_MAC802_16_SIZE ||	(c->getFragmentationStatus()!=FRAG_NOFRAG
-                                               && max_data <= HDR_MAC802_16_SIZE+HDR_MAC802_16_FRAGSUB_SIZE))
-            return b_data; //not even space for header
-
-        if (c->getFragmentationStatus()==FRAG_NOFRAG && max_data <= HDR_MAC802_16_SIZE+HDR_MAC802_16_FRAGSUB_SIZE
-                && (ch->size()>HDR_MAC802_16_SIZE+HDR_MAC802_16_FRAGSUB_SIZE) ) {
+                                               && max_data <= HDR_MAC802_16_SIZE+HDR_MAC802_16_FRAGSUB_SIZE)) {
             return b_data; //not even space for header
         }
 
+
         if (c->getFragmentationStatus()!=FRAG_NOFRAG) {
-            if (max_data >= ch->size()-c->getFragmentBytes()+HDR_MAC802_16_FRAGSUB_SIZE) { //getFrag => include MACHEADER
-                //add fragmentation header
+        	if (max_data >= ch->size() - c->getFragmentBytes() + HDR_MAC802_16_SIZE + HDR_MAC802_16_FRAGSUB_SIZE) { //getFrag => include MACHEADER
+        		// send last fragment
+        		//add fragmentation header
                 wimaxHdr->header.type_frag = true;
                 //no need to fragment again
                 wimaxHdr->frag_subheader.fc = FRAG_LAST;
@@ -827,7 +827,7 @@ int WimaxScheduler::transfer_packets1 (Connection *c, Burst *b, int b_data)
 
 
                 c->dequeue();  /*remove packet from queue */
-                ch->size() = ch->size()-c->getFragmentBytes()+HDR_MAC802_16_FRAGSUB_SIZE; //new packet size
+                ch->size() = ch->size() - c->getFragmentBytes() + HDR_MAC802_16_SIZE + HDR_MAC802_16_FRAGSUB_SIZE; //new packet size
                 //update fragmentation
                 if (ch->size() < 0 )
                     debug2(" packet size negative -- panic !!! \n");
@@ -860,10 +860,10 @@ int WimaxScheduler::transfer_packets1 (Connection *c, Burst *b, int b_data)
 
                 debug2 ("\nContinue fragmentation %d, CID :%d, (max_data :%d, bytes to send :%d, getFragmentBytes :%d, getFragNumber :%d, updated Frag :%d, update FragBytes :%d, con->qBytes :%d, con->qlen :%d, more_bw :%d)\n", wimaxHdr->frag_subheader.fsn, c->get_cid(), max_data, ch->size(),  c->getFragmentBytes(), c->getFragmentNumber(), (c->getFragmentNumber()+1)%8, c->getFragmentBytes()+max_data-(HDR_MAC802_16_SIZE+HDR_MAC802_16_FRAGSUB_SIZE), c->queueByteLength(), c->queueLength(), more_bw);
 
-                c->updateFragmentation (FRAG_CONT, (c->getFragmentNumber ()+1)%8, c->getFragmentBytes()+max_data-(HDR_MAC802_16_SIZE+HDR_MAC802_16_FRAGSUB_SIZE));
+                c->updateFragmentation (FRAG_CONT, (c->getFragmentNumber ()+1)%8, c->getFragmentBytes() +max_data -(HDR_MAC802_16_SIZE+HDR_MAC802_16_FRAGSUB_SIZE));
             }
         } else {//else no flag
-            if (max_data < ch->size() && c->isFragEnable()) {
+            if (max_data < ( ch->size() + HDR_MAC802_16_SIZE ) && c->isFragEnable()) {
                 //need to fragment the packet for the first time
                 p = p->copy(); //copy packet to send
                 ch = HDR_CMN(p);
@@ -878,7 +878,7 @@ int WimaxScheduler::transfer_packets1 (Connection *c, Burst *b, int b_data)
 
                 debug2 ("\nFirst fragmentation %d, CID :%d, (max_data :%d, bytes to send :%d, ori_size :%d, getFragmentBytes :%d, FRAGSUB :%d, getFragNumber :%d, updated Frag ;%d, update FragBytes :%d, con->qBytes :%d, con->qlen :%d, more_bw :%d)\n", wimaxHdr->frag_subheader.fsn, c->get_cid(), max_data, ch->size(), ori_ch, c->getFragmentBytes(), HDR_MAC802_16_FRAGSUB_SIZE, c->getFragmentNumber (), 1, c->getFragmentBytes()+max_data-(HDR_MAC802_16_SIZE+HDR_MAC802_16_FRAGSUB_SIZE),c->queueByteLength(), c->queueLength (), more_bw);
 
-                c->updateFragmentation (FRAG_FIRST, 1, c->getFragmentBytes()+max_data-(HDR_MAC802_16_SIZE+HDR_MAC802_16_FRAGSUB_SIZE));
+                c->updateFragmentation (FRAG_FIRST, 1, max_data - ( HDR_MAC802_16_SIZE + HDR_MAC802_16_FRAGSUB_SIZE));
                 if (gm_flag>0) {
                     gm_flag = 0;
                     ch->size() = ch->size() + HDR_PIG;
@@ -889,14 +889,16 @@ int WimaxScheduler::transfer_packets1 (Connection *c, Burst *b, int b_data)
                 return b_data;
             } else {
                 //no fragmentation necessary
+                c->dequeue();
                 int more_bw = 0;
                 if (gm_flag>0) {
                     gm_flag = 0;
                     ch->size() = ch->size() + HDR_PIG;
                 }
-
                 debug2 ("\nNo fragmentation %d, (max_data :%d, bytes to send :%d, con->qBytes :%d, con->qlen :%d, more_bw :%d\n", wimaxHdr->frag_subheader.fsn, max_data, ch->size(), c->queueByteLength(), c->queueLength(), more_bw);
-                c->dequeue();
+                // add generic header
+                ch = HDR_CMN(p);
+                ch->size() += HDR_MAC802_16_SIZE;
 
             }//end frag
         }
@@ -1307,7 +1309,7 @@ int WimaxScheduler::transfer_packets_with_fragpackarq(Connection *c, Burst *b, i
     wimaxHdr_pdu->header.eks = 0;
     wimaxHdr_pdu->header.cid = c->get_cid ();
     wimaxHdr_pdu->header.hcs = 0;
-    ch_pdu->size() += HDR_MAC802_16_SIZE+HDR_MAC802_16_FRAGSUB_SIZE+HDR_MAC802_16_CRC_SIZE; /*Size of generic Mac Header and CRC is set (Note one packet header and first ARQ Block is present)*/
+    ch_pdu->size() += HDR_MAC802_16_SIZE + HDR_MAC802_16_FRAGSUB_SIZE + HDR_MAC802_16_CRC_SIZE; /*Size of generic Mac Header and CRC is set (Note one packet header and first ARQ Block is present)*/
     debug2 ("ARQ: MAC [%d] Generated PDU Size: %d FSN is %d \n",mac_->addr(),ch_pdu->size (),  wimaxHdr_pdu->pack_subheader.sn);
 
     // Set the Initial Conditions
@@ -1363,7 +1365,7 @@ int WimaxScheduler::transfer_packets_with_fragpackarq(Connection *c, Burst *b, i
         if ((((seqno - ack_seq) > 0) && ((seqno - ack_seq) > max_window))
                 //|| ((seqno >= curr_window && seqno < max_window) && (ack_seq < max_seq && ack_seq >= (max_seq - max_window))))
                 ||((seqno-ack_seq)<0 && ((seqno+max_seq-ack_seq)>max_window))) {
-        	debug2("ARQ2.0 Transfer_Packets: seqno=%d, ack_seq=%d, 1st judge=%d,  2nd judge=%d",
+            debug2("ARQ2.0 Transfer_Packets: seqno=%d, ack_seq=%d, 1st judge=%d,  2nd judge=%d",
                    seqno,ack_seq,(((seqno - ack_seq) > 0) && ((seqno - ack_seq) > max_window)),((seqno-ack_seq)<0 && ((seqno+max_seq-ack_seq)>max_window)));
             debug2("ARQ2.0 Transfer_Packets: this ARQ block is outside of ARQ slide window, Will not be transferred.\n ");
             break;
@@ -1729,13 +1731,14 @@ int WimaxScheduler::transferPacketsDownlinkBurst (Connection * c, Burst * b, int
             return b_data; //not even space for header
         }
 
-        if (c->getFragmentationStatus()==FRAG_NOFRAG && max_data <= HDR_MAC802_16_SIZE+HDR_MAC802_16_FRAGSUB_SIZE && (ch->size()>HDR_MAC802_16_SIZE+HDR_MAC802_16_FRAGSUB_SIZE) ) {
+        if (c->getFragmentationStatus()==FRAG_NOFRAG && max_data <= HDR_MAC802_16_SIZE + HDR_MAC802_16_FRAGSUB_SIZE && (ch->size()>HDR_MAC802_16_SIZE+HDR_MAC802_16_FRAGSUB_SIZE) ) {
             return b_data; //not even space for header
         }
 
         if (c->getFragmentationStatus()!=FRAG_NOFRAG) {
-            if (max_data >= ch->size()-c->getFragmentBytes() + HDR_MAC802_16_FRAGSUB_SIZE) { //getFrag => include MACHEADER
-                //add fragmentation header
+            if (max_data >= ch->size() - c->getFragmentBytes() + HDR_MAC802_16_FRAGSUB_SIZE) { //getFrag => include MACHEADER
+                // last fragment
+            	//add fragmentation header
                 wimaxHdr->header.type_frag = true;
                 //no need to fragment again
                 wimaxHdr->frag_subheader.fc = FRAG_LAST;
@@ -1744,7 +1747,7 @@ int WimaxScheduler::transferPacketsDownlinkBurst (Connection * c, Burst * b, int
 
 
                 c->dequeue();  /*remove packet from queue */
-                ch->size() = ch->size()-c->getFragmentBytes()+HDR_MAC802_16_FRAGSUB_SIZE; //new packet size
+                ch->size() = ch->size() - c->getFragmentBytes()+ HDR_MAC802_16_SIZE + HDR_MAC802_16_FRAGSUB_SIZE; //new packet size
                 //update fragmentation
                 if (ch->size() < 0 )
                     debug2(" packet size negative -- panic !!! \n");
@@ -1769,7 +1772,7 @@ int WimaxScheduler::transferPacketsDownlinkBurst (Connection * c, Burst * b, int
 
                 debug2 ("\nContinue fragmentation %d, CID :%d, (max_data :%d, bytes to send :%d, getFragmentBytes :%d, getFragNumber :%d, updated Frag :%d, update FragBytes :%d, con->qBytes :%d, con->qlen :%d, more_bw :%d)\n", wimaxHdr->frag_subheader.fsn, c->get_cid(), max_data, ch->size(),  c->getFragmentBytes(), c->getFragmentNumber(), (c->getFragmentNumber()+1)%8, c->getFragmentBytes()+max_data-(HDR_MAC802_16_SIZE+HDR_MAC802_16_FRAGSUB_SIZE), c->queueByteLength(), c->queueLength(), more_bw);
 
-                c->updateFragmentation (FRAG_CONT, (c->getFragmentNumber ()+1)%8, c->getFragmentBytes() + max_data-(HDR_MAC802_16_SIZE+HDR_MAC802_16_FRAGSUB_SIZE));
+                c->updateFragmentation (FRAG_CONT, (c->getFragmentNumber ()+1)%8, c->getFragmentBytes() + max_data - (HDR_MAC802_16_SIZE + HDR_MAC802_16_FRAGSUB_SIZE));
             }
         } else {//else no flag
             if (max_data < ch->size() && c->isFragEnable()) {
@@ -1787,7 +1790,7 @@ int WimaxScheduler::transferPacketsDownlinkBurst (Connection * c, Burst * b, int
 
                 debug2 ("\nFirst fragmentation %d, CID :%d, (max_data :%d, bytes to send :%d, ori_size :%d, getFragmentBytes :%d, FRAGSUB :%d, getFragNumber :%d, updated Frag ;%d, update FragBytes :%d, con->qBytes :%d, con->qlen :%d, more_bw :%d)\n", wimaxHdr->frag_subheader.fsn, c->get_cid(), max_data, ch->size(), ori_ch, c->getFragmentBytes(), HDR_MAC802_16_FRAGSUB_SIZE, c->getFragmentNumber (), 1, c->getFragmentBytes()+max_data-(HDR_MAC802_16_SIZE+HDR_MAC802_16_FRAGSUB_SIZE),c->queueByteLength(), c->queueLength (), more_bw);
 
-                c->updateFragmentation (FRAG_FIRST, 1, c->getFragmentBytes()+max_data-(HDR_MAC802_16_SIZE+HDR_MAC802_16_FRAGSUB_SIZE));
+                c->updateFragmentation (FRAG_FIRST, 1, c->getFragmentBytes() + max_data-(HDR_MAC802_16_SIZE + HDR_MAC802_16_FRAGSUB_SIZE));
 
             } else if (max_data < ch->size() && !c->isFragEnable()) {
                 //the connection does not support fragmentation
@@ -1796,9 +1799,10 @@ int WimaxScheduler::transferPacketsDownlinkBurst (Connection * c, Burst * b, int
             } else {
                 //no fragmentation necessary
                 int more_bw = 0;
-
                 debug2 ("\nNo fragmentation %d, (max_data :%d, bytes to send :%d, con->qBytes :%d, con->qlen :%d, more_bw :%d\n", wimaxHdr->frag_subheader.fsn, max_data, ch->size(), c->queueByteLength(), c->queueLength(), more_bw);
                 c->dequeue();
+                ch = HDR_CMN(p);
+                ch->size() += HDR_MAC802_16_SIZE;
 
             }//end frag
         }
