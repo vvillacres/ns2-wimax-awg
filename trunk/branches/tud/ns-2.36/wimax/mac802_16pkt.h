@@ -34,9 +34,9 @@ class ServiceFlow;
 /** Define fragmentation encoding */
 enum fragment_status {
     FRAG_NOFRAG = 0,
-    FRAG_LAST,
-    FRAG_FIRST,
-    FRAG_CONT
+    FRAG_LAST = 1,
+    FRAG_FIRST = 2,
+    FRAG_CONT = 3
 };
 
 /** Define Mac management type */
