@@ -218,17 +218,6 @@ int Connection::queueByteLength ()
 }
 
 /**
- * Return payload size in bytes
- * ByteLengt minus MAC overhead
- * @return The payload size in bytes
- */
-int Connection::queuePayloadLength ()
-{
-	return ( queue_->byteLength() - queue_->length () * HDR_MAC802_16_SIZE);
-}
-
-
-/**
  * Lookup element n in queue
  */
 Packet* Connection::queueLookup (int n)
