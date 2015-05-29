@@ -29,8 +29,8 @@
 
 // scheduling algorithm downlink
 #include "schedulingalgointerface.h"
-#include "schedulingalgodualequalfill.h"
 #include "schedulingalgodualedf.h"
+#include "schedulingalgodualequalfill.h"
 #include "schedulingalgoproportionalfair.h"
 
 int frame_no = 0;
@@ -622,7 +622,7 @@ void SSscheduler::schedule ()
                     	// Only nrtPS or BE uses CDMA Bandwidth Requests
                         if ( (con_tmp->get_serviceflow()->getQosSet()->getUlGrantSchedulingType()==UL_nrtPS) || (con_tmp->get_serviceflow()->getQosSet()->getUlGrantSchedulingType()==UL_BE)) {
                             // Bandwidth request shall be allowed by traffic policing
-                        	MrtrMstrPair_t mrtrMstrPair = trafficShapingAlgo_->getDataSizes( con_tmp, con_tmp->queuePayloadLength());
+                        	MrtrMstrPair_t mrtrMstrPair = trafficShapingAlgo_->getDataSizes( con_tmp, con_tmp->queueByteLength());
 
                         	if ( mrtrMstrPair.second > 0) {
                         		create_cdma_request(con_tmp);
@@ -826,7 +826,7 @@ void SSscheduler::schedule ()
 
         while ( c != NULL ) {
         	if ( c->getType() == CONN_DATA) {
-        		MrtrMstrPair_t mrtrMstrPair = trafficShapingAlgo_->getDataSizes( c, c->queuePayloadLength());
+        		MrtrMstrPair_t mrtrMstrPair = trafficShapingAlgo_->getDataSizes( c, c->queueByteLength());
 
                 // Add to virtual allocation if data to send
                 if (( mrtrMstrPair.first > 0 ) || (mrtrMstrPair.second > 0 )) {
@@ -840,8 +840,10 @@ void SSscheduler::schedule ()
                     	// demand more bandwidth for
                     	mrtrMstrPair.first += HDR_MAC802_16_SIZE;
                     	mrtrMstrPair.second += HDR_MAC802_16_SIZE;
+                    	//ceil(double(mrtrMstrPair.first) / double(c->queueByteLength()) * c->queueLength()) * HDR_MAC802_16_SIZE
+
                     }
-                                               // Bandwidth request shall be allowed by traffic policing
+                    // Bandwidth request shall be allowed by traffic policing
 
                     // better way ???
                     Ofdm_mod_rate burstProfile = mac_->getMap()->getUlSubframe()->getProfile( my_burst->getIUC())->getEncoding();

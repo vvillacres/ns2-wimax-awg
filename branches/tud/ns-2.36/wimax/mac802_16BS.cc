@@ -264,9 +264,9 @@ void Mac802_16BS::sendDown(Packet *p)
                     wimaxHdr->header.eks = 0;
                     wimaxHdr->header.cid = cid; //default
                     wimaxHdr->header.hcs = 0;
-                    HDR_CMN(p)->size() += HDR_MAC802_16_SIZE;
+                    // HDR_CMN(p)->size() += HDR_MAC802_16_SIZE; // overhead be be added on transmission
                     connection ->enqueue (p);
-                    debug2 ("At %f (BS) in Mac %d, SENDDOWN, Enqueue packet to cid :%d queue size :%d (max :%d)\n", NOW, index_, cid,connection->queueLength (), macmib_.queue_length);
+                    debug2 ("At %f (BS) in Mac %d, SENDDOWN, Enqueue packet to cid :%d queue size :%d (max :%d) packet size :%d \n", NOW, index_, cid,connection->queueLength (), macmib_.queue_length, HDR_CMN(p)->size());
                     //Begin RPI
                 } else if ((connection->getArqStatus () != NULL) && (connection->getArqStatus ()->isArqEnabled () == 1)) {
                     //We will have to divide the packet to ARQ Blocks
@@ -1342,8 +1342,11 @@ void Mac802_16BS::receive (Packet *pktRx_)
         debug2 ("\tfrag type = %d (type noflag :%d, first :%d, cont :%d, last :%d)\n", wimaxHdr->frag_subheader.fc & 0x3, FRAG_NOFRAG, FRAG_FIRST,FRAG_CONT, FRAG_LAST);
         switch (wimaxHdr->frag_subheader.fc & 0x3) {
         case FRAG_NOFRAG:
-            if (con->getFragmentationStatus()!=FRAG_NOFRAG)
+            if (con->getFragmentationStatus()!=FRAG_NOFRAG) {
                 con->updateFragmentation (FRAG_NOFRAG, 0, 0); //reset
+            }
+            // remove header
+            ch->size() -= HDR_MAC802_16_SIZE;
             drop_pkt = false;
             break;
         case FRAG_FIRST:
@@ -1358,9 +1361,9 @@ void Mac802_16BS::receive (Packet *pktRx_)
             }
 
             if (wimaxHdr->header.type_fbgm) {
-                con->updateFragmentation (FRAG_FIRST, 0, ch->size()-(HDR_MAC802_16_SIZE+HDR_MAC802_16_FRAGSUB_SIZE+flag_pig));
+                con->updateFragmentation (FRAG_FIRST, 0, ch->size()-(HDR_MAC802_16_SIZE + HDR_MAC802_16_FRAGSUB_SIZE + flag_pig));
             } else {
-                con->updateFragmentation (FRAG_FIRST, 0, ch->size()-(HDR_MAC802_16_SIZE+HDR_MAC802_16_FRAGSUB_SIZE));
+                con->updateFragmentation (FRAG_FIRST, 0, ch->size()-(HDR_MAC802_16_SIZE + HDR_MAC802_16_FRAGSUB_SIZE));
             }
 
             break;
@@ -1386,7 +1389,7 @@ void Mac802_16BS::receive (Packet *pktRx_)
             debug2 ("\tReceived last fragment fsn :%d cid :%d", wimaxHdr->frag_subheader.fsn&0x7, cid);
             if ( (con->getFragmentationStatus()==FRAG_FIRST || con->getFragmentationStatus()==FRAG_CONT)
                     && ((wimaxHdr->frag_subheader.fsn&0x7) == (con->getFragmentNumber ()+1)%8) ) {
-                ch->size() += con->getFragmentBytes()-HDR_MAC802_16_FRAGSUB_SIZE;
+                ch->size() += con->getFragmentBytes()- HDR_MAC802_16_SIZE - HDR_MAC802_16_FRAGSUB_SIZE;
                 drop_pkt = false;
                 debug2 ("...Ok\n");
             } else {
@@ -1415,6 +1418,10 @@ void Mac802_16BS::receive (Packet *pktRx_)
             debug2("==============================BS receive End ===========================================\n");
             return;
         }
+    } else {
+    	// entire packet was received
+    	// remove header
+    	ch->size() -= HDR_MAC802_16_SIZE;
     }
 
     //Check if this is a bandwidth request
@@ -1460,15 +1467,10 @@ void Mac802_16BS::receive (Packet *pktRx_)
     } else {
         update_throughput (&rx_data_watch_, 8*ch->size());
         update_throughput (&rx_traffic_watch_, 8*ch->size());
-        ch->size() -= HDR_MAC802_16_SIZE;
 
         // update arrived data volume vr@tud
         int packetSize = ch->size();
         con->increaseArrivedDataVolume( packetSize);
-
-        double overheadFactor = con->getOverheadFactor();
-        overheadFactor = 0.9 * overheadFactor + 0.1 * (double(packetSize + HDR_MAC802_16_SIZE) / packetSize);
-        con->setOverheadFactor( overheadFactor);
 
 
         uptarget_->recv(pktRx_, (Handler*) 0);
