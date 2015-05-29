@@ -10,6 +10,9 @@
 #include "serviceflow.h"
 #include "connection.h"
 
+//MAKRO MIN for usage by the traffic shaping algorithm
+#define MINTS(a,b) ( (a)<= (b) ? (a) : (b) )
+
 TrafficShapingTswTcm::TrafficShapingTswTcm( double frameDuration )  : TrafficShapingInterface( frameDuration)
 {
     // Nothing to do
@@ -96,16 +99,16 @@ MrtrMstrPair_t TrafficShapingTswTcm::getDataSizes(Connection *connection, u_int3
 
     //
     if ( (connection->getFragmentBytes() > 0) && ( connection->queueLength() > 0) ) {
-    	queuePayloadSize -= ( connection->getFragmentBytes() - HDR_MAC802_16_SIZE - HDR_MAC802_16_FRAGSUB_SIZE );
+    	queuePayloadSize -= connection->getFragmentBytes();
     }
 
     // min function Mrtr according to IEEE 802.16-2009
-    wantedMrtrSize = MIN( wantedMrtrSize, maxTrafficBurst);
-    wantedMrtrSize = MIN( wantedMrtrSize, queuePayloadSize);
+    wantedMrtrSize = MINTS( wantedMrtrSize, maxTrafficBurst);
+    wantedMrtrSize = MINTS( wantedMrtrSize, queuePayloadSize);
 
     // min function for Mstr
-    wantedMstrSize = MIN( wantedMstrSize, maxTrafficBurst);
-    wantedMstrSize = MIN( wantedMstrSize, queuePayloadSize);
+    wantedMstrSize = MINTS( wantedMstrSize, maxTrafficBurst);
+    wantedMstrSize = MINTS( wantedMstrSize, queuePayloadSize);
 
     MrtrMstrPair_t mrtrMstrPair;
     mrtrMstrPair.first = wantedMrtrSize;

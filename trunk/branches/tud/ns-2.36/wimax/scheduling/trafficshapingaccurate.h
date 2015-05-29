@@ -13,8 +13,6 @@
 #include <deque>
 using namespace std;
 
-//MAKRO MIN
-#define MIN(a,b) ( (a) <= (b) ? (a) : (b) )
 
 //----------------Prediction Data-------------------------------
 struct TrafficShapingElement {
