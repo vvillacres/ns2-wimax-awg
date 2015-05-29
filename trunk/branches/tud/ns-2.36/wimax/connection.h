@@ -176,7 +176,6 @@ public:
      * @return the value of queue_
      */
     inline PacketQueue * get_queue ( ) {
-    	printf("get_queue CID: %d\n",cid_);
         return queue_;
     }
 
@@ -192,12 +191,6 @@ public:
      */
     int queueByteLength ();
 
-    /**
-     * Return payload size in bytes
-     * ByteLengt minus MAC overhead
-     * @return The payload size in bytes
-     */
-    int queuePayloadLength ();
 
     Packet * queueLookup (int n);
 
