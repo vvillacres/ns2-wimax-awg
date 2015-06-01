@@ -220,8 +220,8 @@ void SchedulingAlgoDualEqualFill::scheduleConnections( VirtualAllocation* virtua
 
 							}
 
-							// check if demand is fullfilled
-							if (allocatedPayload >= wantedMrtrSize) {
+							// check if demand is fullfilled or if all packets have been served
+							if ((allocatedPayload >= wantedMrtrSize) || (currentPacket->next_ == NULL))  {
 								allocationDone = true;
 								// reduce number of connection with mrtr demand
 								nbOfMrtrConnections--;
@@ -461,8 +461,8 @@ void SchedulingAlgoDualEqualFill::scheduleConnections( VirtualAllocation* virtua
 
 								}
 
-								// check if demand is fullfilled
-								if (allocatedPayload == (wantedMstrSize + slotDifference)) {
+								// check if demand is fullfilled or if all packets have been handeled
+								if ((allocatedPayload == (wantedMstrSize + slotDifference)) || (currentPacket->next_ == NULL))  {
 									allocationDone = true;
 									// reduce number of connection with mstr demand
 									nbOfMstrConnections--;
