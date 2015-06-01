@@ -702,8 +702,6 @@ void Mac802_16SS::receive (Packet *pktRx_)
     int flag_cdma_packet = 0;
     wimaxHdr = HDR_MAC802_16(pktRx_);
 
-    printf ("FRAGMENTATION: Receive At %f somethning %d \n", NOW, ch->size());
-
 #ifdef DEBUG_WIMAX
     debug2("\n\n==============================SS receive begin ===========================================\n");
     debug10 ("At %f (SS) in Mac %d, RECEIVE, packet received (type=%s)\n", NOW, index_, packet_info.name(ch->ptype()));
@@ -1434,7 +1432,6 @@ void Mac802_16SS::receive (Packet *pktRx_)
             if (con->getFragmentationStatus()!=FRAG_NOFRAG) {
                 con->updateFragmentation (FRAG_NOFRAG, 0, 0); //reset
             }
-            printf ("FRAGMENTATION: Receive At %f %d Entire Paket Size %d \n", NOW, con->get_cid(), ch->size());
             // remove header
             ch->size() -= HDR_MAC802_16_SIZE;
             drop_pkt = false;
@@ -1443,8 +1440,6 @@ void Mac802_16SS::receive (Packet *pktRx_)
             //when it is the first fragment, it does not matter if we previously
             //received other fragments, since we reset the information
             assert (wimaxHdr->frag_subheader.fsn == 0);
-            //printf ("\tReceived first fragment\n");
-            printf ("FRAGMENTATION: Receive At %f %d First Fragment Size %d \n", NOW, con->get_cid(), ch->size());
             con->updateFragmentation (FRAG_FIRST, 0, ch->size() - (HDR_MAC802_16_SIZE + HDR_MAC802_16_FRAGSUB_SIZE));
             break;
         case FRAG_CONT:
@@ -1452,10 +1447,8 @@ void Mac802_16SS::receive (Packet *pktRx_)
                     && con->getFragmentationStatus()!=FRAG_CONT)
                     || ((wimaxHdr->frag_subheader.fsn&0x7) != (con->getFragmentNumber ()+1)%8) ) {
                 frag_error = true;
-                printf ("FRAGMENTATION: Receive At %f %d ERROR with middle frag seq=%d (expected=%d)\n",NOW, con->get_cid(),wimaxHdr->frag_subheader.fsn&0x7, (con->getFragmentNumber ()+1)%8);
                 con->updateFragmentation (FRAG_NOFRAG, 0, 0); //reset
             } else {
-            	printf ("FRAGMENTATION: Receive At %f %d Middle Fragment Size %d \n", NOW, con->get_cid(), ch->size());
                 con->updateFragmentation (FRAG_CONT, wimaxHdr->frag_subheader.fsn&0x7, con->getFragmentBytes()+ch->size()-(HDR_MAC802_16_SIZE+HDR_MAC802_16_FRAGSUB_SIZE));
             }
             break;
@@ -1463,12 +1456,9 @@ void Mac802_16SS::receive (Packet *pktRx_)
             if ( (con->getFragmentationStatus()==FRAG_FIRST
                     || con->getFragmentationStatus()==FRAG_CONT)
                     && ((wimaxHdr->frag_subheader.fsn&0x7) == (con->getFragmentNumber ()+1)%8) ) {
-                //printf ("\tReceived last fragment\n");
-            	printf ("FRAGMENTATION: Receive At %f %d Last Fragment Size %d \n", NOW, con->get_cid(), ch->size());
                 ch->size() += con->getFragmentBytes() - ( HDR_MAC802_16_SIZE + HDR_MAC802_16_FRAGSUB_SIZE);
                 drop_pkt = false;
             } else {
-                printf ("FRAGMENTATION: Receive At %f %d ERROR with last frag seq=%d (expected=%d) size %d \n",NOW, con->get_cid(), wimaxHdr->frag_subheader.fsn&0x7, (con->getFragmentNumber ()+1)%8, ch->size());
                 frag_error = true;
             }
             con->updateFragmentation (FRAG_NOFRAG, 0, 0); //reset
@@ -1494,7 +1484,6 @@ void Mac802_16SS::receive (Packet *pktRx_)
     } else {
     	// entire packet was received
     	// remove mac header
-    	 printf ("FRAGMENTATION: Receive At %f %d Entire Paket Size %d  without frag  \n", NOW, con->get_cid(), ch->size());
     	ch->size() -= HDR_MAC802_16_SIZE;
     }
 
