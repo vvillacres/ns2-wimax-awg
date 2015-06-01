@@ -113,8 +113,9 @@ void DlSubFrameTimer::expire( Event* e )
                     mac_->transmit (p);
 
 
-                } else
+                } else {
                     break;
+                }
             }
         }
     }
