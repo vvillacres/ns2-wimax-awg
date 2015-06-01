@@ -829,8 +829,9 @@ int WimaxScheduler::transfer_packets1 (Connection *c, Burst *b, int b_data)
                 c->dequeue();  /*remove packet from queue */
                 ch->size() = ch->size() - c->getFragmentBytes() + HDR_MAC802_16_SIZE + HDR_MAC802_16_FRAGSUB_SIZE; //new packet size
                 //update fragmentation
-                if (ch->size() < 0 )
+                if (ch->size() < 0 ) {
                     debug2(" packet size negative -- panic !!! \n");
+                }
 
                 debug2 ("\nEnd of fragmentation %d, CID :%d, (max_data :%d, bytes to send :%d, getFragmentBytes :%d, getFragNumber :%d, updated Frag :%d, update FragBytes :%d, con->qBytes :%d, con->qlen :%d, more_bw :%d)\n", wimaxHdr->frag_subheader.fsn, c->get_cid(), max_data, ch->size(), c->getFragmentBytes(), c->getFragmentNumber(), 0, 0, c->queueByteLength(), c->queueLength(), more_bw);
 
@@ -840,7 +841,7 @@ int WimaxScheduler::transfer_packets1 (Connection *c, Burst *b, int b_data)
                     ch->size() = ch->size() + HDR_PIG;
                 }
 
-            } else {
+            } else if ( max_data > HDR_MAC802_16_SIZE + HDR_MAC802_16_FRAGSUB_SIZE ) {
                 //need to fragment the packet again
                 p = p->copy(); //copy packet to send
                 ch = HDR_CMN(p);
@@ -861,28 +862,42 @@ int WimaxScheduler::transfer_packets1 (Connection *c, Burst *b, int b_data)
                 debug2 ("\nContinue fragmentation %d, CID :%d, (max_data :%d, bytes to send :%d, getFragmentBytes :%d, getFragNumber :%d, updated Frag :%d, update FragBytes :%d, con->qBytes :%d, con->qlen :%d, more_bw :%d)\n", wimaxHdr->frag_subheader.fsn, c->get_cid(), max_data, ch->size(),  c->getFragmentBytes(), c->getFragmentNumber(), (c->getFragmentNumber()+1)%8, c->getFragmentBytes()+max_data-(HDR_MAC802_16_SIZE+HDR_MAC802_16_FRAGSUB_SIZE), c->queueByteLength(), c->queueLength(), more_bw);
 
                 c->updateFragmentation (FRAG_CONT, (c->getFragmentNumber ()+1)%8, c->getFragmentBytes() +max_data -(HDR_MAC802_16_SIZE+HDR_MAC802_16_FRAGSUB_SIZE));
+            } else {
+            	// no space for a further fragment
+            	return b_data;
             }
-        } else {//else no flag
+        } else {//else no fragmentation flag
             if (max_data < ( ch->size() + HDR_MAC802_16_SIZE ) && c->isFragEnable()) {
                 //need to fragment the packet for the first time
-                p = p->copy(); //copy packet to send
-                ch = HDR_CMN(p);
-                int ori_ch = ch->size();
-                wimaxHdr = HDR_MAC802_16(p);
-                //add fragmentation header
-                wimaxHdr->header.type_frag = true;
-                wimaxHdr->frag_subheader.fc = FRAG_FIRST;
-                wimaxHdr->frag_subheader.fsn = c->getFragmentNumber ();
-                int more_bw = 0;
-                ch->size() = max_data; //new packet size
 
-                debug2 ("\nFirst fragmentation %d, CID :%d, (max_data :%d, bytes to send :%d, ori_size :%d, getFragmentBytes :%d, FRAGSUB :%d, getFragNumber :%d, updated Frag ;%d, update FragBytes :%d, con->qBytes :%d, con->qlen :%d, more_bw :%d)\n", wimaxHdr->frag_subheader.fsn, c->get_cid(), max_data, ch->size(), ori_ch, c->getFragmentBytes(), HDR_MAC802_16_FRAGSUB_SIZE, c->getFragmentNumber (), 1, c->getFragmentBytes()+max_data-(HDR_MAC802_16_SIZE+HDR_MAC802_16_FRAGSUB_SIZE),c->queueByteLength(), c->queueLength (), more_bw);
+            	if ( max_data > HDR_MAC802_16_SIZE + HDR_MAC802_16_FRAGSUB_SIZE ) {
+            		// there is space for fragmentation header
 
-                c->updateFragmentation (FRAG_FIRST, 1, max_data - ( HDR_MAC802_16_SIZE + HDR_MAC802_16_FRAGSUB_SIZE));
-                if (gm_flag>0) {
-                    gm_flag = 0;
-                    ch->size() = ch->size() + HDR_PIG;
-                }
+
+					p = p->copy(); //copy packet to send
+					ch = HDR_CMN(p);
+					int ori_ch = ch->size();
+					wimaxHdr = HDR_MAC802_16(p);
+					//add fragmentation header
+					wimaxHdr->header.type_frag = true;
+					wimaxHdr->frag_subheader.fc = FRAG_FIRST;
+					wimaxHdr->frag_subheader.fsn = c->getFragmentNumber ();
+					int more_bw = 0;
+					ch->size() = max_data; //new packet size
+
+					debug2 ("\nFirst fragmentation %d, CID :%d, (max_data :%d, bytes to send :%d, ori_size :%d, getFragmentBytes :%d, FRAGSUB :%d, getFragNumber :%d, updated Frag ;%d, update FragBytes :%d, con->qBytes :%d, con->qlen :%d, more_bw :%d)\n", wimaxHdr->frag_subheader.fsn, c->get_cid(), max_data, ch->size(), ori_ch, c->getFragmentBytes(), HDR_MAC802_16_FRAGSUB_SIZE, c->getFragmentNumber (), 1, c->getFragmentBytes()+max_data-(HDR_MAC802_16_SIZE+HDR_MAC802_16_FRAGSUB_SIZE),c->queueByteLength(), c->queueLength (), more_bw);
+
+					c->updateFragmentation (FRAG_FIRST, 1, max_data - ( HDR_MAC802_16_SIZE + HDR_MAC802_16_FRAGSUB_SIZE));
+					if (gm_flag>0) {
+						gm_flag = 0;
+						ch->size() = ch->size() + HDR_PIG;
+					}
+            	} else {
+            		// no space left for fragmentation header
+            		// can't transmitt packets
+            		return b_data;
+            	}
+
             } else if (max_data < ch->size() && !c->isFragEnable()) {
                 //the connection does not support fragmentation
                 //can't move packets anymore
@@ -896,6 +911,7 @@ int WimaxScheduler::transfer_packets1 (Connection *c, Burst *b, int b_data)
                     ch->size() = ch->size() + HDR_PIG;
                 }
                 debug2 ("\nNo fragmentation %d, (max_data :%d, bytes to send :%d, con->qBytes :%d, con->qlen :%d, more_bw :%d\n", wimaxHdr->frag_subheader.fsn, max_data, ch->size(), c->queueByteLength(), c->queueLength(), more_bw);
+
                 // add generic header
                 ch = HDR_CMN(p);
                 ch->size() += HDR_MAC802_16_SIZE;
@@ -963,11 +979,15 @@ int WimaxScheduler::transfer_packets1 (Connection *c, Burst *b, int b_data)
         //    debug10 ("B_data2 :%d, ch->size :%d\n", b_data, ch->size());
         int assigned_subchannels;
         int symbol_offset;
+
+
         //Trying to calculate how to fill up things here? Before this, frag and arq business?
 
         /*Richard fixed*/
         if (mac_->getNodeType()==STA_BS) {
-            assigned_subchannels = phy->getNumSubchannels(b_data, mac_->getMap()->getDlSubframe()->getProfile (b->getIUC())->getEncoding(), DL_);
+
+        	// new try for allocation of packets in a burst
+/*        	assigned_subchannels = phy->getNumSubchannels(b_data, mac_->getMap()->getDlSubframe()->getProfile (b->getIUC())->getEncoding(), DL_);
             numsubchannels = phy->getNumSubchannels(ch->size(), mac_->getMap()->getDlSubframe()->getProfile (b->getIUC())->getEncoding(), DL_);
             debug10("Richard (BS) is going to use [%d] subchannels.\n",numsubchannels);
 
@@ -984,6 +1004,28 @@ int WimaxScheduler::transfer_packets1 (Connection *c, Burst *b, int b_data)
             txtime_s = (int)(ceil((double)(numsubchannels + subchannel_offset) / (double)phy->getNumsubchannels(DL_))) * num_symbol_per_slot;
             offset = b->getStarttime( )+ txtime_s-num_symbol_per_slot;
             subchannel_offset = (int) ceil((numsubchannels + subchannel_offset) % (phy->getNumsubchannels(DL_)));
+*/
+
+       	// 4 parameters subchanneloffset, symboloffset, number of subchannels, number of symbols
+        	int packetSize = ch->size();
+
+            int startSlot = phy->getNumSubchannels( b_data, mac_->getMap()->getDlSubframe()->getProfile (b->getIUC())->getEncoding(), DL_);
+            int endSlot = phy->getNumSubchannels( b_data + packetSize, mac_->getMap()->getDlSubframe()->getProfile (b->getIUC())->getEncoding(), DL_);
+
+            int numOfSubchannels = endSlot - startSlot;
+            if ( numOfSubchannels == 0) {
+            	numOfSubchannels = 1;
+            }
+
+            int symbolOffset = b->getStarttime() + num_symbol_per_slot * int( floor( double(startSlot) / phy->getNumsubchannels(DL_)));
+            int numOfSymbols = b->getStarttime() + num_symbol_per_slot * int( ceil( double(endSlot) / phy->getNumsubchannels(DL_))) - symbolOffset;
+
+            symbol_offset = symbolOffset;
+            txtime_s = numOfSymbols;
+            numsubchannels = numOfSubchannels;
+            initial_subchannel_offset = startSlot;
+
+
         } else { //if its the SS
             assigned_subchannels = phy->getNumSubchannels(b_data, mac_->getMap()->getUlSubframe()->getProfile (b->getIUC())->getEncoding(), UL_);
 
