@@ -126,11 +126,6 @@ MrtrMstrPair_t TrafficShapingAccurate::getDataSizes(Connection *connection, u_in
     // get Maximum Traffic Burst Size for this connection
     u_int32_t maxTrafficBurst = sfQosSet->getMaxTrafficBurst();
 
-    //
-    if ( (connection->getFragmentBytes() > 0) && ( connection->queueLength() > 0) ) {
-    	queuePayloadSize -= connection->getFragmentBytes();
-    }
-
     // min function Mrtr according to IEEE 802.16-2009
     wantedMrtrSize = MINTS( wantedMrtrSize, maxTrafficBurst);
     wantedMrtrSize = MINTS( wantedMrtrSize, queuePayloadSize);
