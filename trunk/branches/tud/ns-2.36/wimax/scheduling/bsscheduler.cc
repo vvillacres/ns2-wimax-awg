@@ -234,13 +234,13 @@ int BSScheduler::command(int argc, const char*const* argv)
                 // create new alogrithm object
                 dlTrafficShapingAlgorithm_ =  new TrafficShapingTswTcm( mac_->getFrameDuration());
                 printf("New Traffic Shaping Algorithm: Time Sliding Window Three Color Marker \n");
-            } else if (strcmp(argv[2], "masadaa") == 0) {
+            } else if (strcmp(argv[2], "msadaa") == 0) {
                 // delete previous algorithm
                 delete dlTrafficShapingAlgorithm_;
                 // create new alogrithm object
                 dlTrafficShapingAlgorithm_ =  new TrafficShapingMsadaa( mac_->getFrameDuration());
                 printf("New Traffic Shaping Algorithm: Token Bucket Msadaa \n");
-            } else if (strcmp(argv[2], "masadaatb") == 0) {
+            } else if (strcmp(argv[2], "msadaatb") == 0) {
                 // delete previous algorithm
                 delete dlTrafficShapingAlgorithm_;
                 // create new alogrithm object
