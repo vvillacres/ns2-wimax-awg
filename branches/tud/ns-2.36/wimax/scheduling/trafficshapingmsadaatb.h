@@ -9,24 +9,11 @@
 #define TRAFFICSHAPINGMSADAATB_H_
 
 #include "trafficshapinginterface.h"
+#include "trafficshapingmsadaa.h"
 #include <map>
 #include <deque>
 using namespace std;
 
-
-
-
-//----------------Prediction Data-------------------------------
-
-struct LastBucketSize {
-    u_int32_t lastCirToken;
-    u_int32_t lastEirToken;
-    double   timeStamp;
-};
-
-
-typedef map< int, LastBucketSize > MapLastBucketSize_t;
-typedef MapLastBucketSize_t::iterator LastBucketSizeIt_t;
 
 class TrafficShapingMsadaaTb: public TrafficShapingInterface
 {

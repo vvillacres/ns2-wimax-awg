@@ -32,6 +32,8 @@
 // traffic shaping
 #include "trafficshapingaccurate.h"
 #include "trafficshapingtswtcm.h"
+#include "trafficshapingmsadaa.h"
+#include "trafficshapingmsadaatb.h"
 #include "trafficshapingnone.h"
 
 
@@ -232,6 +234,18 @@ int BSScheduler::command(int argc, const char*const* argv)
                 // create new alogrithm object
                 dlTrafficShapingAlgorithm_ =  new TrafficShapingTswTcm( mac_->getFrameDuration());
                 printf("New Traffic Shaping Algorithm: Time Sliding Window Three Color Marker \n");
+            } else if (strcmp(argv[2], "masadaa") == 0) {
+                // delete previous algorithm
+                delete dlTrafficShapingAlgorithm_;
+                // create new alogrithm object
+                dlTrafficShapingAlgorithm_ =  new TrafficShapingMsadaa( mac_->getFrameDuration());
+                printf("New Traffic Shaping Algorithm: Token Bucket Msadaa \n");
+            } else if (strcmp(argv[2], "masadaatb") == 0) {
+                // delete previous algorithm
+                delete dlTrafficShapingAlgorithm_;
+                // create new alogrithm object
+                dlTrafficShapingAlgorithm_ =  new TrafficShapingMsadaaTb( mac_->getFrameDuration());
+                printf("New Traffic Shaping Algorithm: Token Bucket Msadda Time Base \n");
             } else if (strcmp(argv[2], "none") == 0) {
                 // delete previous algorithm
                 delete dlTrafficShapingAlgorithm_;
@@ -256,6 +270,18 @@ int BSScheduler::command(int argc, const char*const* argv)
                 // create new alogrithm object
                 ulTrafficShapingAlgorithm_ =  new TrafficShapingTswTcm( mac_->getFrameDuration());
                 printf("New Traffic Shaping Algorithm: Time Sliding Window Three Color Marker \n");
+            } else if (strcmp(argv[2], "msadaa") == 0) {
+                // delete previous algorithm
+                delete ulTrafficShapingAlgorithm_;
+                // create new alogrithm object
+                ulTrafficShapingAlgorithm_ =  new TrafficShapingMsadaa( mac_->getFrameDuration());
+                printf("New Traffic Shaping Algorithm: Token Bucket Msadaa \n");
+            } else if (strcmp(argv[2], "msadaatb") == 0) {
+                // delete previous algorithm
+                delete ulTrafficShapingAlgorithm_;
+                // create new alogrithm object
+                ulTrafficShapingAlgorithm_ =  new TrafficShapingMsadaaTb( mac_->getFrameDuration());
+                printf("New Traffic Shaping Algorithm: Token Bucket Msadaa Time Base \n");
             } else if (strcmp(argv[2], "none") == 0) {
                 // delete previous algorithm
                 delete ulTrafficShapingAlgorithm_;
