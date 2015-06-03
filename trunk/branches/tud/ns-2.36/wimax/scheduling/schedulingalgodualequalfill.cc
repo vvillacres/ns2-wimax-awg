@@ -428,7 +428,6 @@ void SchedulingAlgoDualEqualFill::scheduleConnections( VirtualAllocation* virtua
 									if (( fragmentedBytes < 1) && (fragmentedBytes >= packetPayload)){
 										// rounding caused errors
 										printf("Slot allignment did not work !!!! Difference %d \n", slotDifference);
-										assert(false);
 										slotDifference = 0;
 										fragmentedBytes = packetPayload - (allocatedPayload - wantedMstrSize);
 									}
@@ -516,11 +515,8 @@ void SchedulingAlgoDualEqualFill::scheduleConnections( VirtualAllocation* virtua
 					// calculate new assigned slots
 					int newSlots = ( allocatedSlots - oldSlots);
 
-					// debug
-					// printf(" %d new Mstr Slots for Connection CID %d \n", newSlots, virtualAllocation->getConnection()->get_cid() );
-
 					// check if connection can be scheduled
-					if ( freeSlots >= newSlots) {
+					if ((newSlots > 0) &&  (freeSlots >= newSlots)) {
 
 						// update freeSlots
 						freeSlots -= newSlots;

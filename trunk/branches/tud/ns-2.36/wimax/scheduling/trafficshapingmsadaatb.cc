@@ -134,9 +134,6 @@ void TrafficShapingMsadaaTb::updateAllocation(Connection *con,u_int32_t realMrtr
     // get the CID of the current connection
     int currentCid = con->get_cid();
 
-    // load QoS Parameter set
-    ServiceFlowQosSet* sfQosSet = con->getServiceFlow()->getQosSet();
-
     // find entry for the current connection
     mapIterator = mapLastBucketSize_.find(currentCid);
 
