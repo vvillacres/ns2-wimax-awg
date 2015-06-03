@@ -25,6 +25,8 @@
 // traffic shaping
 #include "trafficshapingaccurate.h"
 #include "trafficshapingtswtcm.h"
+#include "trafficshapingmsadaa.h"
+#include "trafficshapingmsadaatb.h"
 #include "trafficshapingnone.h"
 
 // scheduling algorithm downlink
@@ -99,6 +101,18 @@ int SSscheduler::command(int argc, const char*const* argv)
 				// create new alogrithm object
 				trafficShapingAlgo_ =  new TrafficShapingTswTcm( mac_->getFrameDuration());
 				printf("New Traffic Shaping Algorithm: Time Sliding Window Three Color Marker \n");
+			} else if (strcmp(argv[2], "msadaa") == 0) {
+				// delete previous algorithm
+				delete trafficShapingAlgo_;
+				// create new alogrithm object
+				trafficShapingAlgo_ =  new TrafficShapingMsadaa( mac_->getFrameDuration());
+				printf("New Traffic Shaping Algorithm: Token Bucket Msadaa \n");
+			} else if (strcmp(argv[2], "msadaats") == 0) {
+				// delete previous algorithm
+				delete trafficShapingAlgo_;
+				// create new alogrithm object
+				trafficShapingAlgo_ =  new TrafficShapingMsadaaTb( mac_->getFrameDuration());
+				printf("New Traffic Shaping Algorithm: Token Bucket Msadaa \n");
 			} else if (strcmp(argv[2], "none") == 0) {
 				// delete previous algorithm
 				delete trafficShapingAlgo_;

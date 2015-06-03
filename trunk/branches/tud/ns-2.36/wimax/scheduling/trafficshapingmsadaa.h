@@ -6,7 +6,7 @@
  */
 
 #ifndef TRAFFICSHAPINGMSADAA_H_
-#define TRAFFICSHAPINGMSADDA_H_
+#define TRAFFICSHAPINGMSADAA_H_
 
 #include "trafficshapinginterface.h"
 #include <map>
