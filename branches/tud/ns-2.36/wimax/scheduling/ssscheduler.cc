@@ -107,12 +107,12 @@ int SSscheduler::command(int argc, const char*const* argv)
 				// create new alogrithm object
 				trafficShapingAlgo_ =  new TrafficShapingMsadaa( mac_->getFrameDuration());
 				printf("New Traffic Shaping Algorithm: Token Bucket Msadaa \n");
-			} else if (strcmp(argv[2], "msadaats") == 0) {
+			} else if (strcmp(argv[2], "msadaatb") == 0) {
 				// delete previous algorithm
 				delete trafficShapingAlgo_;
 				// create new alogrithm object
 				trafficShapingAlgo_ =  new TrafficShapingMsadaaTb( mac_->getFrameDuration());
-				printf("New Traffic Shaping Algorithm: Token Bucket Msadaa \n");
+				printf("New Traffic Shaping Algorithm: Token Bucket Msadaa Time Base \n");
 			} else if (strcmp(argv[2], "none") == 0) {
 				// delete previous algorithm
 				delete trafficShapingAlgo_;
