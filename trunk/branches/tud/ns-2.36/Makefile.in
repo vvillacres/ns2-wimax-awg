@@ -361,6 +361,8 @@ OBJ_CC = \
 	wimax/scheduling/trafficshapinginterface.o \
 	wimax/scheduling/trafficshapingaccurate.o \
 	wimax/scheduling/trafficshapingtswtcm.o \
+	wimax/scheduling/trafficshapingmsadaa.o \
+	wimax/scheduling/trafficshapingmsadaatb.o \
 	wimax/scheduling/trafficshapingnone.o \
 	wimax/scheduling/schedulingalgointerface.o \
 	wimax/scheduling/schedulingalgodualequalfill.o \
