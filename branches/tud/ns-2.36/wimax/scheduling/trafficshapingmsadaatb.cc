@@ -69,7 +69,7 @@ MrtrMstrPair_t TrafficShapingMsadaaTb::getDataSizes(Connection *connection, u_in
         // create new map element
         LastBucketSize lastBucketSize;
         lastBucketSize.lastCirToken = cirToken;
-        lastBucketSize.lastEirToken = cirToken;
+        lastBucketSize.lastEirToken = eirToken;
         lastBucketSize.timeStamp = NOW;
 
         // insert new map element
@@ -159,7 +159,14 @@ void TrafficShapingMsadaaTb::updateAllocation(Connection *con,u_int32_t realMrtr
 
         //  write new values to map of mstr and mrtr rate back to the map
         mapIterator->second.lastCirToken -= realMrtrSize;
+        if ( mapIterator->second.lastCirToken < 0 ) {
+        	mapIterator->second.lastCirToken = 0;
+        }
         mapIterator->second.lastEirToken -= (realMstrSize - realMrtrSize);
+        if ( mapIterator->second.lastEirToken < 0 ) {
+        	mapIterator->second.lastEirToken = 0;
+        }
+
 
 
     }

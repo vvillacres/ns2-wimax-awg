@@ -19,8 +19,8 @@ using namespace std;
 //----------------Prediction Data-------------------------------
 
 struct LastBucketSize {
-    u_int32_t lastCirToken;
-    u_int32_t lastEirToken;
+    int lastCirToken;
+    int lastEirToken;
     double   timeStamp;
 };
 
