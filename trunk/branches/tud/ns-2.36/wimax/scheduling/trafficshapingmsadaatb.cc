@@ -48,7 +48,7 @@ MrtrMstrPair_t TrafficShapingMsadaaTb::getDataSizes(Connection *connection, u_in
     int eirToken;
 
     // calculate token bucket sizes in sec
-    int timeBase = sfQosSet->getTimeBase()* 1e-3;
+    double timeBase = sfQosSet->getTimeBase()* 1e-3;
 
     int cirBucketSize = int( ceil(double(sfQosSet->getMinReservedTrafficRate()) / 8.0 * timeBase));
     int eirBucketSize = int( floor(double(sfQosSet->getMaxSustainedTrafficRate() - sfQosSet->getMinReservedTrafficRate()) / 8.0 * timeBase));
