@@ -1521,7 +1521,7 @@ mac802_16_dl_map_frame * BSScheduler::buildDownlinkMap( VirtualAllocation * virt
             }
 
             // Traffic Policing
-            mrtrMstrPair = dlTrafficShapingAlgorithm_->getDataSizes( currentCon, u_int32_t(currentCon->queueByteLength()));
+            mrtrMstrPair = dlTrafficShapingAlgorithm_->getDataSizes( currentCon, u_int32_t(currentCon->queueByteLength() - currentCon->getFragmentBytes()));
 
             // Add to virtual allocation if data to send
             if ( mrtrMstrPair.second > 0 ) {
