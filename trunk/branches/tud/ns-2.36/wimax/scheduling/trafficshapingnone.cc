@@ -24,9 +24,6 @@ MrtrMstrPair_t TrafficShapingNone::getDataSizes(Connection * connection, u_int32
 {
     MrtrMstrPair_t mrtrMstrPair;
     u_int32_t wantedMstrSize = queuePayloadSize;
-    if ( (connection->getFragmentBytes() > 0) && ( connection->queueLength() > 0) ) {
-    	wantedMstrSize = wantedMstrSize - u_int32_t( connection->getFragmentBytes() - HDR_MAC802_16_FRAGSUB_SIZE);
-    }
 
     // QoS Parameter auslesen
     ServiceFlowQosSet* sfQosSet = connection->getServiceFlow()->getQosSet();
