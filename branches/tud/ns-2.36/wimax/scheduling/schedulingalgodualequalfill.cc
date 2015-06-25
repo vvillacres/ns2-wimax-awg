@@ -260,13 +260,14 @@ void SchedulingAlgoDualEqualFill::scheduleConnections( VirtualAllocation* virtua
 				if (( oldSlots == 0 ) && (virtualAllocation->getBroadcastSlotCapacity() != 0 )) {
 					// new dl-map ie is needed
 
-					// debug for QPSK 1/2
-					assert( freeSlots >= 1);
 					// increase broadcast burst
 					freeSlots -= virtualAllocation->increaseBroadcastBurst( DL_MAP_IE_SIZE);
 
-					// debug
-					assert( freeSlots >= 0);
+					if (freeSlots < 0) {
+						// not even space for DL_MAP_IE
+						freeSlots -= virtualAllocation->increaseBroadcastBurst( -DL_MAP_IE_SIZE);
+						allocatedSlots = oldSlots;
+					}
 
 					// decrease unscheduled connections
 					nbOfUnscheduledConnections--;
@@ -505,8 +506,11 @@ void SchedulingAlgoDualEqualFill::scheduleConnections( VirtualAllocation* virtua
 						// increase broadcast burst
 						freeSlots -= virtualAllocation->increaseBroadcastBurst( DL_MAP_IE_SIZE);
 
-						// debug
-						assert( freeSlots >= 0);
+						if (freeSlots < 0) {
+							// not even space for DL_MAP_IE
+							freeSlots -= virtualAllocation->increaseBroadcastBurst( -DL_MAP_IE_SIZE);
+							allocatedSlots = oldSlots;
+						}
 
 						// decrease unscheduled connections
 						nbOfUnscheduledConnections--;
